@@ -1,0 +1,127 @@
+# Excavator auto-updates this file. Please contribute improvements to the central template:
+# https://github.palantir.build/excavator-checks/circle-templates/blob/develop/excavator/circleci/templates/simple-java.config.yml
+# To manually manage the CircleCI configuration for this project, remove the .circleci/template.sh file.
+
+version: 2.1
+orbs:
+  cache: palantir-orbs/circle-cache@volatile
+jobs:
+  circle-all:
+    docker: [{ image: 'docker.palantir.build/circle2-build-images/ubuntu-focal-standard:0.40.5004' }]
+    resource_class: large
+    environment:
+      JAVA_HOME: /opt/java17
+      GRADLE_OPTS: -Dorg.gradle.workers.max=2 -Dorg.gradle.jvmargs='-Xmx2g --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
+      _JAVA_OPTIONS: -XX:ActiveProcessorCount=4 -XX:MaxRAM=8g -XX:+CrashOnOutOfMemoryError -XX:ErrorFile=/home/circleci/artifacts/hs_err_pid%p.log -XX:HeapDumpPath=/home/circleci/artifacts
+      DOCKER_BUILDKIT: 1
+      CIRCLE_TEST_REPORTS: /home/circleci/junit
+      CIRCLE_ARTIFACTS: /home/circleci/artifacts
+    steps:
+      - checkout
+      - run: delete_unrelated_tags
+      - cache/restore: { keys: 'gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}' }
+      - cache/restore: { keys: 'compile-gradle-cache-v1-{{ checksum "versions.props" }}-{{ checksum "build.gradle" }}' }
+      - run:
+          command: monitor_all_processes
+          name: Monitor all processes, saving a log file to the artifacts directory. Use https://pl.ntr/monitorallprocessesvisualizer to analyze it.
+          background: true
+      - run: ./gradlew --parallel --stacktrace build --continue
+      - cache/save:
+          key: 'gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}'
+          paths: ~/.gradle/wrapper
+      - cache/save:
+          key: 'compile-gradle-cache-v1-{{ checksum "versions.props" }}-{{ checksum "build.gradle" }}'
+          paths: ~/.gradle/caches
+      - store_test_results: { path: ~/junit }
+      - store_artifacts: { path: ~/artifacts }
+      - persist_to_workspace:
+          root: /home/circleci
+          paths: [ project, .gradle/init.gradle ]
+      - run:
+          name: Upload hs_err_pid files to help debug Gradle segfaults
+          command: find ~/artifacts -name 'hs_err_pid*' -exec curl -XPUT --fail --upload-file {} https://artifactory.palantir.build/artifactory/internal-dist-sandbox/hs_err_pid/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM-$CIRCLE_STAGE-hs_err_pid.yml \;
+          when: always
+      - run:
+          name: Upload core dump to help debug Gradle segfaults
+          command: |
+            find ~/project -not \( -name node_modules -prune \) -not \( -name .rtfm -prune \) -name 'core.*' -exec curl -XPUT --fail --upload-file {} https://publish.artifactory.palantir.build/artifactory/internal-dist-sandbox/circle_core_dumps/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM-$CIRCLE_STAGE-core.bin \;
+          when: on_fail
+
+  publish:
+    docker: [{ image: 'docker.palantir.build/circle2-build-images/ubuntu-focal-standard:0.40.5004' }]
+    resource_class: large
+    environment:
+      JAVA_HOME: /opt/java17
+      GRADLE_OPTS: -Dorg.gradle.workers.max=2 -Dorg.gradle.jvmargs='-Xmx2g --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
+      _JAVA_OPTIONS: -XX:ActiveProcessorCount=4 -XX:MaxRAM=8g -XX:+CrashOnOutOfMemoryError -XX:ErrorFile=/home/circleci/artifacts/hs_err_pid%p.log -XX:HeapDumpPath=/home/circleci/artifacts
+      DOCKER_BUILDKIT: 1
+      CIRCLE_TEST_REPORTS: /home/circleci/junit
+      CIRCLE_ARTIFACTS: /home/circleci/artifacts
+    steps:
+      - attach_workspace: { at: /home/circleci }
+      - cache/restore: { keys: 'gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}' }
+      - cache/restore: { keys: 'publish-gradle-cache-v1-{{ checksum "versions.props" }}-{{ checksum "build.gradle" }}' }
+      - run:
+          name: "Check for Artifactory Credentials"
+          command: |
+            if [[ ! -z "${ARTIFACTORY_SKIP_INJECTION}" ]]; then
+              echo "No Artifactory Credentials Reason: ${ARTIFACTORY_SKIP_INJECTION}"
+              echo "To enable publishing make sure you repo is enrolled in https://github.palantir.build/devtools/github-automation and https://github.palantir.build/devtools/artifactory-automation."
+              echo "If you need further help please reach out to DevTools on Slack at #help-devtools."
+            fi
+
+            if [[ ! -z "${ARTIFACTORY_INJECTOR}" ]]; then
+              echo "Credential Injector: ${ARTIFACTORY_INJECTOR}"
+            fi
+
+            # add newline
+            echo
+
+            # check for in-toto credentials
+            if [[ ! -z "${INTOTO_SKIP_INJECTION}" ]]; then
+              echo "No in-toto Credentials Reason: ${INTOTO_SKIP_INJECTION}"
+              echo "To enable publishing make sure you repo is enrolled in https://github.palantir.build/devtools/github-automation and https://github.palantir.build/devtools/artifactory-automation and that the sscs-hooks(.*)* pre-receive hook is enabled."
+              echo "If you need further help please reach out to DevTools on Slack at #help-devtools."
+            fi
+
+            if [[ ! -z "${INTOTO_INJECTOR}" ]]; then
+              echo "in-toto Credential Injector: ${INTOTO_INJECTOR}"
+            fi
+      - run:
+          command: monitor_all_processes
+          name: Monitor all processes, saving a log file to the artifacts directory. Use https://pl.ntr/monitorallprocessesvisualizer to analyze it.
+          background: true
+      - deploy:
+          command: ./gradlew --parallel --stacktrace --continue publish
+      - run:
+          command: git status --porcelain
+          when: always
+      - cache/save:
+          key: 'publish-gradle-cache-v1-{{ checksum "versions.props" }}-{{ checksum "build.gradle" }}'
+          paths: ~/.gradle/caches
+      - store_test_results: { path: ~/junit }
+      - store_artifacts: { path: ~/artifacts }
+      - run:
+          name: Upload hs_err_pid files to help debug Gradle segfaults
+          command: find ~/artifacts -name 'hs_err_pid*' -exec curl -XPUT --fail --upload-file {} https://artifactory.palantir.build/artifactory/internal-dist-sandbox/hs_err_pid/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM-$CIRCLE_STAGE-hs_err_pid.yml \;
+          when: always
+      - run:
+          name: Upload core dump to help debug Gradle segfaults
+          command: |
+            find ~/project -not \( -name node_modules -prune \) -not \( -name .rtfm -prune \) -name 'core.*' -exec curl -XPUT --fail --upload-file {} https://publish.artifactory.palantir.build/artifactory/internal-dist-sandbox/circle_core_dumps/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM-$CIRCLE_STAGE-core.bin \;
+          when: on_fail
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - circle-all:
+          filters: { tags: { only: /.*/ } }
+
+      - publish:
+          requires: [ circle-all ]
+          filters: { tags: { only: /.*/ }, branches: { only: develop } }
+
+notify:
+  webhooks:
+    - url: https://parana.palantir.build/hook

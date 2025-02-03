@@ -1,0 +1,7 @@
+checks:
+  enabled:
+    - AfterEvaluate
+    - RegisterInsteadOfCreate
+    - StripIndentTrue
+  suppressed:
+    AutoParallelizable: too hard to implement

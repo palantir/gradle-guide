@@ -1,0 +1,4 @@
+# Excavator auto-updates this file. Please contribute improvements to the central template:
+# https://github.palantir.build/foundry/standards/blob/develop/excavator/changelog-app/templates/changelog.yml.template
+
+# This file is intentionally empty. The file's existence enables changelog-app and is empty to use the default configuration.

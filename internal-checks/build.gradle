@@ -1,0 +1,15 @@
+apply plugin: 'groovy'
+
+dependencies {
+    implementation 'one.util:streamex'
+    implementation 'org.apache.commons:commons-lang3'
+
+    testImplementation localGroovy()
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    inputs.dir(rootProject.file('guide'))
+    inputs.file(rootProject.file('permalinks.md'))
+}
