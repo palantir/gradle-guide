@@ -1,5 +1,4 @@
 # Excavator auto-updates this file. Please contribute improvements to the central template:
-# https://github.palantir.build/foundry/standards/blob/develop/excavator/stale-bot/templates/stale.yml.template
 
 only: pulls
 staleLabel: stale
