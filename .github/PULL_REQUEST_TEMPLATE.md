@@ -9,5 +9,3 @@
 ## Possible downsides?
 <!-- Please describe any way users could be negatively affected by this PR. -->
 
-## Are Docs needed?
-<!-- Please indicate whether documentation is needed for this PR. -->
