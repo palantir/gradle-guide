@@ -16,11 +16,13 @@ buildscript {
     dependencies {
         classpath 'com.palantir.gradle.patch-memoryinfo:gradle-patch-memoryinfo:1.0.0'
         classpath 'com.palantir.gradle.internal-build-cache:gradle-internal-build-cache:0.10.0'
+        classpath 'com.palantir.gradle.jdks:gradle-jdks-settings:0.61.0'
         classpath 'com.palantir.gradle.buildscan:gradle-internal-build-scan:1.24.0'
     }
 }
 apply plugin: 'com.palantir.patch-memoryinfo'
 apply plugin: 'com.palantir.internal-build-cache'
+apply plugin: 'com.palantir.jdks.settings'
 apply plugin: 'com.palantir.build-scan.settings'
 
 rootProject.name = 'gradle-guide-root'
