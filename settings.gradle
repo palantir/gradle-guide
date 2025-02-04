@@ -1,17 +1,12 @@
 pluginManagement {
     repositories {
-        maven {
-            url 'https://artifactory.palantir.build/artifactory/release-jar'
-            metadataSources { mavenPom(); ignoreGradleMetadataRedirection() }
-        }
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     }
 }
 buildscript {
     repositories {
-        maven {
-            url 'https://artifactory.palantir.build/artifactory/release-jar'
-            metadataSources { mavenPom(); ignoreGradleMetadataRedirection() }
-        }
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     }
     dependencies {
         classpath 'com.palantir.gradle.patch-memoryinfo:gradle-patch-memoryinfo:1.0.0'
