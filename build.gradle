@@ -14,6 +14,7 @@ buildscript {
         classpath 'com.palantir.javaformat:gradle-palantir-java-format:2.50.0'
         classpath 'com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.2.0'
         classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.19.0'
+        classpath 'com.palantir.gradle.failure-reports:gradle-failure-reports:1.13.0'
         constraints {
             classpath('org.apache.logging.log4j:log4j-core:2.17.1'){ because 'Avoid vulnerable versions of log4j' }
         }
@@ -27,6 +28,7 @@ apply plugin: 'com.palantir.git-version'
 apply plugin: 'com.palantir.jdks'
 apply plugin: 'com.palantir.jdks.latest'
 apply plugin: 'com.palantir.external-publish'
+apply plugin: 'com.palantir.failure-reports'
 
 version gitVersion()
 
