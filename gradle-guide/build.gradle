@@ -20,18 +20,10 @@ dependencies {
     testImplementation 'com.netflix.nebula:nebula-test'
 }
 
-def writeVersion = tasks.register('writeVerison') {
-    outputs.file('build/version')
-    inputs.property('version', version)
-
-    doFirst {
-        outputs.files.singleFile.text = inputs.properties.version
-    }
-}
-
 tasks.named('test').configure {
-    dependsOn(':gradle-guide-error-prone:publishToMavenLocal')
-    dependsOn writeVersion
+    dependsOn ':gradle-guide-error-prone:publishToMavenLocal'
+
+    systemProperty 'gradleGuideErrorProneVersion', version
 }
 
 

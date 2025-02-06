@@ -8,7 +8,8 @@ import nebula.test.IntegrationSpec
 
 class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
     def setup() {
-        buildFile << """
+        // language=Gradle
+        buildFile << '''
             apply plugin: 'java-gradle-plugin'
             apply plugin: 'com.palantir.gradle-guide'
             
@@ -16,7 +17,22 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                 mavenCentral()
                 mavenLocal()
             }
-        """.stripIndent(true)
+            
+            dependencies {
+                constraints {
+                    errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
+                }
+                
+                errorprone 'com.google.errorprone:error_prone_core:2.36.0'
+            }
+            
+            suppressibleErrorProne {
+                // Our test source files are placed under `build/nebulatest`, which is ignored by default
+                configureEachErrorProneOptions {
+                    it.excludedPaths.unset()
+                }
+            }
+        '''.stripIndent(true)
     }
 
     def 'registers errorprones correctly'() {
