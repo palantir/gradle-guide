@@ -1,0 +1,57 @@
+buildscript {
+    repositories {
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+    }
+
+    dependencies {
+        classpath 'com.palantir.jakartapackagealignment:jakarta-package-alignment:0.6.0'
+        classpath 'com.palantir.baseline:gradle-baseline-java:6.5.0'
+        classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.31.0'
+        classpath 'com.palantir.gradle.gitversion:gradle-git-version:1.0.0'
+        classpath 'com.palantir.gradle.jdks:gradle-jdks:0.61.0'
+        classpath 'com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.17.0'
+        classpath 'com.palantir.javaformat:gradle-palantir-java-format:2.50.0'
+        classpath 'com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.2.0'
+        classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.19.0'
+        constraints {
+            classpath('org.apache.logging.log4j:log4j-core:2.17.1'){ because 'Avoid vulnerable versions of log4j' }
+        }
+    }
+}
+
+apply plugin: 'com.palantir.baseline'
+apply plugin: 'com.palantir.baseline-java-versions'
+apply plugin: 'com.palantir.consistent-versions'
+apply plugin: 'com.palantir.git-version'
+apply plugin: 'com.palantir.jdks'
+apply plugin: 'com.palantir.jdks.latest'
+apply plugin: 'com.palantir.external-publish'
+
+version gitVersion()
+
+allprojects {
+    apply plugin: 'com.palantir.baseline-null-away'
+    apply plugin: 'com.palantir.java-format'
+    apply plugin: 'java-library'
+    apply plugin: 'com.palantir.jakarta-package-alignment'
+
+    repositories {
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+    }
+
+
+    group 'com.palantir.gradle.guide'
+    version rootProject.version
+
+    tasks.check.dependsOn tasks.checkUnusedDependencies
+}
+
+javaVersions {
+    libraryTarget = 17
+}
+
+jdks {
+    daemonTarget = 17
+}

@@ -1,0 +1,44 @@
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'groovy'
+apply plugin: 'com.palantir.external-publish-jar'
+
+dependencies {
+    compileOnly gradleApi()
+
+    implementation 'com.palantir.suppressible-error-prone:gradle-suppressible-error-prone'
+    implementation 'com.google.guava:guava'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+
+    compileOnly 'org.immutables:value::annotations'
+    annotationProcessor 'org.immutables:value'
+
+    compileOnly 'com.palantir.gradle.auto-parallelizable:auto-parallelizable-annotations'
+    annotationProcessor 'com.palantir.gradle.auto-parallelizable:auto-parallelizable'
+
+    testImplementation gradleTestKit()
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
+
+def writeVersion = tasks.register('writeVerison') {
+    outputs.file('build/version')
+    inputs.property('version', version)
+
+    doFirst {
+        outputs.files.singleFile.text = inputs.properties.version
+    }
+}
+
+tasks.named('test').configure {
+    dependsOn(':gradle-guide-error-prone:publishToMavenLocal')
+    dependsOn writeVersion
+}
+
+
+// generate plugin test files when generating Eclipse projects
+tasks.eclipse.dependsOn pluginUnderTestMetadata
+
+gradlePlugin {
+    // do not add new task to publish to plugins.gradle.org
+    automatedPublishing = false
+}
