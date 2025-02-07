@@ -21,7 +21,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
     2. [In the lair of the complexity demon](guide/introduction.md#in-the-lair-of-the-complexity-demon)
 2. [Background what is a gradle file](guide/background-what-is-a-gradle-file.md)
     1. [`.gradle` files](guide/background-what-is-a-gradle-file.md#.gradle-files)
-    2. [Gradle script Groovy <-> Java transliteration](guide/background-what-is-a-gradle-file.md#gradle-script-groovy-<->-java-transliteration)
+    2. [Gradle script Groovy <-> Java transliteration](guide/background-what-is-a-gradle-file.md#gradle-script-groovy-----java-transliteration)
     3. [`settings.gradle` file](guide/background-what-is-a-gradle-file.md#settings.gradle-file)
     4. [`build.gradle` files](guide/background-what-is-a-gradle-file.md#build.gradle-files)
 3. [Anatomy of a gradle plugin](guide/anatomy-of-a-gradle-plugin.md)

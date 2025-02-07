@@ -21,7 +21,7 @@ class TableOfContentsGeneratorTest {
             
             ## Subheading 1
             
-            ## Subheading with `code` elements/slashes
+            ## Subheading with `code` elements/slashes <>
         '''.stripIndent(true)
 
         guideDir.resolve("more-stuff.md") << /* language=markdown */ '''
@@ -62,7 +62,7 @@ class TableOfContentsGeneratorTest {
             <!-- TableOfContents: START -->
             1. [Starting stuff](guide/starting-stuff.md)
                 1. [Subheading 1](guide/starting-stuff.md#subheading-1)
-                2. [Subheading with `code` elements/slashes](guide/starting-stuff.md#subheading-with-code-elementsslashes)
+                2. [Subheading with `code` elements/slashes <>](guide/starting-stuff.md#subheading-with-code-elementsslashes---)
             2. [More stuff](guide/more-stuff.md)
                 1. [Subheading 1](guide/more-stuff.md#subheading-1)
                 2. [Subheading 2](guide/more-stuff.md#subheading-2)

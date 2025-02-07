@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -82,8 +83,10 @@ final class TableOfContentsGenerator {
                     .zipWith(integers())
                     .mapKeyValue((matchResult, subIndex) -> {
                         String subheading = matchResult.group(1);
-                        String subheadingLink =
-                                subheading.toLowerCase().replace(' ', '-').replaceAll("[/`]", "");
+                        String subheadingLink = subheading
+                                .toLowerCase(Locale.ROOT)
+                                .replaceAll("[ <>]", "-")
+                                .replaceAll("[/`]", "");
                         return String.format(
                                 "    %d. [%s](guide/%s#%s)",
                                 subIndex, subheading, guideDir.relativize(mdFile), subheadingLink);
