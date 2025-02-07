@@ -85,8 +85,8 @@ final class TableOfContentsGenerator {
                         String subheading = matchResult.group(1);
                         String subheadingLink = subheading
                                 .toLowerCase(Locale.ROOT)
-                                .replaceAll("[ <>]", "-")
-                                .replaceAll("[/`]", "");
+                                .replace(" ", "-")
+                                .replaceAll("[/`<>]", "");
                         return String.format(
                                 "    %d. [%s](guide/%s#%s)",
                                 subIndex, subheading, guideDir.relativize(mdFile), subheadingLink);
