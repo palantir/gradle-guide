@@ -1,7 +1,7 @@
 /*
  * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
  */
-package com.palantir.gradle.guide.internal;
+package com.palantir.gradle.guide.internal.toc;
 
 import java.io.IOException;
 import java.nio.file.Files;

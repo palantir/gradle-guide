@@ -1,17 +1,16 @@
 /*
  * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
  */
-package com.palantir.gradle.guide.internal;
+package com.palantir.gradle.guide.internal.toc;
 
 import com.google.common.collect.Sets;
+import com.palantir.gradle.guide.internal.markdown.MdFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -24,8 +23,6 @@ final class TableOfContentsGenerator {
     private static final String TOC_SOURCE_END = "-->";
     private static final String TOC_START = "<!-- TableOfContents: START -->";
     private static final String TOC_END = "<!-- TableOfContents: END -->";
-
-    private static final Pattern SUBHEADING_PATTERN = Pattern.compile("^## (.+)$");
 
     public static String generate(String readmeContent, Path guideDir) {
         List<String> lines = readmeContent
@@ -76,27 +73,18 @@ final class TableOfContentsGenerator {
                 filename.substring(0, filename.length() - ".md".length()).replace('-', ' '));
         String top = String.format("%s. [%s](guide/%s)", index, title, guideDir.relativize(mdFile));
 
-        try {
-            List<String> mdFileContent = Files.readAllLines(mdFile);
-            String subheadings = StreamEx.of(mdFileContent)
-                    .flatMap(line -> SUBHEADING_PATTERN.matcher(line).results())
-                    .zipWith(integers())
-                    .mapKeyValue((matchResult, subIndex) -> {
-                        String subheading = matchResult.group(1);
-                        String subheadingLink = subheading
-                                .toLowerCase(Locale.ROOT)
-                                .replace(" ", "-")
-                                .replaceAll("[/`<>]", "");
-                        return String.format(
-                                "    %d. [%s](guide/%s#%s)",
-                                subIndex, subheading, guideDir.relativize(mdFile), subheadingLink);
-                    })
-                    .collect(Collectors.joining("\n"));
+        MdFile mdFileObj = MdFile.fromPath(mdFile);
+        String subheadings = StreamEx.of(mdFileObj.headings())
+                .zipWith(integers())
+                .mapKeyValue((heading, subIndex) -> String.format(
+                        "    %d. [%s](guide/%s#%s)",
+                        subIndex,
+                        heading.text(),
+                        guideDir.relativize(mdFile),
+                        heading.asAnchor().anchor()))
+                .collect(Collectors.joining("\n"));
 
-            return top + "\n" + subheadings;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to process file " + mdFile, e);
-        }
+        return top + "\n" + subheadings;
     }
 
     private static IntStream integers() {

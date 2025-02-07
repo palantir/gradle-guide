@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 final class AllErrorpronesExtendFromGradleGuideBugCheckerTest {
     @ParameterizedTest(name = "{0}")
-    @MethodSource("com.palantir.gradle.guide.checks.AllErrorprones#allErrorprones")
+    @MethodSource("com.palantir.gradle.guide.errorprone.AllErrorprones#allErrorprones")
     void all_extend_from_gradle_guide_bug_checker(BugChecker bugChecker) {
         Assertions.assertThat(bugChecker).isInstanceOf(GradleGuideBugChecker.class);
     }
