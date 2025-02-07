@@ -41,11 +41,17 @@ allprojects {
         gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     }
 
-
     group 'com.palantir.gradle.guide'
     version rootProject.version
 
     tasks.check.dependsOn tasks.checkUnusedDependencies
+
+    suppressibleErrorProne {
+        configureEachErrorProneOptions {
+            disable("StrictUnusedVariable")
+            disable("PreferSafeLoggableExceptions")
+        }
+    }
 }
 
 javaVersions {

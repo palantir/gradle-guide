@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat
 class TableOfContentsGeneratorTest {
     @Test
     void generates_a_good_table_of_contents(@TempDir Path guideDir) {
-        guideDir.resolve("01-starting-stuff.md") << /* language=markdown */ '''
+        guideDir.resolve("starting-stuff.md") << /* language=markdown */ '''
             # Starting Stuff
             
             ## Subheading 1
@@ -24,7 +24,7 @@ class TableOfContentsGeneratorTest {
             ## Subheading with `code` elements/slashes
         '''.stripIndent(true)
 
-        guideDir.resolve("02-more-stuff.md") << /* language=markdown */ '''
+        guideDir.resolve("more-stuff.md") << /* language=markdown */ '''
             # More Stuff
             
             ## Subheading 1
@@ -35,6 +35,11 @@ class TableOfContentsGeneratorTest {
         // language=markdown
         def readme = '''
             # Title
+            
+            <!-- TableOfContentsSource:
+            * starting-stuff.md
+            * more-stuff.md
+            -->
             
             <!-- TableOfContents: START -->
             some other stuff that was here
@@ -49,13 +54,18 @@ class TableOfContentsGeneratorTest {
         assertThat(newReadme).isEqualTo '''
             # Title
             
+            <!-- TableOfContentsSource:
+            * starting-stuff.md
+            * more-stuff.md
+            -->
+            
             <!-- TableOfContents: START -->
-            1. [Starting stuff](guide/01-starting-stuff.md)
-                1. [Subheading 1](guide/01-starting-stuff.md#subheading-1)
-                2. [Subheading with `code` elements/slashes](guide/01-starting-stuff.md#subheading-with-code-elementsslashes)
-            2. [More stuff](guide/02-more-stuff.md)
-                1. [Subheading 1](guide/02-more-stuff.md#subheading-1)
-                2. [Subheading 2](guide/02-more-stuff.md#subheading-2)
+            1. [Starting stuff](guide/starting-stuff.md)
+                1. [Subheading 1](guide/starting-stuff.md#subheading-1)
+                2. [Subheading with `code` elements/slashes](guide/starting-stuff.md#subheading-with-code-elementsslashes)
+            2. [More stuff](guide/more-stuff.md)
+                1. [Subheading 1](guide/more-stuff.md#subheading-1)
+                2. [Subheading 2](guide/more-stuff.md#subheading-2)
             <!-- TableOfContents: END -->
             
             other stuff afterwards

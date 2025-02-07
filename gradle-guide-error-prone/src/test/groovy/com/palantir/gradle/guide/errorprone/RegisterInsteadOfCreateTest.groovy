@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 @CompileStatic(TypeCheckingMode.PASS)
 class RegisterInsteadOfCreateTest {
     @Test
-    void blah() {
+    void matches_tasks_create() {
         CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(RegisterInsteadOfCreate.class, getClass())
 
         compilationTestHelper.addSourceLines 'Test.java', /* language=java */ '''
@@ -21,6 +21,24 @@ class RegisterInsteadOfCreateTest {
                 static void test(TaskContainer tasks) {
                     // BUG: Diagnostic contains: Don't do this yo
                     tasks.create("lol");
+                }
+            }
+        '''.stripIndent(true)
+
+        compilationTestHelper.doTest()
+    }
+
+    @Test
+    void matches_configurations_create() {
+        CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(RegisterInsteadOfCreate.class, getClass())
+
+        compilationTestHelper.addSourceLines 'Test.java', /* language=java */ '''
+            import org.gradle.api.artifacts.ConfigurationContainer;
+
+            class Test {
+                static void test(ConfigurationContainer configurations) {
+                    // BUG: Diagnostic contains: Don't do this yo
+                    configurations.create("lol");
                 }
             }
         '''.stripIndent(true)
