@@ -13,5 +13,11 @@ public final class AllErrorprones {
         return ServiceLoader.load(BugChecker.class).stream().map(ServiceLoader.Provider::get);
     }
 
+    public static Stream<GradleGuideBugChecker> allGradleGuideErrorprones() {
+        return allErrorprones()
+                .filter(checker -> checker instanceof GradleGuideBugChecker)
+                .map(checker -> (GradleGuideBugChecker) checker);
+    }
+
     private AllErrorprones() {}
 }

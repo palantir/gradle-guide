@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
-import org.apache.commons.lang3.StringUtils;
 
 final class TableOfContentsGenerator {
 
@@ -67,21 +66,18 @@ final class TableOfContentsGenerator {
         return readmeContent.substring(0, start) + "\n" + toc + "\n" + readmeContent.substring(end);
     }
 
-    private static String contentsSectionForMdFile(Path guideDir, Path mdFile, Integer index) {
-        String filename = mdFile.getFileName().toString();
-        String title = StringUtils.capitalize(
-                filename.substring(0, filename.length() - ".md".length()).replace('-', ' '));
-        String top = String.format("%s. [%s](guide/%s)", index, title, guideDir.relativize(mdFile));
+    private static String contentsSectionForMdFile(Path guideDir, Path mdFilePath, Integer index) {
+        MdFile mdFile = MdFile.fromPath(mdFilePath);
+        String top = String.format("%s. [%s](guide/%s)", index, mdFile.title(), guideDir.relativize(mdFilePath));
 
-        MdFile mdFileObj = MdFile.fromPath(mdFile);
-        String subheadings = StreamEx.of(mdFileObj.headings())
+        String subheadings = StreamEx.of(mdFile.headingsUpToLevel(2))
                 .zipWith(integers())
                 .mapKeyValue((heading, subIndex) -> String.format(
                         "    %d. [%s](guide/%s#%s)",
                         subIndex,
                         heading.text(),
-                        guideDir.relativize(mdFile),
-                        heading.asAnchor().anchor()))
+                        guideDir.relativize(mdFilePath),
+                        heading.text().asAnchor()))
                 .collect(Collectors.joining("\n"));
 
         return top + "\n" + subheadings;

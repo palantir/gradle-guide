@@ -21,5 +21,5 @@ public abstract class GradleGuideBugChecker extends BugChecker {
 
     public interface MoreInfoLink {}
 
-    public record MoreInfoSubsectionHeaderLink(String mdFileName, String subsectionHeader) implements MoreInfoLink {}
+    public record MoreInfoHeadingLink(String mdFileName, String heading) implements MoreInfoLink {}
 }

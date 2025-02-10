@@ -12,19 +12,14 @@
 <tr>
 <td>
 
-<a id="RegisterInsteadOfCreate"></a>
-`RegisterInsteadOfCreate`
+<a id="RegisterInsteadOfCreate">`RegisterInsteadOfCreate`</a>
 
 </td>
 <td>
-
-Lorem ipsum dolor sit amet
-
+Don't do this yo
 </td>
 <td>
-
-[More info](guide/managed-types-and-properties.md#managed-types)
-
+<a href="guide/diagnosing-build-performance.md#configuration-subsection">More Info</a>
 </td>
 </tr>
 </tbody>

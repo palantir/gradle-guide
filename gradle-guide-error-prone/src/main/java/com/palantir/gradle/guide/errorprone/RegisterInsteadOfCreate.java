@@ -34,6 +34,6 @@ public final class RegisterInsteadOfCreate extends GradleGuideBugChecker
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoSubsectionHeaderLink("diagnosing-build-performance.md", "Configuration subsection");
+        return new MoreInfoHeadingLink("diagnosing-build-performance.md", "Configuration subsection");
     }
 }

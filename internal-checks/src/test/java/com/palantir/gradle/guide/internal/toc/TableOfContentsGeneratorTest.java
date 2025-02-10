@@ -21,6 +21,8 @@ class TableOfContentsGeneratorTest {
 
             ## Subheading 1
 
+            ### Ignore me, I'm too low level
+
             ## Subheading with `code` elements/slashes <>
             """);
 
@@ -32,6 +34,8 @@ class TableOfContentsGeneratorTest {
             ## Subheading 1
 
             ## Subheading 2
+
+            #### Really ignore me
             """);
 
         // language=markdown
@@ -65,10 +69,10 @@ class TableOfContentsGeneratorTest {
             -->
 
             <!-- TableOfContents: START -->
-            1. [Starting stuff](guide/starting-stuff.md)
+            1. [Starting Stuff](guide/starting-stuff.md)
                 1. [Subheading 1](guide/starting-stuff.md#subheading-1)
                 2. [Subheading with `code` elements/slashes <>](guide/starting-stuff.md#subheading-with-code-elementsslashes-)
-            2. [More stuff](guide/more-stuff.md)
+            2. [More Stuff](guide/more-stuff.md)
                 1. [Subheading 1](guide/more-stuff.md#subheading-1)
                 2. [Subheading 2](guide/more-stuff.md#subheading-2)
             <!-- TableOfContents: END -->

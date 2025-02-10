@@ -4,15 +4,9 @@
 
 package com.palantir.gradle.guide.internal.markdown;
 
-import java.util.Locale;
-
-public record Heading(String text) {
-    public Anchor asAnchor() {
-        return new Anchor(text.toLowerCase(Locale.ROOT).replace(" ", "-").replaceAll("[/`<>]", ""));
-    }
-
+public record Heading(int level, HeadingText text) {
     @Override
     public String toString() {
-        return text;
+        return "#".repeat(level) + text.toString();
     }
 }
