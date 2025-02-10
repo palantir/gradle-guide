@@ -4,7 +4,6 @@ dependencies {
     implementation project(':gradle-guide-error-prone')
     implementation 'one.util:streamex'
     implementation 'com.google.guava:guava'
-    implementation 'org.apache.commons:commons-lang3'
 
     testImplementation localGroovy()
     testImplementation 'org.assertj:assertj-core'
@@ -14,7 +13,7 @@ dependencies {
 test {
     inputs.dir(rootProject.file('guide'))
     inputs.file(rootProject.file('errorprones.md'))
-    inputs.file(rootProject.file('readme.md'))
+    inputs.file(rootProject.file('README.md'))
 }
 
 javaVersion {

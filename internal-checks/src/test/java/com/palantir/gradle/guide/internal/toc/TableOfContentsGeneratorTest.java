@@ -71,7 +71,8 @@ class TableOfContentsGeneratorTest {
             <!-- TableOfContents: START -->
             1. [Starting Stuff](guide/starting-stuff.md)
                 1. [Subheading 1](guide/starting-stuff.md#subheading-1)
-                2. [Subheading with `code` elements/slashes <>](guide/starting-stuff.md#subheading-with-code-elementsslashes-)
+                2. [Subheading with `code` elements/slashes <>](guide/starting-stuff.md\
+            #subheading-with-code-elementsslashes-)
             2. [More Stuff](guide/more-stuff.md)
                 1. [Subheading 1](guide/more-stuff.md#subheading-1)
                 2. [Subheading 2](guide/more-stuff.md#subheading-2)
