@@ -2,16 +2,16 @@ com.fasterxml.jackson.*:* = 2.15.2
 com.google.auto.service:* = 1.1.1
 com.google.errorprone:error_prone_* = 2.36.0
 com.google.guava:guava = 33.4.0-jre
-com.netflix.nebula:nebula-test = 10.0.0
+com.netflix.nebula:nebula-test = 10.6.2
 com.palantir.gradle.auto-parallelizable:* = 1.4.0
 com.palantir.suppressible-error-prone:* = 2.2.0
-net.ltgt.gradle:gradle-errorprone-plugin = 3.1.0
-org.junit.jupiter:* = 5.9.3
-org.assertj:* = 3.24.2
-one.util:streamex = 0.8.1
-org.immutables:* = 2.9.3
+net.ltgt.gradle:gradle-errorprone-plugin = 4.1.0
+org.junit.jupiter:* = 5.11.4
+org.assertj:* = 3.27.3
+one.util:streamex = 0.8.3
+org.immutables:* = 2.10.1
 
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
-org.checkerframework:checker-qual = 3.36.0
+org.checkerframework:checker-qual = 3.49.0
