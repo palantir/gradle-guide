@@ -1,4 +1,5 @@
-com.fasterxml.jackson.*:* = 2.15.2
+com.fasterxml.jackson.*:* = 2.18.2
+com.fasterxml.jackson.core:jackson-databind = 2.18.2
 com.google.auto.service:* = 1.1.1
 com.google.errorprone:error_prone_* = 2.36.0
 com.google.guava:guava = 33.4.0-jre
