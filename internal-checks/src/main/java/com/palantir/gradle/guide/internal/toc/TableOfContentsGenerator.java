@@ -17,11 +17,11 @@ package com.palantir.gradle.guide.internal.toc;
 
 import com.google.common.collect.Sets;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
+import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -30,44 +30,22 @@ import one.util.streamex.StreamEx;
 
 final class TableOfContentsGenerator {
 
-    private static final String TOC_SOURCE_START = "<!-- TableOfContentsSource:";
-    private static final String TOC_SOURCE_END = "-->";
     private static final String TOC_START = "<!-- TableOfContents: START -->";
     private static final String TOC_END = "<!-- TableOfContents: END -->";
 
     public static String generate(String readmeContent, Path guideDir) {
-        List<String> lines = readmeContent
-                .lines()
-                .dropWhile(line -> !line.contains(TOC_SOURCE_START))
-                .skip(1)
-                .takeWhile(line -> !line.contains(TOC_SOURCE_END))
-                .toList();
+        TableOfContentsSource tocSource = TableOfContentsSource.fromString(guideDir, readmeContent)
+                .orElseThrow(() -> new RuntimeException("No TableOfContentsSource found in README.md"));
 
-        if (lines.isEmpty()) {
-            throw new RuntimeException("No TableOfContentsSource found in README.md");
-        }
-
-        List<Path> mdFilesInContents = lines.stream()
-                .map(line -> line.replace("* ", ""))
-                .map(guideDir::resolve)
-                .toList();
-
-        List<Path> mdFilesThatDontExist =
-                mdFilesInContents.stream().filter(Files::notExists).toList();
-
-        if (!mdFilesThatDontExist.isEmpty()) {
-            throw new RuntimeException(
-                    "The following files in the table of contents do not exist: " + mdFilesThatDontExist);
-        }
-
-        Set<Path> mdFilesNotInTableOfContents = Sets.difference(allMdFiles(guideDir), new HashSet<>(mdFilesInContents));
+        Set<Path> mdFilesNotInTableOfContents =
+                Sets.difference(allMdFiles(guideDir), new HashSet<>(tocSource.referencedFiles()));
 
         if (!mdFilesNotInTableOfContents.isEmpty()) {
             throw new RuntimeException(
                     "The following files are not in the table of contents: " + mdFilesNotInTableOfContents);
         }
 
-        String toc = StreamEx.of(mdFilesInContents)
+        String toc = StreamEx.of(tocSource.referencedFiles())
                 .zipWith(integers())
                 .mapKeyValue((mdFile, i) -> contentsSectionForMdFile(guideDir, mdFile, i))
                 .joining("\n");

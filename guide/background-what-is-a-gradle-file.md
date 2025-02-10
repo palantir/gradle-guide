@@ -1,3 +1,5 @@
+<p align="right">Previous: <a>Introduction</a> | Next: <a>Managed Types and Properties</a></p>
+
 # Background: What is a Gradle file?
 
 `.gradle` files can look like magic - but this is usually just some tricksy syntatic sugar. Every Gradle script could be written in Java - in fact this is what we do when we write a Gradle plugin. In this section we'll reveal what's behind this "magic" syntax, which will be essential when debugging issues with custom Gradle, and should help you write Java plugins
