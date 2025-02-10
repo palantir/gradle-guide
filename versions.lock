@@ -1,8 +1,8 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file
-com.fasterxml.jackson.core:jackson-annotations:2.15.2 (1 constraints: 8a123d21)
-com.fasterxml.jackson.core:jackson-core:2.15.2 (2 constraints: 592a4240)
-com.fasterxml.jackson.core:jackson-databind:2.15.2 (2 constraints: 0b1dedeb)
-com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.2 (1 constraints: 3c05403b)
+com.fasterxml.jackson.core:jackson-annotations:2.18.2 (1 constraints: 8d124621)
+com.fasterxml.jackson.core:jackson-core:2.18.2 (2 constraints: 5f2a1a41)
+com.fasterxml.jackson.core:jackson-databind:2.18.2 (2 constraints: 111dc5ec)
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2 (1 constraints: 3f05493b)
 com.github.ben-manes.caffeine:caffeine:3.0.5 (1 constraints: e312a21b)
 com.github.kevinstern:software-and-algorithms:1.0 (1 constraints: 7e12fcf5)
 com.google.auto:auto-common:1.2.1 (2 constraints: b321cc9d)
@@ -29,7 +29,7 @@ org.checkerframework:checker-qual:3.43.0 (5 constraints: 983c87d8)
 org.immutables:value:2.9.3 (1 constraints: 10051336)
 org.jspecify:jspecify:1.0.0 (2 constraints: 3227e389)
 org.ow2.asm:asm:9.7.1 (2 constraints: 0f27a36e)
-org.yaml:snakeyaml:2.0 (1 constraints: 3a178910)
+org.yaml:snakeyaml:2.3 (1 constraints: 3d178c10)
 
 [Test dependencies]
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
