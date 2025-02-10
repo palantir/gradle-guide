@@ -70,7 +70,7 @@ final class TableOfContentsGenerator {
         MdFile mdFile = MdFile.fromPath(mdFilePath);
         String top = String.format("%s. [%s](guide/%s)", index, mdFile.title(), guideDir.relativize(mdFilePath));
 
-        String subheadings = StreamEx.of(mdFile.headingsUpToLevel(2))
+        String subheadings = StreamEx.of(mdFile.headingsAtLevel(2))
                 .zipWith(integers())
                 .mapKeyValue((heading, subIndex) -> String.format(
                         "    %d. [%s](guide/%s#%s)",
