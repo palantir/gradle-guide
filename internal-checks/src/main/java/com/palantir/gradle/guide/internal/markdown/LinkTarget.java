@@ -16,17 +16,6 @@
 
 package com.palantir.gradle.guide.internal.markdown;
 
-import java.nio.file.Path;
-import java.util.Optional;
-
-public record Heading(Path mdFilePath, int level, HeadingText text) implements LinkTarget {
-    @Override
-    public LinkTargetInfo linkTarget() {
-        return new LinkTargetInfo(text.text(), mdFilePath, Optional.of(text.asAnchor()));
-    }
-
-    @Override
-    public String toString() {
-        return "#".repeat(level) + text.toString() + " in " + mdFilePath;
-    }
+public interface LinkTarget {
+    LinkTargetInfo linkTarget();
 }

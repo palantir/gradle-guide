@@ -18,13 +18,13 @@ package com.palantir.gradle.guide.internal.previousnext;
 
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
 import java.nio.file.Path;
-import java.util.Optional;
 
 final class PreviousNextButtonsGenerator {
     public static String previousNextButtons(TableOfContentsSource tableOfContentsSource, Path path, String input) {
-        String previous = tableOfContentsSource.before(path).map(path -> );
-        Optional<Path> next = tableOfContentsSource.after(path);
+        //String previous = tableOfContentsSource.before(path).map(path -> );
+        // Optional<Path> next = tableOfContentsSource.after(path);
 
-        return input + "\n" + previousNextButtons(previous, next);
+        //return input + "\n" + previousNextButtons(previous, next);
+        return "";
     }
 }

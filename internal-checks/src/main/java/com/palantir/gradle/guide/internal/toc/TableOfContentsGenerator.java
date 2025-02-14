@@ -15,17 +15,11 @@
  */
 package com.palantir.gradle.guide.internal.toc;
 
-import com.google.common.collect.Sets;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
+import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
 
 final class TableOfContentsGenerator {
@@ -33,41 +27,28 @@ final class TableOfContentsGenerator {
     private static final String TOC_START = "<!-- TableOfContents: START -->";
     private static final String TOC_END = "<!-- TableOfContents: END -->";
 
-    public static String generate(String readmeContent, Path guideDir) {
-        TableOfContentsSource tocSource = TableOfContentsSource.fromString(guideDir, readmeContent)
-                .orElseThrow(() -> new RuntimeException("No TableOfContentsSource found in README.md"));
-
-        Set<Path> mdFilesNotInTableOfContents =
-                Sets.difference(allMdFiles(guideDir), new HashSet<>(tocSource.referencedFiles()));
-
-        if (!mdFilesNotInTableOfContents.isEmpty()) {
-            throw new RuntimeException(
-                    "The following files are not in the table of contents: " + mdFilesNotInTableOfContents);
-        }
+    public static String generate(Readme readme) {
+        TableOfContentsSource tocSource = readme.tableOfContentsSource();
 
         String toc = StreamEx.of(tocSource.referencedFiles())
                 .zipWith(integers())
-                .mapKeyValue((mdFile, i) -> contentsSectionForMdFile(guideDir, mdFile, i))
+                .mapKeyValue((MdFile mdFile, Integer index) -> contentsSectionForMdFile(readme, mdFile, index))
                 .joining("\n");
 
+        String readmeContent = readme.content();
         int start = readmeContent.indexOf(TOC_START) + TOC_START.length();
         int end = readmeContent.indexOf(TOC_END);
 
         return readmeContent.substring(0, start) + "\n" + toc + "\n" + readmeContent.substring(end);
     }
 
-    private static String contentsSectionForMdFile(Path guideDir, Path mdFilePath, Integer index) {
-        MdFile mdFile = MdFile.fromPath(mdFilePath);
-        String top = String.format("%s. [%s](guide/%s)", index, mdFile.title(), guideDir.relativize(mdFilePath));
+    private static String contentsSectionForMdFile(Readme readme, MdFile mdFile, Integer index) {
+        String top = String.format("%d. %s", index, readme.markdownLinkTo(mdFile));
 
         String subheadings = StreamEx.of(mdFile.headingsAtLevel(2))
                 .zipWith(integers())
-                .mapKeyValue((heading, subIndex) -> String.format(
-                        "    %d. [%s](guide/%s#%s)",
-                        subIndex,
-                        heading.text(),
-                        guideDir.relativize(mdFilePath),
-                        heading.text().asAnchor()))
+                .mapKeyValue(
+                        (heading, subIndex) -> String.format("    %d. %s", subIndex, readme.markdownLinkTo(heading)))
                 .collect(Collectors.joining("\n"));
 
         return top + "\n" + subheadings;
@@ -75,17 +56,6 @@ final class TableOfContentsGenerator {
 
     private static IntStream integers() {
         return IntStream.iterate(1, i -> i + 1);
-    }
-
-    private static Set<Path> allMdFiles(Path guideDir) {
-        try (Stream<Path> allMdFiles = Files.list(guideDir)) {
-            return allMdFiles
-                    .filter(path -> !path.toFile().isDirectory())
-                    .filter(path -> !path.getFileName().toString().startsWith("."))
-                    .collect(Collectors.toSet());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private TableOfContentsGenerator() {}

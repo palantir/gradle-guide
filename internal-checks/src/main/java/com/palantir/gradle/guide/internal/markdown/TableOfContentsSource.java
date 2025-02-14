@@ -16,16 +16,16 @@
 
 package com.palantir.gradle.guide.internal.markdown;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-public record TableOfContentsSource(List<Path> referencedFiles) {
+public record TableOfContentsSource(List<MdFile> referencedFiles) {
     private static final String TOC_SOURCE_START = "<!-- TableOfContentsSource:";
     private static final String TOC_SOURCE_END = "-->";
 
-    public static Optional<TableOfContentsSource> fromString(Path guideDir, String readme) {
+    public static Optional<TableOfContentsSource> fromString(Set<MdFile> mdFiles, String readme) {
         List<String> lines = readme.lines()
                 .dropWhile(line -> !line.contains(TOC_SOURCE_START))
                 .skip(1)
@@ -36,23 +36,26 @@ public record TableOfContentsSource(List<Path> referencedFiles) {
             return Optional.empty();
         }
 
-        List<Path> mdFilesInContents = lines.stream()
+        List<MdFile> mdFilesInContents = lines.stream()
                 .map(line -> line.replace("* ", ""))
-                .map(guideDir::resolve)
+                .map(filename -> mdFiles.stream()
+                        .filter(mdFile -> mdFile.path().endsWith(filename))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException(
+                                "Table of contents source refers to markdown file not found: " + filename)))
                 .toList();
 
-        List<Path> mdFilesThatDontExist =
-                mdFilesInContents.stream().filter(Files::notExists).toList();
+        Set<MdFile> mdFilesNotInTableOfContents = Sets.difference(mdFiles, Set.copyOf(mdFilesInContents));
 
-        if (!mdFilesThatDontExist.isEmpty()) {
+        if (!mdFilesNotInTableOfContents.isEmpty()) {
             throw new RuntimeException(
-                    "The following files in the table of contents do not exist: " + mdFilesThatDontExist);
+                    "The following files are not in the table of contents: " + mdFilesNotInTableOfContents);
         }
 
         return Optional.of(new TableOfContentsSource(mdFilesInContents));
     }
 
-    public Optional<Path> before(Path path) {
+    public Optional<MdFile> before(MdFile path) {
         int index = indexOf(path);
 
         if (index == 0) {
@@ -62,7 +65,7 @@ public record TableOfContentsSource(List<Path> referencedFiles) {
         return Optional.of(referencedFiles.get(index - 1));
     }
 
-    public Optional<Path> after(Path path) {
+    public Optional<MdFile> after(MdFile path) {
         int index = indexOf(path);
 
         if (index >= referencedFiles.size() - 1) {
@@ -72,7 +75,7 @@ public record TableOfContentsSource(List<Path> referencedFiles) {
         return Optional.of(referencedFiles.get(index + 1));
     }
 
-    private int indexOf(Path path) {
+    private int indexOf(MdFile path) {
         int index = referencedFiles.indexOf(path);
 
         if (index == -1) {

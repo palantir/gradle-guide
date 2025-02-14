@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.guide.internal.toc;
 
+import com.palantir.gradle.guide.internal.markdown.Guide;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +31,8 @@ final class VerifyTableOfContentsCorrectTest {
 
         String currentReadme = Files.readString(readme);
 
-        String correctedReadme = TableOfContentsGenerator.generate(currentReadme, Paths.get("../guide"));
+        String correctedReadme = TableOfContentsGenerator.generate(
+                Guide.fromRootDirectory(Paths.get("..")).readme());
 
         if (currentReadme.equals(correctedReadme)) {
             return;

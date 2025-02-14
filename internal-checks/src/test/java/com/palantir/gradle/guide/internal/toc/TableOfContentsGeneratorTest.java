@@ -17,6 +17,7 @@ package com.palantir.gradle.guide.internal.toc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.palantir.gradle.guide.internal.markdown.Guide;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +26,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 class TableOfContentsGeneratorTest {
     @Test
-    void generates_a_good_table_of_contents(@TempDir Path guideDir) throws IOException {
+    void generates_a_good_table_of_contents(@TempDir Path rootDir) throws IOException {
+        Path guideDir = rootDir.resolve("guide");
+        Files.createDirectories(guideDir);
+
         Files.writeString(
                 guideDir.resolve("starting-stuff.md"),
                 """
@@ -51,7 +55,8 @@ class TableOfContentsGeneratorTest {
             """);
 
         // language=markdown
-        String readme =
+        Files.writeString(
+                rootDir.resolve("README.md"),
                 """
             # Title
 
@@ -65,9 +70,10 @@ class TableOfContentsGeneratorTest {
             <!-- TableOfContents: END -->
 
             other stuff afterwards
-            """;
+            """);
 
-        String newReadme = TableOfContentsGenerator.generate(readme, guideDir);
+        String newReadme = TableOfContentsGenerator.generate(
+                Guide.fromRootDirectory(rootDir).readme());
 
         // language=markdown
         assertThat(newReadme)
