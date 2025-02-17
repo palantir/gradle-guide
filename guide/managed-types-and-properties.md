@@ -1,8 +1,8 @@
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
+  <td align="right">Next: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
 
@@ -61,8 +61,8 @@ It is possible to write extensions and tasks directly as in the `HelloExtension_
 
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
+  <td align="right">Next: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
 </tr></table>
 <!-- PreviousNext:END -->

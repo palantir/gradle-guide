@@ -1,8 +1,8 @@
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
+  <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
+  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
 
@@ -130,8 +130,8 @@ Sometimes, you really do need to test your plugin in a CI environment. In every 
 
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
+  <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
+  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
 </tr></table>
 <!-- PreviousNext:END -->

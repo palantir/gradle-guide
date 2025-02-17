@@ -1,6 +1,6 @@
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
+  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
@@ -469,7 +469,7 @@ In these cases, unless each artifact transform takes seconds or longer to run, i
 
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
+  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
