@@ -1,3 +1,8 @@
+<div style="display: flex; justify-content: space-between;">
+    <span>Previous: [Testing and running your plugins](testing-and-running-your-plugins-locally.md)</span>
+    <span>Next: [Diagnosing Build Performance](diagnosing-build-performance.md)</span>
+</div>
+
 # Managed Types and Properties
 
 > Further Reading: 

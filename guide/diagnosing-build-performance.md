@@ -1,3 +1,7 @@
+<div style="display: flex; justify-content: space-between;">
+    <span>Previous: [Managed Types and Properties](managed-types-and-properties.md)</span>
+</div>
+
 # Diagnosing Build Performance
 
 In this guide, we'll cover:

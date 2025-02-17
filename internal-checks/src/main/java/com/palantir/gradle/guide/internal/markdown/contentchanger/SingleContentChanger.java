@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.internal.markdown;
+package com.palantir.gradle.guide.internal.markdown.contentchanger;
 
+import com.palantir.gradle.guide.internal.markdown.MdFile;
 import java.util.function.UnaryOperator;
 
-public final class ContentChanger {
+public final class SingleContentChanger implements ContentChanger {
     private static final boolean CI = System.getenv("CI") != null;
 
     private final MdFile mdFile;
     private final UnaryOperator<String> markdownContentModifier;
 
-    public ContentChanger(MdFile mdFile, UnaryOperator<String> markdownContentModifier) {
+    public SingleContentChanger(MdFile mdFile, UnaryOperator<String> markdownContentModifier) {
         this.mdFile = mdFile;
         this.markdownContentModifier = markdownContentModifier;
     }
 
+    @Override
     public void verifyContentOnCiOrChangeContentLocally() {
         String existing = mdFile.readContent();
         String expected = markdownContentModifier.apply(existing);
@@ -38,13 +40,13 @@ public final class ContentChanger {
         }
 
         if (CI) {
-            throw new RuntimeException(
-                    "%s is not up to date. Please rerun this test locally and commit.".formatted(mdFile.path()));
+            throw new ContentNotCorrectException(mdFile.path());
         }
 
         mdFile.writeContent(expected);
     }
 
+    @Override
     public void changeContent() {
         mdFile.writeContent(markdownContentModifier.apply(mdFile.readContent()));
     }

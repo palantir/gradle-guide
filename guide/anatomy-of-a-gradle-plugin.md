@@ -1,3 +1,8 @@
+<div style="display: flex; justify-content: space-between;">
+    <span>Previous: [Background: What is a Gradle file?](background-what-is-a-gradle-file.md)</span>
+    <span>Next: [Testing and running your plugins](testing-and-running-your-plugins-locally.md)</span>
+</div>
+
 # Anatomy of a Gradle Plugin
 
 > Further reading: [Developing Custom Gradle Plugins](https://docs.gradle.org/current/userguide/custom_plugins.html)

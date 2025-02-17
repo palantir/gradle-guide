@@ -16,16 +16,17 @@
 
 package com.palantir.gradle.guide.internal.previousnext;
 
-import com.palantir.gradle.guide.internal.markdown.ContentChanger;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
+import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
+import com.palantir.gradle.guide.internal.markdown.contentchanger.SingleContentChanger;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class PreviousNextButtonsGenerator {
-    public static ContentChanger previousNextButtons(TableOfContentsSource tableOfContentsSource, MdFile mdFile) {
-        return new ContentChanger(mdFile, input -> {
+public final class PreviousNextLinksGenerator {
+    public static ContentChanger previousNextLinks(TableOfContentsSource tableOfContentsSource, MdFile mdFile) {
+        return new SingleContentChanger(mdFile, input -> {
             Optional<String> previous = tableOfContentsSource
                     .before(mdFile)
                     .map(previousMdFile -> "Previous: " + mdFile.markdownLinkTo(previousMdFile));
@@ -35,15 +36,15 @@ final class PreviousNextButtonsGenerator {
 
             String previousNextSpans = Stream.of(previous, next)
                     .flatMap(Optional::stream)
-                    .map(text -> "<span>" + text + "</span>")
-                    .collect(Collectors.joining(""));
+                    .map(text -> "    <span>" + text + "</span>")
+                    .collect(Collectors.joining("\n"));
 
             String inDiv =
-                    "<div style=\"display: flex; justify-content: space-between;\">" + previousNextSpans + "</div>";
+                    "<div style=\"display: flex; justify-content: space-between;\">\n" + previousNextSpans + "\n</div>";
 
-            return previousNextSpans + "\n\n" + input;
+            return inDiv + "\n\n" + input;
         });
     }
 
-    private PreviousNextButtonsGenerator() {}
+    private PreviousNextLinksGenerator() {}
 }

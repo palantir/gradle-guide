@@ -1,3 +1,8 @@
+<div style="display: flex; justify-content: space-between;">
+    <span>Previous: [Anatomy of a Gradle Plugin](anatomy-of-a-gradle-plugin.md)</span>
+    <span>Next: [Managed Types and Properties](managed-types-and-properties.md)</span>
+</div>
+
 # Testing and running your plugins
 
 Here we'll cover the best ways to test your code locally for fast iteration but also how to run your plugins on real projects, both locally and in CI. We'll not be going in-depth, that will be covered in the "Testing best practices" page.

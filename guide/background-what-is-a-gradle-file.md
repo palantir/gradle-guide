@@ -1,3 +1,8 @@
+<div style="display: flex; justify-content: space-between;">
+    <span>Previous: [Introduction](introduction.md)</span>
+    <span>Next: [Anatomy of a Gradle Plugin](anatomy-of-a-gradle-plugin.md)</span>
+</div>
+
 <div style="display: flex; justify-content: space-between;"><span>Previous: <a>Introduction</a></span><span>Contents</span><span>Next: <a>Managed Types and Properties</a></span></div>
 
 # Background: What is a Gradle file?

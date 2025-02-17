@@ -16,6 +16,9 @@
 
 package com.palantir.gradle.guide.internal.markdown;
 
+import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
+import com.palantir.gradle.guide.internal.markdown.contentchanger.MultiContentChanger;
+import com.palantir.gradle.guide.internal.previousnext.PreviousNextLinksGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +40,12 @@ public record Guide(Readme readme, Set<MdFile> mdFiles) {
                                                         .getFileName()
                                                         .toString())
                                                 .toList())));
+    }
+
+    public ContentChanger previousNextLinks() {
+        return new MultiContentChanger(mdFiles.stream()
+                .map(mdFile -> PreviousNextLinksGenerator.previousNextLinks(readme.tableOfContentsSource(), mdFile))
+                .toList());
     }
 
     public static Guide fromRootDirectory(Path rootDir) {

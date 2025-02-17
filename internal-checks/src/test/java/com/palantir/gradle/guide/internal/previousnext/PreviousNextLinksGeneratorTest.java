@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-final class PreviousNextButtonsGeneratorTest {
+final class PreviousNextLinksGeneratorTest {
     @Test
     void generates_previous_next_buttons_at_top_and_bottom(@TempDir Path rootDir) throws IOException {
         Files.writeString(
@@ -56,31 +56,37 @@ final class PreviousNextButtonsGeneratorTest {
             # Third
             """);
 
-        Guide guide = Guide.fromRootDirectory(rootDir);
-
-        PreviousNextButtonsGenerator.previousNextButtons(
-                        guide.readme().tableOfContentsSource(), guide.mdFileByFileName("first.md"))
-                .changeContent();
+        Guide.fromRootDirectory(rootDir).previousNextLinks().changeContent();
 
         assertThat(Files.readString(firstMd))
-                .isEqualTo("""
-            <span>Next: [Second](second.md)</span>
+                .isEqualTo(
+                        """
+            <div style="display: flex; justify-content: space-between;">
+                <span>Next: [Second](second.md)</span>
+            </div>
 
             # First
             """);
 
         assertThat(Files.readString(secondMd))
-                .isEqualTo("""
-            <span>Next: [Second](second.md)</span>
+                .isEqualTo(
+                        """
+            <div style="display: flex; justify-content: space-between;">
+                <span>Previous: [First](first.md)</span>
+                <span>Next: [Third](third.md)</span>
+            </div>
 
-            # First
+            # Second
             """);
 
         assertThat(Files.readString(thirdMd))
-                .isEqualTo("""
-            <span>Next: [Second](second.md)</span>
+                .isEqualTo(
+                        """
+            <div style="display: flex; justify-content: space-between;">
+                <span>Previous: [Second](second.md)</span>
+            </div>
 
-            # First
+            # Third
             """);
     }
 }
