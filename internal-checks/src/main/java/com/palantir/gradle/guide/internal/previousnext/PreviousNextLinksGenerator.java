@@ -16,16 +16,18 @@
 
 package com.palantir.gradle.guide.internal.previousnext;
 
-import com.palantir.gradle.guide.internal.TextUtils;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.SingleContentChanger;
+import com.palantir.gradle.guide.internal.text.SectionTag;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class PreviousNextLinksGenerator {
+    private static final SectionTag PREVIOUS_NEXT = new SectionTag("PreviousNext");
+
     public static ContentChanger previousNextLinks(Readme readme, MdFile mdFile) {
         return new SingleContentChanger(mdFile, input -> {
             Optional<String> previous = readme.tableOfContentsSource()
@@ -44,11 +46,17 @@ public final class PreviousNextLinksGenerator {
                     .map(text -> "  " + text)
                     .collect(Collectors.joining("\n"));
 
-            String table =
-                    "<!-- PreviousNext:START -->\n<table><tr>\n" + tds + "\n</tr></table>\n<!-- PreviousNext:END -->";
+            String table = String.join(
+                    "\n", PREVIOUS_NEXT.startTag(), "<table><tr>", tds, "</tr></table>", PREVIOUS_NEXT.endTag());
 
-            return table + "\n\n" + TextUtils.removeExistingTaggedSectionAndPreceedingWhitespace("PreviousNext", input)
-                    + "\n\n" + table + "\n";
+            return String.join(
+                            "\n",
+                            table,
+                            "",
+                            PREVIOUS_NEXT.removeExistingTaggedSectionsAndPreceedingWhitespace(input),
+                            "",
+                            table)
+                    + "\n";
         });
     }
 

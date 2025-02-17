@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.internal;
+package com.palantir.gradle.guide.internal.text;
 
 import java.util.regex.Pattern;
 
-public final class TextUtils {
-    public static String removeExistingTaggedSectionAndPreceedingWhitespace(String tag, String text) {
-        String tagStart = "<!-- " + tag + ":START -->";
-        String tagEnd = "<!-- " + tag + ":END -->";
+public record SectionTag(String startTag, String endTag) {
+    public SectionTag(String tagName) {
+        this("<!-- " + tagName + ":START -->", "<!-- " + tagName + ":END -->");
+    }
 
+    public String removeExistingTaggedSectionsAndPreceedingWhitespace(String text) {
         Pattern pattern = Pattern.compile(
-                "(\\s|\\n)*" + Pattern.quote(tagStart) + "(.|\\n)*?" + Pattern.quote(tagEnd) + "(\\s|\\n)*");
+                "(\\s|\\n)*" + Pattern.quote(startTag) + "(.|\\n)*?" + Pattern.quote(endTag) + "(\\s|\\n)*");
 
         return pattern.matcher(text).replaceAll("");
     }
-
-    private TextUtils() {}
 }
