@@ -18,14 +18,14 @@ package com.palantir.gradle.guide.internal.toc;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
+import com.palantir.gradle.guide.internal.text.SectionTag;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import one.util.streamex.StreamEx;
 
 final class TableOfContentsGenerator {
 
-    private static final String TOC_START = "<!-- TableOfContents: START -->";
-    private static final String TOC_END = "<!-- TableOfContents: END -->";
+    private static final SectionTag TABLE_OF_CONTENTS = new SectionTag("TableOfContents");
 
     public static String generate(Readme readme) {
         TableOfContentsSource tocSource = readme.tableOfContentsSource();
@@ -36,10 +36,7 @@ final class TableOfContentsGenerator {
                 .joining("\n");
 
         String readmeContent = readme.mdFile().readContent();
-        int start = readmeContent.indexOf(TOC_START) + TOC_START.length();
-        int end = readmeContent.indexOf(TOC_END);
-
-        return readmeContent.substring(0, start) + "\n" + toc + "\n" + readmeContent.substring(end);
+        return TABLE_OF_CONTENTS.replaceTaggedSection(readmeContent, toc);
     }
 
     private static String contentsSectionForMdFile(Readme readme, MdFile mdFile, Integer index) {

@@ -29,4 +29,20 @@ public record SectionTag(String startTag, String endTag) {
 
         return pattern.matcher(text).replaceAll("");
     }
+
+    public String replaceTaggedSection(String text, String replacement) {
+        int start = text.indexOf(startTag) + startTag.length();
+
+        if (start == -1) {
+            throw new RuntimeException("Can't find start tag '%s' in:\n\n%s".formatted(startTag, text));
+        }
+
+        int end = text.indexOf(endTag);
+
+        if (end == -1) {
+            throw new RuntimeException("Can't find end tag '%s' in:\n\n%s".formatted(endTag, text));
+        }
+
+        return text.substring(0, start) + "\n" + replacement + "\n" + text.substring(end);
+    }
 }
