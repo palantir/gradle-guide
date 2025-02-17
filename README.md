@@ -38,7 +38,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 4. [Managed Types and Properties](guide/managed-types-and-properties.md)
     1. [Managed types](guide/managed-types-and-properties.md#managed-types)
 5. [Avoiding Unnecessary Configuration](guide/avoiding-unnecessary-configuration.md)
-
+    1. [Lifecycle of a Gradle Build](guide/avoiding-unnecessary-configuration.md#lifecycle-of-a-gradle-build)
 6. [Testing and running your plugins](guide/testing-and-running-your-plugins-locally.md)
     1. [Testing locally](guide/testing-and-running-your-plugins-locally.md#testing-locally)
     2. [Running your plugin in other repos locally](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-locally)
