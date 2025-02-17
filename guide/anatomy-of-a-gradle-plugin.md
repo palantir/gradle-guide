@@ -1,6 +1,6 @@
 <div style="display: flex; justify-content: space-between;">
-    <span>Previous: [Background: What is a Gradle file?](background-what-is-a-gradle-file.md)</span>
-    <span>Next: [Testing and running your plugins](testing-and-running-your-plugins-locally.md)</span>
+    <span>Previous: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></span>
+    <span>Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></span>
 </div>
 
 # Anatomy of a Gradle Plugin
