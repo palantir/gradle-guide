@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.guide.internal.previousnext;
 
+import com.palantir.gradle.guide.internal.TextUtils;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
@@ -46,7 +47,7 @@ public final class PreviousNextLinksGenerator {
             String table =
                     "<!-- PreviousNext:START -->\n<table><tr>\n" + tds + "\n</tr></table>\n<!-- PreviousNext:END -->";
 
-            return table + "\n\n" + input;
+            return table + "\n" + TextUtils.removeExistingTaggedSection("PreviousNext", input) + "\n" + table;
         });
     }
 

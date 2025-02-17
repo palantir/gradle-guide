@@ -5,7 +5,6 @@
   <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
-
 # Anatomy of a Gradle Plugin
 
 > Further reading: [Developing Custom Gradle Plugins](https://docs.gradle.org/current/userguide/custom_plugins.html)
@@ -146,3 +145,11 @@ And we're done! We've:
 ## Next steps
 
 This is pretty much the simplest possible Gradle plugin. In the next sections, we'll go over the best practice for each of the different parts, looking at how any magic works, common mistakes to avoid and how to structure your code to avoid bugs.
+
+<!-- PreviousNext:START -->
+<table><tr>
+  <td>Previous: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
+  <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+  <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+</tr></table>
+<!-- PreviousNext:END -->

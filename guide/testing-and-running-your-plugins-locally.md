@@ -5,7 +5,6 @@
   <td align="right">Next: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
-
 # Testing and running your plugins
 
 Here we'll cover the best ways to test your code locally for fast iteration but also how to run your plugins on real projects, both locally and in CI. We'll not be going in-depth, that will be covered in the "Testing best practices" page.
@@ -127,3 +126,11 @@ Sometimes, you really do need to test your plugin in a CI environment. In every 
 3. Replace the version of the plugin as per step 3 in the "Running your plugin in other repos locally" section, but instead of `999` do your `999-some-unique-id`.
 4. Push up and it should run on CI.
 5. _Do not_ merge this change into develop. If this is on a PR, mark the PR as "do not merge" and leave a comment on maven line additions to remind yourself to remove it.
+
+<!-- PreviousNext:START -->
+<table><tr>
+  <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
+  <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+  <td align="right">Next: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
+</tr></table>
+<!-- PreviousNext:END -->

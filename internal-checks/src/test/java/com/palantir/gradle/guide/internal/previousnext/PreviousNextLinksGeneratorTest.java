@@ -31,6 +31,8 @@ final class PreviousNextLinksGeneratorTest {
         Files.writeString(
                 rootDir.resolve("README.md"),
                 """
+            # Readme
+            ## Table of Contents
             <!-- TableOfContentsSource:
             first.md
             second.md
