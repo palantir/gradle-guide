@@ -4,6 +4,7 @@
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
+
 # Diagnosing Build Performance
 
 In this guide, we'll cover:
@@ -465,8 +466,6 @@ It's particularly bad for cacheable [Artifact Transforms](https://docs.gradle.or
 ```
 
 In these cases, unless each artifact transform takes seconds or longer to run, it's probably not worth caching.
-
-
 
 <!-- PreviousNext:START -->
 <table><tr>

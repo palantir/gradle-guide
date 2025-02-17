@@ -5,6 +5,7 @@
   <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
+
 # Managed Types and Properties
 
 > Further Reading: 

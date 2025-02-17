@@ -16,34 +16,17 @@
 
 package com.palantir.gradle.guide.internal;
 
-import com.google.common.base.Splitter;
+import java.util.regex.Pattern;
 
 public final class TextUtils {
-    public static String removeExistingTaggedSection(String tag, String text) {
+    public static String removeExistingTaggedSectionAndPreceedingWhitespace(String tag, String text) {
         String tagStart = "<!-- " + tag + ":START -->";
         String tagEnd = "<!-- " + tag + ":END -->";
 
-        StringBuilder stringBuilder = new StringBuilder();
+        Pattern pattern = Pattern.compile(
+                "(\\s|\\n)*" + Pattern.quote(tagStart) + "(.|\\n)*?" + Pattern.quote(tagEnd) + "(\\s|\\n)*");
 
-        boolean inTaggedSection = false;
-
-        for (String line : Splitter.on('\n').split(text)) {
-            if (line.equals(tagStart)) {
-                inTaggedSection = true;
-                continue;
-            }
-
-            if (line.equals(tagEnd)) {
-                inTaggedSection = false;
-                continue;
-            }
-
-            if (!inTaggedSection) {
-                stringBuilder.append(line).append('\n');
-            }
-        }
-
-        return stringBuilder.toString();
+        return pattern.matcher(text).replaceAll("");
     }
 
     private TextUtils() {}

@@ -5,6 +5,7 @@
   <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
+
 # Anatomy of a Gradle Plugin
 
 > Further reading: [Developing Custom Gradle Plugins](https://docs.gradle.org/current/userguide/custom_plugins.html)

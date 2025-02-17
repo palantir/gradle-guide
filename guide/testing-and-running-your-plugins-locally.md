@@ -5,6 +5,7 @@
   <td align="right">Next: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
+
 # Testing and running your plugins
 
 Here we'll cover the best ways to test your code locally for fast iteration but also how to run your plugins on real projects, both locally and in CI. We'll not be going in-depth, that will be covered in the "Testing best practices" page.
