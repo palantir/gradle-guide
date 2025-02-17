@@ -21,14 +21,16 @@ import java.util.Optional;
 
 public record LinkTargetInfo(String label, Path targetFile, Optional<Anchor> anchor) {
     public String markdownLinkFrom(Path from) {
-        String relativePath = from.getParent().relativize(targetFile).toString();
-        return String.format(
-                "[%s](%s%s)", label, relativePath, anchor.map(anc -> "#" + anc).orElse(""));
+        return "[%s](%s)".formatted(label, relativePathAndAnchor(from));
     }
 
     public String htmlLinkFrom(Path from) {
+        return "<a href=\"%s\">%s</a>".formatted(relativePathAndAnchor(from), label);
+    }
+
+    private String relativePathAndAnchor(Path from) {
         String relativePath = from.getParent().relativize(targetFile).toString();
-        return "<a href=\"%s#%s\">%s</a>"
-                .formatted(relativePath, anchor.map(anc -> "#" + anc).orElse(""), label);
+        String possibleAnchor = anchor.map(anc -> "#" + anc).orElse("");
+        return relativePath + possibleAnchor;
     }
 }
