@@ -75,8 +75,8 @@ final class PreviousNextLinksGeneratorTest {
 
         Guide.fromRootDirectory(rootDir).previousNextLinks().changeContent();
 
-        assertThat(Files.readString(firstMd))
-                .isEqualTo(
+        assertThat(firstMd)
+                .hasContent(
                         """
             <!-- PreviousNext:START -->
             <table><tr>
@@ -95,8 +95,8 @@ final class PreviousNextLinksGeneratorTest {
             <!-- PreviousNext:END -->
             """);
 
-        assertThat(Files.readString(secondMd))
-                .isEqualTo(
+        assertThat(secondMd)
+                .hasContent(
                         """
             <!-- PreviousNext:START -->
             <table><tr>
@@ -118,8 +118,8 @@ final class PreviousNextLinksGeneratorTest {
             <!-- PreviousNext:END -->
             """);
 
-        assertThat(Files.readString(thirdMd))
-                .isEqualTo(
+        assertThat(thirdMd)
+                .hasContent(
                         """
             <!-- PreviousNext:START -->
             <table><tr>
