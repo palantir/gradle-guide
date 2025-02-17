@@ -40,7 +40,7 @@ public final class PreviousNextLinksGenerator {
 
             String tds = Stream.of(previous, Optional.of(tableOfContents), next)
                     .flatMap(Optional::stream)
-                    .map(text -> "    " + text)
+                    .map(text -> "  " + text)
                     .collect(Collectors.joining("\n"));
 
             String table =
