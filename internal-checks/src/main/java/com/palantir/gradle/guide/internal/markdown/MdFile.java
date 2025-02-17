@@ -20,37 +20,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
 
-public final class MdFile {
+public record MdFile(Path path, String title, List<Heading> headings) implements LinkTarget {
     private static final Pattern SUBHEADING_PATTERN = Pattern.compile("^(#+) (.+)$");
-
-    private final String title;
-    private final List<Heading> headings;
-
-    public MdFile(String name, List<Heading> headings) {
-        this.headings = headings;
-
-        this.title = headings.stream()
-                .findFirst()
-                .filter(heading -> heading.level() == 1)
-                .map(Heading::text)
-                .map(HeadingText::text)
-                .orElseThrow(() -> new IllegalStateException(String.format(
-                        "The first heading of %s must be a level one heading (ie one #) for the title", name)));
-    }
-
-    public static MdFile fromString(String content) {
-        return new MdFile(
-                "in memory md file",
-                StreamEx.of(content.lines())
-                        .flatMap(line -> SUBHEADING_PATTERN.matcher(line).results())
-                        .map(matchResult ->
-                                new Heading(matchResult.group(1).length(), new HeadingText(matchResult.group(2))))
-                        .toList());
-    }
 
     public List<String> headingsAsStrings() {
         return headings.stream().map(Heading::text).map(HeadingText::text).toList();
@@ -68,9 +44,64 @@ public final class MdFile {
         return headings.stream().filter(heading -> heading.level() <= level);
     }
 
-    public static MdFile fromPath(Path mdFile) {
+    public Heading headingWithText(String text) {
+        return headings.stream()
+                .filter(heading -> heading.text().text().equals(text))
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Could not find heading with text '%s' in '%s', options are: %s"
+                                .formatted(text, path, headingsAsStrings())));
+    }
+
+    @Override
+    public LinkTargetInfo linkTarget() {
+        return new LinkTargetInfo(title, path, Optional.empty());
+    }
+
+    public String markdownLinkTo(LinkTarget linkTarget) {
+        return linkTarget.linkTarget().markdownLinkFrom(path);
+    }
+
+    public String htmlLinkTo(LinkTarget linkTarget) {
+        return linkTarget.linkTarget().htmlLinkFrom(path);
+    }
+
+    public String readContent() {
         try {
-            return fromString(Files.readString(mdFile));
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeContent(String content) {
+        try {
+            Files.writeString(path, content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static MdFile fromPath(Path mdFilePath) {
+        try {
+            String content = Files.readString(mdFilePath);
+
+            List<Heading> headings = StreamEx.of(content.lines())
+                    .flatMap(line -> SUBHEADING_PATTERN.matcher(line).results())
+                    .map(matchResult -> new Heading(
+                            mdFilePath, matchResult.group(1).length(), new HeadingText(matchResult.group(2))))
+                    .toList();
+
+            String title = headings.stream()
+                    .findFirst()
+                    .filter(heading -> heading.level() == 1)
+                    .map(Heading::text)
+                    .map(HeadingText::text)
+                    .orElseThrow(() -> new IllegalStateException(String.format(
+                            "The first heading of '%s' must be a level one heading (ie one #) for the title",
+                            mdFilePath)));
+
+            return new MdFile(mdFilePath, title, headings);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

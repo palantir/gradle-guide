@@ -20,7 +20,7 @@ import java.util.Locale;
 
 public record HeadingText(String text) {
     public Anchor asAnchor() {
-        return new Anchor(text.toLowerCase(Locale.ROOT).replace(" ", "-").replaceAll("[/`<>]", ""));
+        return new Anchor(text.toLowerCase(Locale.ROOT).replace(" ", "-").replaceAll("[/`<>:]", ""));
     }
 
     @Override

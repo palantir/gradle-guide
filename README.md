@@ -8,7 +8,7 @@ CURRENTLY IN PROGRESS
 
 A guide for writing good Gradle plugins and a plugin to check for bad Gradle code.
 
-## Guide Table of Contents
+## Table of Contents
 
 <!-- TableOfContentsSource:
 * introduction.md
@@ -19,7 +19,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 * diagnosing-build-performance.md
 -->
 
-<!-- TableOfContents: START -->
+<!-- TableOfContents:START -->
 1. [Introduction](guide/introduction.md)
     1. [What is this guide?](guide/introduction.md#what-is-this-guide?)
     2. [In the lair of the complexity demon](guide/introduction.md#in-the-lair-of-the-complexity-demon)
@@ -44,8 +44,8 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 6. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
     1. [Expectations of performance](guide/diagnosing-build-performance.md#expectations-of-performance)
     2. [Finding a build scan](guide/diagnosing-build-performance.md#finding-a-build-scan)
-    3. [Tasks: How to diagnose performance issues](guide/diagnosing-build-performance.md#tasks:-how-to-diagnose-performance-issues)
-    4. [Configuration: How to diagnose performance issues](guide/diagnosing-build-performance.md#configuration:-how-to-diagnose-performance-issues)
+    3. [Tasks: How to diagnose performance issues](guide/diagnosing-build-performance.md#tasks-how-to-diagnose-performance-issues)
+    4. [Configuration: How to diagnose performance issues](guide/diagnosing-build-performance.md#configuration-how-to-diagnose-performance-issues)
     5. [Common perf issues](guide/diagnosing-build-performance.md#common-perf-issues)
-<!-- TableOfContents: END -->
+<!-- TableOfContents:END -->
 

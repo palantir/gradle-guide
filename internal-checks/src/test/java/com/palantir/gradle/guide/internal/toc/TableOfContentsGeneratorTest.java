@@ -17,6 +17,7 @@ package com.palantir.gradle.guide.internal.toc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.palantir.gradle.guide.internal.markdown.Guide;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +26,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 class TableOfContentsGeneratorTest {
     @Test
-    void generates_a_good_table_of_contents(@TempDir Path guideDir) throws IOException {
+    void generates_a_good_table_of_contents(@TempDir Path rootDir) throws IOException {
+        Path guideDir = rootDir.resolve("guide");
+        Files.createDirectories(guideDir);
+
         Files.writeString(
                 guideDir.resolve("starting-stuff.md"),
                 """
@@ -51,7 +55,9 @@ class TableOfContentsGeneratorTest {
             """);
 
         // language=markdown
-        String readme =
+        Path readme = rootDir.resolve("README.md");
+        Files.writeString(
+                readme,
                 """
             # Title
 
@@ -60,18 +66,18 @@ class TableOfContentsGeneratorTest {
             * more-stuff.md
             -->
 
-            <!-- TableOfContents: START -->
+            <!-- TableOfContents:START -->
             some other stuff that was here
-            <!-- TableOfContents: END -->
+            <!-- TableOfContents:END -->
 
             other stuff afterwards
-            """;
+            """);
 
-        String newReadme = TableOfContentsGenerator.generate(readme, guideDir);
+        Guide.fromRootDirectory(rootDir).readme().tableOfContents().changeContent();
 
         // language=markdown
-        assertThat(newReadme)
-                .isEqualTo(
+        assertThat(readme)
+                .hasContent(
                         """
             # Title
 
@@ -80,7 +86,7 @@ class TableOfContentsGeneratorTest {
             * more-stuff.md
             -->
 
-            <!-- TableOfContents: START -->
+            <!-- TableOfContents:START -->
             1. [Starting Stuff](guide/starting-stuff.md)
                 1. [Subheading 1](guide/starting-stuff.md#subheading-1)
                 2. [Subheading with `code` elements/slashes <>](guide/starting-stuff.md\
@@ -88,7 +94,7 @@ class TableOfContentsGeneratorTest {
             2. [More Stuff](guide/more-stuff.md)
                 1. [Subheading 1](guide/more-stuff.md#subheading-1)
                 2. [Subheading 2](guide/more-stuff.md#subheading-2)
-            <!-- TableOfContents: END -->
+            <!-- TableOfContents:END -->
 
             other stuff afterwards
             """);

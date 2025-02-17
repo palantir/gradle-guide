@@ -19,14 +19,18 @@ package com.palantir.gradle.guide.internal.markdown;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public record Heading(Path mdFilePath, int level, HeadingText text) implements LinkTarget {
-    @Override
-    public LinkTargetInfo linkTarget() {
-        return new LinkTargetInfo(text.text(), mdFilePath, Optional.of(text.asAnchor()));
+public record LinkTargetInfo(String label, Path targetFile, Optional<Anchor> anchor) {
+    public String markdownLinkFrom(Path from) {
+        return "[%s](%s)".formatted(label, relativePathAndAnchor(from));
     }
 
-    @Override
-    public String toString() {
-        return "#".repeat(level) + text.toString() + " in " + mdFilePath;
+    public String htmlLinkFrom(Path from) {
+        return "<a href=\"%s\">%s</a>".formatted(relativePathAndAnchor(from), label);
+    }
+
+    private String relativePathAndAnchor(Path from) {
+        String relativePath = from.getParent().relativize(targetFile).toString();
+        String possibleAnchor = anchor.map(anc -> "#" + anc).orElse("");
+        return relativePath + possibleAnchor;
     }
 }

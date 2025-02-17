@@ -1,3 +1,10 @@
+<!-- PreviousNext:START -->
+<table><tr>
+  <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+  <td align="right">Next: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
+</tr></table>
+<!-- PreviousNext:END -->
+
 # Introduction
 
 ## What is this guide?
@@ -13,4 +20,11 @@ At its heart, a Gradle build is a set of mutable domain object types. These cont
 
 If you have ever done web development before the introduction of frameworks like React, the problem is broadly the same. You have a bunch of mutable state (the DOM) and code (javascript) that changes it at different times. Without being very disciplined about how you write this code, this can easily lead to bugs.
 
-As in the web case, we ideally fix this by building such a framework, so it is near impossible (or at least much harder) to make these mistakes. In this guide we will walk through how to write Gradle plugins to minimise the risk of these bugs. 
+As in the web case, we ideally fix this by building such a framework, so it is near impossible (or at least much harder) to make these mistakes. In this guide we will walk through how to write Gradle plugins to minimise the risk of these bugs.
+
+<!-- PreviousNext:START -->
+<table><tr>
+  <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+  <td align="right">Next: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
+</tr></table>
+<!-- PreviousNext:END -->

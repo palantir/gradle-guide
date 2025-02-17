@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.internal.markdown;
+package com.palantir.gradle.guide.internal;
 
-import java.nio.file.Path;
-import java.util.Optional;
+import com.palantir.gradle.guide.internal.markdown.Guide;
+import java.nio.file.Paths;
+import org.junit.jupiter.api.Test;
 
-public record Heading(Path mdFilePath, int level, HeadingText text) implements LinkTarget {
-    @Override
-    public LinkTargetInfo linkTarget() {
-        return new LinkTargetInfo(text.text(), mdFilePath, Optional.of(text.asAnchor()));
+final class GuideTest {
+    private final Guide guide = Guide.fromRootDirectory(Paths.get(".."));
+
+    @Test
+    void table_of_contents_is_up_to_date() {
+        guide.readme().tableOfContents().verifyContentOnCiOrChangeContentLocally();
     }
 
-    @Override
-    public String toString() {
-        return "#".repeat(level) + text.toString() + " in " + mdFilePath;
+    @Test
+    void previous_next_links_are_up_to_date() {
+        guide.previousNextLinks().verifyContentOnCiOrChangeContentLocally();
     }
 }
