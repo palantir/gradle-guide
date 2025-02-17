@@ -1,4 +1,4 @@
-<p align="right">Previous: <a>Introduction</a> | Next: <a>Managed Types and Properties</a></p>
+<div style="display: flex; justify-content: space-between;"><span>Previous: <a>Introduction</a></span><span>Contents</span><span>Next: <a>Managed Types and Properties</a></span></div>
 
 # Background: What is a Gradle file?
 
@@ -333,3 +333,8 @@ configurations {
 Configuration someConfiguration = project.getConfigurations()
         .create("someConfiguration");
 ```
+
+</td></tr></tbody></table>
+
+<hr>
+<div style="display: flex; justify-content: space-between;"><span>Previous: <a>Introduction</a></span><span>Next: <a>Managed Types and Properties</a></span></div>

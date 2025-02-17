@@ -49,6 +49,26 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return new LinkTargetInfo(title, path, Optional.empty());
     }
 
+    public String markdownLinkTo(LinkTarget linkTarget) {
+        return linkTarget.linkTarget().markdownLinkFrom(path);
+    }
+
+    public String readContent() {
+        try {
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeContent(String content) {
+        try {
+            Files.writeString(path, content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static MdFile fromPath(Path mdFilePath) {
         try {
             String content = Files.readString(mdFilePath);

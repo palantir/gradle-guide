@@ -6,8 +6,8 @@ dependencies {
     implementation 'com.google.guava:guava'
 
     testImplementation localGroovy()
-    testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
 }
 
 test {

@@ -16,15 +16,34 @@
 
 package com.palantir.gradle.guide.internal.previousnext;
 
+import com.palantir.gradle.guide.internal.markdown.ContentChanger;
+import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
-import java.nio.file.Path;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class PreviousNextButtonsGenerator {
-    public static String previousNextButtons(TableOfContentsSource tableOfContentsSource, Path path, String input) {
-        //String previous = tableOfContentsSource.before(path).map(path -> );
-        // Optional<Path> next = tableOfContentsSource.after(path);
+    public static ContentChanger previousNextButtons(TableOfContentsSource tableOfContentsSource, MdFile mdFile) {
+        return new ContentChanger(mdFile, input -> {
+            Optional<String> previous = tableOfContentsSource
+                    .before(mdFile)
+                    .map(previousMdFile -> "Previous: " + mdFile.markdownLinkTo(previousMdFile));
 
-        //return input + "\n" + previousNextButtons(previous, next);
-        return "";
+            Optional<String> next =
+                    tableOfContentsSource.after(mdFile).map(nextMdFile -> "Next: " + mdFile.markdownLinkTo(nextMdFile));
+
+            String previousNextSpans = Stream.of(previous, next)
+                    .flatMap(Optional::stream)
+                    .map(text -> "<span>" + text + "</span>")
+                    .collect(Collectors.joining(""));
+
+            String inDiv =
+                    "<div style=\"display: flex; justify-content: space-between;\">" + previousNextSpans + "</div>";
+
+            return previousNextSpans + "\n\n" + input;
+        });
     }
+
+    private PreviousNextButtonsGenerator() {}
 }
