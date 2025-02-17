@@ -1,6 +1,7 @@
-<table width="100%">
+<table>
 <tr>
 <td align="left">Previous: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
+<td><a href="../readme.md#guide-table-of-contents">Table of Contents</a></td>
 <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
 </tr>
 </table>
