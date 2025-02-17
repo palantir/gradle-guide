@@ -1,6 +1,9 @@
-<div style="display: flex; justify-content: space-between;">
-    <span>Previous: [Managed Types and Properties](managed-types-and-properties.md)</span>
-</div>
+<!-- PreviousNext:START -->
+<table><tr>
+    <td>Previous: <a href="managed-types-and-properties.md#">Managed Types and Properties</a></td>
+    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a><td>
+</tr></table>
+<!-- PreviousNext:END -->
 
 # Diagnosing Build Performance
 

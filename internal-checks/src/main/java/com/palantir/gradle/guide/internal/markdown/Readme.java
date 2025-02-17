@@ -21,17 +21,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
-public record Readme(Path path, String content, TableOfContentsSource tableOfContentsSource) {
-    public String markdownLinkTo(LinkTarget linkTarget) {
-        return linkTarget.linkTarget().markdownLinkFrom(path);
-    }
-
+public record Readme(MdFile mdFile, TableOfContentsSource tableOfContentsSource) {
     public static Readme fromPath(Path readme, Set<MdFile> mdFiles) {
         try {
             String readmeContent = Files.readString(readme);
             return new Readme(
-                    readme,
-                    readmeContent,
+                    MdFile.fromPath(readme),
                     TableOfContentsSource.fromString(mdFiles, readmeContent)
                             .orElseThrow(() -> new IllegalStateException("The readme must have a table of contents")));
         } catch (IOException e) {

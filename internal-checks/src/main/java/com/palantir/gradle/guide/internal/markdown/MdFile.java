@@ -44,6 +44,15 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return headings.stream().filter(heading -> heading.level() <= level);
     }
 
+    public Heading headingWithText(String text) {
+        return headings.stream()
+                .filter(heading -> heading.text().text().equals(text))
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Could not find heading with text '%s' in '%s', options are: %s"
+                                .formatted(text, path, headingsAsStrings())));
+    }
+
     @Override
     public LinkTargetInfo linkTarget() {
         return new LinkTargetInfo(title, path, Optional.empty());
@@ -51,6 +60,10 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
 
     public String markdownLinkTo(LinkTarget linkTarget) {
         return linkTarget.linkTarget().markdownLinkFrom(path);
+    }
+
+    public String htmlLinkTo(LinkTarget linkTarget) {
+        return linkTarget.linkTarget().htmlLinkFrom(path);
     }
 
     public String readContent() {

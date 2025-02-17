@@ -44,7 +44,7 @@ public record Guide(Readme readme, Set<MdFile> mdFiles) {
 
     public ContentChanger previousNextLinks() {
         return new MultiContentChanger(mdFiles.stream()
-                .map(mdFile -> PreviousNextLinksGenerator.previousNextLinks(readme.tableOfContentsSource(), mdFile))
+                .map(mdFile -> PreviousNextLinksGenerator.previousNextLinks(readme, mdFile))
                 .toList());
     }
 

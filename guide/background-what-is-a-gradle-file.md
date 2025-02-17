@@ -1,9 +1,10 @@
-<div style="display: flex; justify-content: space-between;">
-    <span>Previous: [Introduction](introduction.md)</span>
-    <span>Next: [Anatomy of a Gradle Plugin](anatomy-of-a-gradle-plugin.md)</span>
-</div>
-
-<div style="display: flex; justify-content: space-between;"><span>Previous: <a>Introduction</a></span><span>Contents</span><span>Next: <a>Managed Types and Properties</a></span></div>
+<!-- PreviousNext:START -->
+<table><tr>
+    <td>Previous: <a href="introduction.md#">Introduction</a></td>
+    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a><td>
+    <td align="right">Next: <a href="anatomy-of-a-gradle-plugin.md#">Anatomy of a Gradle Plugin</a></td>
+</tr></table>
+<!-- PreviousNext:END -->
 
 # Background: What is a Gradle file?
 
@@ -338,8 +339,3 @@ configurations {
 Configuration someConfiguration = project.getConfigurations()
         .create("someConfiguration");
 ```
-
-</td></tr></tbody></table>
-
-<hr>
-<div style="display: flex; justify-content: space-between;"><span>Previous: <a>Introduction</a></span><span>Next: <a>Managed Types and Properties</a></span></div>

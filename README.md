@@ -8,7 +8,7 @@ CURRENTLY IN PROGRESS
 
 A guide for writing good Gradle plugins and a plugin to check for bad Gradle code.
 
-## Guide Table of Contents
+## Table of Contents
 
 <!-- TableOfContentsSource:
 * introduction.md

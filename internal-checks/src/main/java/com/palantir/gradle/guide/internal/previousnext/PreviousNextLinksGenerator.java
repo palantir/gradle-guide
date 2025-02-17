@@ -17,7 +17,7 @@
 package com.palantir.gradle.guide.internal.previousnext;
 
 import com.palantir.gradle.guide.internal.markdown.MdFile;
-import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
+import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.SingleContentChanger;
 import java.util.Optional;
@@ -25,24 +25,28 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class PreviousNextLinksGenerator {
-    public static ContentChanger previousNextLinks(TableOfContentsSource tableOfContentsSource, MdFile mdFile) {
+    public static ContentChanger previousNextLinks(Readme readme, MdFile mdFile) {
         return new SingleContentChanger(mdFile, input -> {
-            Optional<String> previous = tableOfContentsSource
+            Optional<String> previous = readme.tableOfContentsSource()
                     .before(mdFile)
-                    .map(previousMdFile -> "Previous: " + mdFile.markdownLinkTo(previousMdFile));
+                    .map(previousMdFile -> "<td>Previous: " + mdFile.htmlLinkTo(previousMdFile) + "</td>");
 
-            Optional<String> next =
-                    tableOfContentsSource.after(mdFile).map(nextMdFile -> "Next: " + mdFile.markdownLinkTo(nextMdFile));
+            String tableOfContents = "<td align=\"center\">"
+                    + mdFile.htmlLinkTo(readme.mdFile().headingWithText("Table of Contents")) + "<td>";
 
-            String previousNextSpans = Stream.of(previous, next)
+            Optional<String> next = readme.tableOfContentsSource()
+                    .after(mdFile)
+                    .map(nextMdFile -> "<td align=\"right\">Next: " + mdFile.htmlLinkTo(nextMdFile) + "</td>");
+
+            String tds = Stream.of(previous, Optional.of(tableOfContents), next)
                     .flatMap(Optional::stream)
-                    .map(text -> "    <span>" + text + "</span>")
+                    .map(text -> "    " + text)
                     .collect(Collectors.joining("\n"));
 
-            String inDiv =
-                    "<div style=\"display: flex; justify-content: space-between;\">\n" + previousNextSpans + "\n</div>";
+            String table =
+                    "<!-- PreviousNext:START -->\n<table><tr>\n" + tds + "\n</tr></table>\n<!-- PreviousNext:END -->";
 
-            return inDiv + "\n\n" + input;
+            return table + "\n\n" + input;
         });
     }
 

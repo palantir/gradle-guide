@@ -1,6 +1,9 @@
-<div style="display: flex; justify-content: space-between;">
-    <span>Next: [Background: What is a Gradle file?](background-what-is-a-gradle-file.md)</span>
-</div>
+<!-- PreviousNext:START -->
+<table><tr>
+    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a><td>
+    <td align="right">Next: <a href="background-what-is-a-gradle-file.md#">Background: What is a Gradle file?</a></td>
+</tr></table>
+<!-- PreviousNext:END -->
 
 # Introduction
 

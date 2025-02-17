@@ -1,7 +1,10 @@
-<div style="display: flex; justify-content: space-between;">
-    <span>Previous: [Anatomy of a Gradle Plugin](anatomy-of-a-gradle-plugin.md)</span>
-    <span>Next: [Managed Types and Properties](managed-types-and-properties.md)</span>
-</div>
+<!-- PreviousNext:START -->
+<table><tr>
+    <td>Previous: <a href="anatomy-of-a-gradle-plugin.md#">Anatomy of a Gradle Plugin</a></td>
+    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a><td>
+    <td align="right">Next: <a href="managed-types-and-properties.md#">Managed Types and Properties</a></td>
+</tr></table>
+<!-- PreviousNext:END -->
 
 # Testing and running your plugins
 

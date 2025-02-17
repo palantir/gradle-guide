@@ -35,7 +35,7 @@ final class TableOfContentsGenerator {
                 .mapKeyValue((MdFile mdFile, Integer index) -> contentsSectionForMdFile(readme, mdFile, index))
                 .joining("\n");
 
-        String readmeContent = readme.content();
+        String readmeContent = readme.mdFile().readContent();
         int start = readmeContent.indexOf(TOC_START) + TOC_START.length();
         int end = readmeContent.indexOf(TOC_END);
 
@@ -43,12 +43,12 @@ final class TableOfContentsGenerator {
     }
 
     private static String contentsSectionForMdFile(Readme readme, MdFile mdFile, Integer index) {
-        String top = String.format("%d. %s", index, readme.markdownLinkTo(mdFile));
+        String top = String.format("%d. %s", index, readme.mdFile().markdownLinkTo(mdFile));
 
         String subheadings = StreamEx.of(mdFile.headingsAtLevel(2))
                 .zipWith(integers())
-                .mapKeyValue(
-                        (heading, subIndex) -> String.format("    %d. %s", subIndex, readme.markdownLinkTo(heading)))
+                .mapKeyValue((heading, subIndex) ->
+                        String.format("    %d. %s", subIndex, readme.mdFile().markdownLinkTo(heading)))
                 .collect(Collectors.joining("\n"));
 
         return top + "\n" + subheadings;

@@ -25,4 +25,10 @@ public record LinkTargetInfo(String label, Path targetFile, Optional<Anchor> anc
         return String.format(
                 "[%s](%s%s)", label, relativePath, anchor.map(anc -> "#" + anc).orElse(""));
     }
+
+    public String htmlLinkFrom(Path from) {
+        String relativePath = from.getParent().relativize(targetFile).toString();
+        return "<a href=\"%s#%s\">%s</a>"
+                .formatted(relativePath, anchor.map(anc -> "#" + anc).orElse(""), label);
+    }
 }
