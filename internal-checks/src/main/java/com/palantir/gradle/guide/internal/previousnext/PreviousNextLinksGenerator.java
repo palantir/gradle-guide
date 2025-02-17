@@ -32,7 +32,7 @@ public final class PreviousNextLinksGenerator {
                     .map(previousMdFile -> "<td>Previous: " + mdFile.htmlLinkTo(previousMdFile) + "</td>");
 
             String tableOfContents = "<td align=\"center\">"
-                    + mdFile.htmlLinkTo(readme.mdFile().headingWithText("Table of Contents")) + "<td>";
+                    + mdFile.htmlLinkTo(readme.mdFile().headingWithText("Table of Contents")) + "</td>";
 
             Optional<String> next = readme.tableOfContentsSource()
                     .after(mdFile)

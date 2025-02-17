@@ -1,7 +1,7 @@
 <!-- PreviousNext:START -->
 <table><tr>
     <td>Previous: <a href="introduction.md#">Introduction</a></td>
-    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a><td>
+    <td align="center"><a href="../README.md##table-of-contents">Table of Contents</a></td>
     <td align="right">Next: <a href="anatomy-of-a-gradle-plugin.md#">Anatomy of a Gradle Plugin</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
