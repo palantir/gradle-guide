@@ -69,20 +69,39 @@ If you do a lot of Gradle plugin development and support, you may find it tediou
 Simply make a file in `~/.gradle/init.d/maven-local.gradle` with these contents:
 
 ```gradle
-allprojects {
+def mavenLocalDep = System.getenv('MAVEN_LOCAL')
+if (mavenLocalDep == null || mavenLocalDep == '') {
+    return
+}
+
+rootProject {
     buildscript {
         repositories {
             mavenLocal()
         }
-    }
 
+        configurations.classpath.resolutionStrategy.eachDependency { details ->
+            if (requested.name.contains(mavenLocalDep)) {
+                details.useVersion '999'
+            }
+        }
+    }
+}
+
+allprojects {
     repositories {
         mavenLocal()
     }
 }
 ```
 
-> Note: this will run builds with different repositories than on other people's/CI's machines. There is the risk you end up using something unexpected from your Maven local repo. Always bare this in mind if using this script.
+Then, when you want to run a maven local published plugin in another repo (make sure to publish with version `999`), you can just run this in the other repo:
+
+```
+MAVEN_LOCAL=gradle-plugin-jar-name ./gradlew whatever 
+```
+
+> Note: when enabled, this will run builds with a different buildscript classpath than on other people's/CI's machines, which will mean you do not get build cache hits.
 
 ## Debugging your Gradle plugin running on a different repo
 
