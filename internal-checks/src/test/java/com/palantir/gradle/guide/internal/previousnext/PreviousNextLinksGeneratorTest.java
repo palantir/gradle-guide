@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class PreviousNextLinksGeneratorTest {
+    @SuppressWarnings("checkstyle:RegexpMultiline")
     @Test
     void generates_previous_next_buttons_at_top_and_bottom(@TempDir Path rootDir) throws IOException {
         Files.writeString(

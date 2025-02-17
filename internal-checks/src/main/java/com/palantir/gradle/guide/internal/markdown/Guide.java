@@ -27,21 +27,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public record Guide(Readme readme, Set<MdFile> mdFiles) {
-    public MdFile mdFileByFileName(String fileName) {
-        return mdFiles.stream()
-                .filter(mdFile -> mdFile.path().getFileName().toString().equals(fileName))
-                .findFirst()
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Could not find markdown file with name %s. Options are %s"
-                                .formatted(
-                                        fileName,
-                                        mdFiles.stream()
-                                                .map(mdFile -> mdFile.path()
-                                                        .getFileName()
-                                                        .toString())
-                                                .toList())));
-    }
-
     public ContentChanger previousNextLinks() {
         return new MultiContentChanger(mdFiles.stream()
                 .map(mdFile -> PreviousNextLinksGenerator.previousNextLinks(readme, mdFile))
