@@ -48,7 +48,7 @@ public final class PreviousNextLinksGenerator {
                     "<!-- PreviousNext:START -->\n<table><tr>\n" + tds + "\n</tr></table>\n<!-- PreviousNext:END -->";
 
             return table + "\n\n" + TextUtils.removeExistingTaggedSectionAndPreceedingWhitespace("PreviousNext", input)
-                    + "\n\n" + table;
+                    + "\n\n" + table + "\n";
         });
     }
 

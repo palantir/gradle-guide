@@ -44,12 +44,27 @@ final class PreviousNextLinksGeneratorTest {
         Files.createDirectories(guideDir);
 
         Path firstMd = guideDir.resolve("first.md");
-        Files.writeString(firstMd, """
+        Files.writeString(
+                firstMd,
+                """
             # First
+
+            <!-- PreviousNext:START -->
+            Some old stuff
+            <!-- PreviousNext:END -->
             """);
 
         Path secondMd = guideDir.resolve("second.md");
-        Files.writeString(secondMd, """
+        Files.writeString(
+                secondMd,
+                """
+            <!-- PreviousNext:START -->
+            Some old stuff with lots of whitespace after
+            <!-- PreviousNext:END -->
+
+
+
+
             # Second
             """);
 
@@ -63,32 +78,65 @@ final class PreviousNextLinksGeneratorTest {
         assertThat(Files.readString(firstMd))
                 .isEqualTo(
                         """
-            <div style="display: flex; justify-content: space-between;">
-                <span>Next: [Second](second.md)</span>
-            </div>
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+              <td align="right">Next: <a href="second.md">Second</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
 
             # First
+
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+              <td align="right">Next: <a href="second.md">Second</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
             """);
 
         assertThat(Files.readString(secondMd))
                 .isEqualTo(
                         """
-            <div style="display: flex; justify-content: space-between;">
-                <span>Previous: [First](first.md)</span>
-                <span>Next: [Third](third.md)</span>
-            </div>
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td>Previous: <a href="first.md">First</a></td>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+              <td align="right">Next: <a href="third.md">Third</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
 
             # Second
+
+
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td>Previous: <a href="first.md">First</a></td>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+              <td align="right">Next: <a href="third.md">Third</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
             """);
 
         assertThat(Files.readString(thirdMd))
                 .isEqualTo(
                         """
-            <div style="display: flex; justify-content: space-between;">
-                <span>Previous: [Second](second.md)</span>
-            </div>
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td>Previous: <a href="second.md">Second</a></td>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
 
             # Third
+
+
+            <!-- PreviousNext:START -->
+            <table><tr>
+              <td>Previous: <a href="second.md">Second</a></td>
+              <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
+            </tr></table>
+            <!-- PreviousNext:END -->
             """);
     }
 }
