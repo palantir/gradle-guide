@@ -18,25 +18,28 @@ package com.palantir.gradle.guide.internal.toc;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import com.palantir.gradle.guide.internal.markdown.Readme;
 import com.palantir.gradle.guide.internal.markdown.TableOfContentsSource;
+import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
+import com.palantir.gradle.guide.internal.markdown.contentchanger.SingleContentChanger;
 import com.palantir.gradle.guide.internal.text.SectionTag;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import one.util.streamex.StreamEx;
 
-final class TableOfContentsGenerator {
+public final class TableOfContentsGenerator {
 
     private static final SectionTag TABLE_OF_CONTENTS = new SectionTag("TableOfContents");
 
-    public static String generate(Readme readme) {
-        TableOfContentsSource tocSource = readme.tableOfContentsSource();
+    public static ContentChanger generate(Readme readme) {
+        return new SingleContentChanger(readme.mdFile(), readmeContent -> {
+            TableOfContentsSource tocSource = readme.tableOfContentsSource();
 
-        String toc = StreamEx.of(tocSource.referencedFiles())
-                .zipWith(integers())
-                .mapKeyValue((MdFile mdFile, Integer index) -> contentsSectionForMdFile(readme, mdFile, index))
-                .joining("\n");
+            String toc = StreamEx.of(tocSource.referencedFiles())
+                    .zipWith(integers())
+                    .mapKeyValue((MdFile mdFile, Integer index) -> contentsSectionForMdFile(readme, mdFile, index))
+                    .joining("\n");
 
-        String readmeContent = readme.mdFile().readContent();
-        return TABLE_OF_CONTENTS.replaceTaggedSection(readmeContent, toc);
+            return TABLE_OF_CONTENTS.replaceTaggedSection(readmeContent, toc);
+        });
     }
 
     private static String contentsSectionForMdFile(Readme readme, MdFile mdFile, Integer index) {

@@ -55,8 +55,9 @@ class TableOfContentsGeneratorTest {
             """);
 
         // language=markdown
+        Path readme = rootDir.resolve("README.md");
         Files.writeString(
-                rootDir.resolve("README.md"),
+                readme,
                 """
             # Title
 
@@ -72,12 +73,11 @@ class TableOfContentsGeneratorTest {
             other stuff afterwards
             """);
 
-        String newReadme = TableOfContentsGenerator.generate(
-                Guide.fromRootDirectory(rootDir).readme());
+        Guide.fromRootDirectory(rootDir).readme().tableOfContents().changeContent();
 
         // language=markdown
-        assertThat(newReadme)
-                .isEqualTo(
+        assertThat(readme)
+                .hasContent(
                         """
             # Title
 

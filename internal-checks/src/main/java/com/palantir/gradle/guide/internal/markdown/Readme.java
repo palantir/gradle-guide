@@ -16,12 +16,18 @@
 
 package com.palantir.gradle.guide.internal.markdown;
 
+import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
+import com.palantir.gradle.guide.internal.toc.TableOfContentsGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
 public record Readme(MdFile mdFile, TableOfContentsSource tableOfContentsSource) {
+    public ContentChanger tableOfContents() {
+        return TableOfContentsGenerator.generate(this);
+    }
+
     public static Readme fromPath(Path readme, Set<MdFile> mdFiles) {
         try {
             String readmeContent = Files.readString(readme);

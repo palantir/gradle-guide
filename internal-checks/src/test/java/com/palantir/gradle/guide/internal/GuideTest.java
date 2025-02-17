@@ -24,6 +24,11 @@ final class GuideTest {
     private final Guide guide = Guide.fromRootDirectory(Paths.get(".."));
 
     @Test
+    void table_of_contents_is_up_to_date() {
+        guide.readme().tableOfContents().verifyContentOnCiOrChangeContentLocally();
+    }
+
+    @Test
     void previous_next_links_are_up_to_date() {
         guide.previousNextLinks().verifyContentOnCiOrChangeContentLocally();
     }
