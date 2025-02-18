@@ -48,8 +48,8 @@ public record TableOfContentsSource(List<MdFile> referencedFiles) {
         Set<MdFile> mdFilesNotInTableOfContents = Sets.difference(mdFiles, Set.copyOf(mdFilesInContents));
 
         if (!mdFilesNotInTableOfContents.isEmpty()) {
-            throw new RuntimeException(
-                    "The following files are not in the table of contents: " + mdFilesNotInTableOfContents);
+            throw new RuntimeException("The following files are not in the table of contents: "
+                    + mdFilesNotInTableOfContents.stream().map(MdFile::path).toList());
         }
 
         return Optional.of(new TableOfContentsSource(mdFilesInContents));
