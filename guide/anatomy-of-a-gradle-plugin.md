@@ -148,6 +148,7 @@ And we're done! We've:
 This is pretty much the simplest possible Gradle plugin. In the next sections, we'll go over the best practice for each of the different parts, looking at how any magic works, common mistakes to avoid and how to structure your code to avoid bugs.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>

@@ -60,6 +60,7 @@ This is very similar to [the commonly used `immutables` library](https://immutab
 It is possible to write extensions and tasks directly as in the `HelloExtension_Generated` class above. If you look into the depths of older Palantir Gradle code you will find many instances of this, but this is no longer recommended. All new code should use Manaded Types.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>

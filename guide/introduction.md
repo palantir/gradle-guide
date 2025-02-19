@@ -23,6 +23,7 @@ If you have ever done web development before the introduction of frameworks like
 As in the web case, we ideally fix this by building such a framework, so it is near impossible (or at least much harder) to make these mistakes. In this guide we will walk through how to write Gradle plugins to minimise the risk of these bugs.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
   <td align="right">Next: <a href="background-what-is-a-gradle-file.md">Background: What is a Gradle file?</a></td>
