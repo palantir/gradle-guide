@@ -89,6 +89,7 @@ final class PreviousNextLinksGeneratorTest {
             # First
 
             <!-- PreviousNext:START -->
+            <hr>
             <table><tr>
               <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
               <td align="right">Next: <a href="second.md">Second</a></td>
@@ -111,6 +112,7 @@ final class PreviousNextLinksGeneratorTest {
 
 
             <!-- PreviousNext:START -->
+            <hr>
             <table><tr>
               <td>Previous: <a href="first.md">First</a></td>
               <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
@@ -133,6 +135,7 @@ final class PreviousNextLinksGeneratorTest {
 
 
             <!-- PreviousNext:START -->
+            <hr>
             <table><tr>
               <td>Previous: <a href="second.md">Second</a></td>
               <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>

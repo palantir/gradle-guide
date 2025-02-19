@@ -468,6 +468,7 @@ It's particularly bad for cacheable [Artifact Transforms](https://docs.gradle.or
 In these cases, unless each artifact transform takes seconds or longer to run, it's probably not worth caching.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
