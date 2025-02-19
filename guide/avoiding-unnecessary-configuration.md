@@ -114,7 +114,7 @@ project.getTasks().matching(task -> ...);
 project.getTasks().withType(Foo.class).matching(task -> ...);
 ```
 
-#### Good
+#### Good:
 
 `configureEach` will lazily configure each task that already exists as well as new ones that get added:
 
