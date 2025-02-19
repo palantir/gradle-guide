@@ -47,16 +47,19 @@ public final class PreviousNextLinksGenerator {
                     .map(text -> "  " + text)
                     .collect(Collectors.joining("\n"));
 
-            String table = String.join(
-                    "\n", PREVIOUS_NEXT.startTag(), "<table><tr>", tds, "</tr></table>", PREVIOUS_NEXT.endTag());
+            String table = String.join("\n", "<table><tr>", tds, "</tr></table>");
+
+            String topTable = String.join("\n", PREVIOUS_NEXT.startTag(), table, PREVIOUS_NEXT.endTag());
+
+            String bottomTable = String.join("\n", PREVIOUS_NEXT.startTag(), "<hr>", table, PREVIOUS_NEXT.endTag());
 
             return String.join(
                             "\n",
-                            table,
+                            topTable,
                             "",
                             PREVIOUS_NEXT.removeExistingTaggedSectionsAndPreceedingWhitespace(input),
                             "",
-                            table)
+                            bottomTable)
                     + "\n";
         });
     }

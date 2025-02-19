@@ -341,6 +341,7 @@ Configuration someConfiguration = project.getConfigurations()
 ```
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="introduction.md">Introduction</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>

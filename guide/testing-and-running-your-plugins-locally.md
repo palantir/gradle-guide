@@ -148,6 +148,7 @@ Sometimes, you really do need to test your plugin in a CI environment. In every 
 5. _Do not_ merge this change into develop. If this is on a PR, mark the PR as "do not merge" and leave a comment on maven line additions to remind yourself to remove it.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="anatomy-of-a-gradle-plugin.md">Anatomy of a Gradle Plugin</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
