@@ -46,7 +46,7 @@ Tasks have input and output properties. At configuration time, these tasks are c
 
 ## Task dependency graph calculation
 
-Gradle works out which tasks need to run before which other ones, starting from the requested tasks. The `dependsOn` and `mustRunAfter` properties for each task are evaluated. Where task input properties have been linked up to task output properties, Gradle is able to keep track of these task dependencies _without_ evaluating the values of the properties.
+Gradle works out which tasks need to run before which other ones, starting from the requested tasks. The `dependsOn`, `mustRunAfter` and `shouldRunAfter` properties for each task are evaluated. Where task input properties have been linked up to task output properties, Gradle is able to keep track of these task dependencies _without_ evaluating the values of the properties.
 
 Gradle now has a complete task dependency graph, and is ready to execute the tasks.
 
