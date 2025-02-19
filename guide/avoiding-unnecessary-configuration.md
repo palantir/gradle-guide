@@ -152,6 +152,7 @@ All of the `getByName`/`all` etc methods [described above for Tasks](#accessing-
 The advice for `Task`s also applies to other Gradle domain objects like `SourceSetContainer`, `ArtifactRepositoryContainer` - anything that inherits from [DomainObjectCollection](https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#:~:text=All%20Known%20Subinterfaces%3A).
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="lifecycle-of-a-gradle-build.md">Lifecycle of a Gradle Build</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>

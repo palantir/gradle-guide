@@ -71,6 +71,7 @@ Once all tasks have been executed, the build is finished. Gradle will print out 
 The Daemon will now wait for a period of time to see if it is needed again. If not, it will shut down.
 
 <!-- PreviousNext:START -->
+<hr>
 <table><tr>
   <td>Previous: <a href="managed-types-and-properties.md">Managed Types and Properties</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
