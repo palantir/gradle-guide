@@ -40,7 +40,7 @@ TaskProvider<FooTask> task = project.getTasks().register("foo", FooTask.class, f
 
 This is better; we tell Gradle there is task called `foo`, but we give the configuration of the task lazily. If `foo` is not executed, we don't even realise or configure the task.
 
-### Using `TaskProvider`s
+## Using `TaskProvider`s
 
 The `register` approach now gives us a `TaskProvider`, which is a lazy handle to the task. Many  of the built-in Gradle APIs will let you pass a `TaskProvider` instead of a `Task` object.
 
