@@ -46,7 +46,10 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
     5. [Task execution](guide/lifecycle-of-a-gradle-build.md#task-execution)
     6. [Build finish](guide/lifecycle-of-a-gradle-build.md#build-finish)
 6. [Avoiding Unnecessary Configuration](guide/avoiding-unnecessary-configuration.md)
-
+    1. [Lazy task registration](guide/avoiding-unnecessary-configuration.md#lazy-task-registration)
+    2. [Accessing tasks lazily](guide/avoiding-unnecessary-configuration.md#accessing-tasks-lazily)
+    3. [Configurations](guide/avoiding-unnecessary-configuration.md#configurations)
+    4. [Other types](guide/avoiding-unnecessary-configuration.md#other-types)
 7. [Testing and running your plugins](guide/testing-and-running-your-plugins-locally.md)
     1. [Testing locally](guide/testing-and-running-your-plugins-locally.md#testing-locally)
     2. [Running your plugin in other repos locally](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-locally)
