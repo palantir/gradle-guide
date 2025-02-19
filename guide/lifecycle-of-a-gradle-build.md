@@ -42,7 +42,7 @@ Starting from the root project, Gradle will evaluate each project's `build.gradl
 
 [^1]: [Isolated projects](https://docs.gradle.org/current/userguide/isolated_projects.html) is an upcoming Gradle feature that will enable project configuration to run in parallel, provided a very strict series of are adhered to that limits projects reading other project's configuration.
 
-Tasks have input and output properties. At configuration time, these tasks are created and have their inputs and outputs configured (however, ideally these input and output properties are lazy and not yet calculated).
+Tasks have input and output properties. At configuration time, these tasks are registered and have the configuration for their inputs and outputs properties set up.
 
 ## Task dependency graph calculation
 
@@ -55,13 +55,14 @@ Gradle now has a complete task dependency graph, and is ready to execute the tas
 Gradle actually executes the tasks, scheduling them in dependency order. For each task:
 
 * The task's `onlyIf`s, and `enabled` properties are inspected to see if it should run.
-* The input and output properties are only now evaluated.
-* Gradle decides whether the task is up-to-date (it's run before and none of it's inputs or outputs have changed) or whether it needs executing.
+* The input and output properties are (only now) evaluated.
+* Gradle decides whether the task is up-to-date (if it's run before and none of its inputs or outputs have changed) or whether it needs executing.
 * Build cache keys are calculated by hashing the inputs of the task:
-  * If there is a cache hit, the cached outputs are downloaded and used.
-* Any pre-existing output directories or files are deleted.
-* The task actions on the task are run.
-* If appropriate, the task outputs are saved to the build cache.
+  * If there is a cache hit, the cached outputs are downloaded and written to the output dirs
+  * Otherwise:
+    * Any pre-existing output directories or files are deleted.
+    * The task actions on the task are run.
+    * If appropriate, the task outputs are saved to the build cache.
 
 ## Build finish
 
