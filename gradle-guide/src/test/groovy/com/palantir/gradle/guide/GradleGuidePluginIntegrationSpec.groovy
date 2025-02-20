@@ -51,11 +51,10 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         // language=Java
         writeJavaSourceFile('''
             import org.gradle.api.Project;
-            import org.gradle.api.Task;
 
             final class Bad {
                 public void apply(Project project) {
-                    project.getTasks().create("bad", Task.class);
+                    project.getTasks().create("bad");
                 }
             }
         '''.stripIndent(true))
@@ -64,7 +63,7 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         def stderr = runTasksWithFailure('compileJava').standardError
 
         then:
-        stderr.contains 'error: [RegisterInsteadOfCreate]'
+        stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
     }
 
 }
