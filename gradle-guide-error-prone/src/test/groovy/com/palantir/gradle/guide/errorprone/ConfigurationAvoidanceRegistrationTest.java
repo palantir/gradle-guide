@@ -79,4 +79,28 @@ class ConfigurationAvoidanceRegistrationTest {
 
         compilationTestHelper.doTest();
     }
+
+    @Test
+    void matches_sourcesets_create() {
+        compilationTestHelper.addSourceLines(
+                "Test.java",
+                // language=java
+                """
+            import groovy.lang.Closure;
+            import org.gradle.api.tasks.SourceSetContainer;
+
+            class Test {
+                static void test(SourceSetContainer sourceSets) {
+                    // BUG: Diagnostic contains: use `.register`
+                    sourceSets.create("lol");
+                    // BUG: Diagnostic contains: use `.register`
+                    sourceSets.create("lol", Closure.IDENTITY);
+                    // BUG: Diagnostic contains: use `.register`
+                    sourceSets.create("lol", conf -> {});
+                }
+            }
+            """);
+
+        compilationTestHelper.doTest();
+    }
 }
