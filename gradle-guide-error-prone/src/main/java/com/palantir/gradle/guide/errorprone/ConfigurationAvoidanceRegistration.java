@@ -21,11 +21,16 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.util.ASTHelpers;
+import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree;
+import java.util.Map;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -39,13 +44,44 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
             .onDescendantOfAny("org.gradle.api.NamedDomainObjectContainer")
             .namedAnyOf("create");
 
+    private static final Matcher<Tree> UNUSED_RETURN_VALUE =
+            Matchers.parentNode(Matchers.isInstance(ExpressionStatementTree.class));
+
+    private static final Matcher<MethodInvocationTree> FIRST_ARGUMENT_IS_MAP =
+            Matchers.argument(0, Matchers.isSubtypeOf(Map.class));
+
+    private static final Matcher<MethodInvocationTree> SECOND_ARGUMENT_IS_GROOVY_CLOSURE =
+            Matchers.argument(1, Matchers.isSubtypeOf("groovy.lang.Closure"));
+
+    private static final Matcher<MethodInvocationTree> NO_DIRECT_REGISTER_EQUIVALENT =
+            Matchers.anyOf(FIRST_ARGUMENT_IS_MAP, SECOND_ARGUMENT_IS_GROOVY_CLOSURE);
+
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state)) {
             return Description.NO_MATCH;
         }
 
-        return buildDescription(tree).build();
+        Description.Builder descriptionBuilder = buildDescription(tree);
+
+        // If the return value is not used, we can replace `.create` with `.register` without worrying about
+        // breaking usages of the return value as it's changed from a `Task` to a `TaskProvider`,
+        // `Configuration` to `NamedDomainObjectProvider<Configuration>`, etc.
+        if (UNUSED_RETURN_VALUE.matches(tree, state)) {
+            // If the first argument is a map, or second is a Closure, there isn't an equivalent
+            // `.register` method to move to (from Java code at least)
+            if (NO_DIRECT_REGISTER_EQUIVALENT.matches(tree, state)) {
+                return descriptionBuilder.build();
+            }
+
+            return descriptionBuilder
+                    .addFix(SuggestedFix.replace(
+                            tree.getMethodSelect(),
+                            state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register"))
+                    .build();
+        }
+
+        return descriptionBuilder.build();
     }
 
     @Override
