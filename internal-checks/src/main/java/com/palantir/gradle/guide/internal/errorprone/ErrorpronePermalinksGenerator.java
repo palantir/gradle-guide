@@ -33,8 +33,8 @@ final class ErrorpronePermalinksGenerator {
             <thead>
             <tr>
             <td>Name</td>
-            <td>Description</td>
             <td>Detailed Link</td>
+            <td>Description</td>
             </tr>
             </thead>
             <tbody>
@@ -47,14 +47,16 @@ final class ErrorpronePermalinksGenerator {
                             <tr>
                             <td>
 
-                            <a id="$NAME">`$NAME`</a>
+                            <a id="$NAME" href="guide/$LINK">`$NAME`</a>
 
                             </td>
                             <td>
-                            $MESSAGE
+                            <a href="guide/$LINK">Please read</a>
                             </td>
                             <td>
-                            <a href="guide/$LINK">More Info</a>
+
+                            $MESSAGE
+
                             </td>
                             </tr>
                             """

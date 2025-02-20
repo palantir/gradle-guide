@@ -45,22 +45,24 @@ class ErrorpronePermalinksGeneratorTest {
                 <thead>
                 <tr>
                 <td>Name</td>
-                <td>Description</td>
                 <td>Detailed Link</td>
+                <td>Description</td>
                 </tr>
                 </thead>
                 <tbody>
                 <tr>
                 <td>
 
-                <a id="TestErrorProne">`TestErrorProne`</a>
+                <a id="TestErrorProne" href="guide/test.md#test-heading">`TestErrorProne`</a>
 
                 </td>
                 <td>
-                Summary
+                <a href="guide/test.md#test-heading">Please read</a>
                 </td>
                 <td>
-                <a href="guide/test.md#test-heading">More Info</a>
+
+                Summary
+
                 </td>
                 </tr>
                 </tbody>
