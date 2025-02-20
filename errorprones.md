@@ -12,14 +12,14 @@
 <tr>
 <td>
 
-<a id="RegisterInsteadOfCreate">`RegisterInsteadOfCreate`</a>
+<a id="ConfigurationAvoidanceRegistration">`ConfigurationAvoidanceRegistration`</a>
 
 </td>
 <td>
-Don't do this yo
+When registering a new `Task`, `Configuration` or other Gradle domain type, use `.register` instead of `.create` to avoid realising the object eagerly and performing unnecessary work which will slow down the build.
 </td>
 <td>
-<a href="guide/diagnosing-build-performance.md#configuration-subsection">More Info</a>
+<a href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">More Info</a>
 </td>
 </tr>
 </tbody>

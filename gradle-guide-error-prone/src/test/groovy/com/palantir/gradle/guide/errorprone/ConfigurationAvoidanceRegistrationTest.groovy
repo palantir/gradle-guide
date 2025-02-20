@@ -21,10 +21,10 @@ import groovy.transform.TypeCheckingMode
 import org.junit.jupiter.api.Test
 
 @CompileStatic(TypeCheckingMode.PASS)
-class RegisterInsteadOfCreateTest {
+class ConfigurationAvoidanceRegistrationTest {
     @Test
     void matches_tasks_create() {
-        CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(RegisterInsteadOfCreate.class, getClass())
+        CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(ConfigurationAvoidanceRegistration.class, getClass())
 
         compilationTestHelper.addSourceLines 'Test.java', /* language=java */ '''
             import org.gradle.api.tasks.TaskContainer;
@@ -42,7 +42,7 @@ class RegisterInsteadOfCreateTest {
 
     @Test
     void matches_configurations_create() {
-        CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(RegisterInsteadOfCreate.class, getClass())
+        CompilationTestHelper compilationTestHelper = CompilationTestHelper.newInstance(ConfigurationAvoidanceRegistration.class, getClass())
 
         compilationTestHelper.addSourceLines 'Test.java', /* language=java */ '''
             import org.gradle.api.artifacts.ConfigurationContainer;

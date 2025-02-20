@@ -28,8 +28,12 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = "Don't do this yo")
-public final class RegisterInsteadOfCreate extends GradleGuideBugChecker
+@BugPattern(
+        severity = SeverityLevel.ERROR,
+        summary = "When registering a new `Task`, `Configuration` or other Gradle domain type, "
+                + "use `.register` instead of `.create` to avoid realising the object eagerly "
+                + "and performing unnecessary work which will slow down the build.")
+public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ExpressionTree> MATCHER = Matchers.instanceMethod()
             .onDescendantOfAny("org.gradle.api.NamedDomainObjectContainer")
@@ -46,6 +50,6 @@ public final class RegisterInsteadOfCreate extends GradleGuideBugChecker
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoHeadingLink("diagnosing-build-performance.md", "Configuration subsection");
+        return new MoreInfoHeadingLink("avoiding-unnecessary-configuration.md", "Lazy task registration");
     }
 }
