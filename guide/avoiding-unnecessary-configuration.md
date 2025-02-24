@@ -121,6 +121,7 @@ These will realise _all_ tasks, even ones already registered:
 ```java
 project.getTasks().all(task -> ...);
 project.getTasks().matching(task -> ...);
+project.getTasks().withType(Foo.class, task -> ...);
 project.getTasks().withType(Foo.class).matching(task -> ...);
 ```
 
@@ -130,6 +131,7 @@ project.getTasks().withType(Foo.class).matching(task -> ...);
 
 ```java
 project.getTasks().configureEach(task -> ...)
+project.getTasks().withType(Foo.class).configureEach(task -> ...)
 ```
 
 It's a bit like running `.configure` on each `TaskProvider` without realising the tasks.
@@ -159,7 +161,7 @@ All of the `getByName`/`all` etc methods [described above for Tasks](#accessing-
 
 ## Other types
 
-The advice for `Task`s also applies to other Gradle domain objects like `SourceSetContainer`, `ArtifactRepositoryContainer` - anything that inherits from [DomainObjectCollection](https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#:~:text=All%20Known%20Subinterfaces%3A).
+The advice for `Task`s also applies to other Gradle domain objects like `SourceSetContainer`, `ArtifactRepositoryContainer` - anything that inherits from [`DomainObjectCollection`](https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#:~:text=All%20Known%20Subinterfaces%3A).
 
 <!-- PreviousNext:START -->
 <hr>

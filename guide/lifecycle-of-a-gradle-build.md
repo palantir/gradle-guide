@@ -28,7 +28,7 @@ When you _invoke_ gradle, you call the `./gradlew` script and provide a set of "
 
 This `./gradlew` script runs the "Gradle Wrapper" - a new process that runs code in the jar checked into your repo at `gradle/wrapper/gradle-wrapper.jar`. The Gradle Wrapper will ensure the Gradle distribution listed in `gradle/wrapper/gradle-wrapper.properties` is installed - if it isn't, it will download and install it. [Further reading about the Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
 
-The Gradle Wrapper will now check to see if a "Gradle Daemon" already exists. Daemons are long-lived instances of Gradle which speed up build times by keeping the JVM running between builds. If a Daemon already exists, it will be reused. If not, a new one will be started. [Further reading about the Gradle Daemon](https://docs.gradle.org/current/userguide/gradle_daemon.html).
+The Gradle Wrapper will now check to see if a "Gradle Daemon" already exists. Daemons are long-lived instances of Gradle which speed up build times by keeping the JVM running between builds. If a Daemon already exists, and uses a compatible JVM with the same JVM args and other settings, it will be reused. If not, a new one will be started. [Further reading about the Gradle Daemon](https://docs.gradle.org/current/userguide/gradle_daemon.html).
 
 The Daemon now proceeds to load the `settings.gradle` file which takes us onto the next stage.
 
