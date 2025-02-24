@@ -56,6 +56,9 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
     private static final Matcher<MethodInvocationTree> NO_DIRECT_REGISTER_EQUIVALENT =
             Matchers.anyOf(FIRST_ARGUMENT_IS_MAP, SECOND_ARGUMENT_IS_GROOVY_CLOSURE);
 
+    private static final Matcher<MethodInvocationTree> THIRD_ARGUMENT_IS_ACTION =
+            Matchers.argument(2, Matchers.isSubtypeOf("org.gradle.api.Action"));
+
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state)) {
@@ -72,6 +75,20 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
             // `.register` method to move to (from Java code at least)
             if (NO_DIRECT_REGISTER_EQUIVALENT.matches(tree, state)) {
                 return descriptionBuilder.build();
+            }
+
+            // Even if the return value is not used, we should not change the method call if the configure action
+            // calls afterEvaluate, as we may now cause the object to be realised after the configuration phase,
+            // which will cause afterEvaluate to throw.
+            // I'm mainly worried about a couple of cases to do with `publications.create` here, as since it's to
+            // do with publishing the error may not be discovered until publish time.
+            if (THIRD_ARGUMENT_IS_ACTION.matches(tree, state)) {
+                boolean actionCallsAfterEvaluate =
+                        state.getSourceForNode(tree.getArguments().get(2)).contains("afterEvaluate");
+
+                if (actionCallsAfterEvaluate) {
+                    return descriptionBuilder.build();
+                }
             }
 
             return descriptionBuilder

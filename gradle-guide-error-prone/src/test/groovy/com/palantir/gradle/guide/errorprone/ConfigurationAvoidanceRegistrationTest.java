@@ -108,7 +108,7 @@ class ConfigurationAvoidanceRegistrationTest {
     }
 
     @Test
-    void refactors_usages_of_create_where_the_return_value_is_unused_to_register() {
+    void refactors_usages_of_tasks_create_where_the_return_value_is_unused_to_register() {
         refactoringValidator
                 .addInputLines(
                         "Test.java",
@@ -116,6 +116,7 @@ class ConfigurationAvoidanceRegistrationTest {
                         """
             import groovy.lang.Closure;
             import java.util.Map;
+            import org.gradle.api.Project;
             import org.gradle.api.Task;
             import org.gradle.api.tasks.TaskContainer;
 
@@ -144,6 +145,13 @@ class ConfigurationAvoidanceRegistrationTest {
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
                 }
+
+                static void scary_after_evaluate_use(Project project, TaskContainer tasks) {
+                    // BUG: Diagnostic contains: use `.register`
+                    tasks.create("lol", Task.class, task -> {
+                        project.afterEvaluate(p -> {});
+                    });
+                }
             }
             """)
                 .addOutputLines(
@@ -152,6 +160,7 @@ class ConfigurationAvoidanceRegistrationTest {
                         """
             import groovy.lang.Closure;
             import java.util.Map;
+            import org.gradle.api.Project;
             import org.gradle.api.Task;
             import org.gradle.api.tasks.TaskContainer;
 
@@ -179,6 +188,77 @@ class ConfigurationAvoidanceRegistrationTest {
                     tasks.create(Map.of("name", "lol", "type", Task.class));
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
+                }
+
+                static void scary_after_evaluate_use(Project project, TaskContainer tasks) {
+                    // BUG: Diagnostic contains: use `.register`
+                    tasks.create("lol", Task.class, task -> {
+                        project.afterEvaluate(p -> {});
+                    });
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    @Test
+    void refactors_usages_of_configurations_create_where_the_return_value_is_unused_to_register() {
+        refactoringValidator
+                .addInputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import groovy.lang.Closure;
+            import org.gradle.api.artifacts.Configuration;
+            import org.gradle.api.artifacts.ConfigurationContainer;
+
+            class Test {
+                static void unused_return_value(ConfigurationContainer configurations) {
+                    configurations.create("lol");
+                    configurations.create("lol", conf -> {});
+                }
+
+                static Configuration used_return_value(ConfigurationContainer configurations) {
+                    // BUG: Diagnostic contains: use `.register`
+                    Configuration configuration = configurations.create("lol");
+                    // BUG: Diagnostic contains: use `.register`
+                    System.out.println(configurations.create("lol", conf -> {}));
+                    // BUG: Diagnostic contains: use `.register`
+                    return configurations.create("lol", conf -> {});
+                }
+
+                static void methods_with_no_directly_equivalent_register(ConfigurationContainer configurations) {
+                    // BUG: Diagnostic contains: use `.register`
+                    configurations.create("lol", Closure.IDENTITY);
+                }
+            }
+            """)
+                .addOutputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import groovy.lang.Closure;
+            import org.gradle.api.artifacts.Configuration;
+            import org.gradle.api.artifacts.ConfigurationContainer;
+
+            class Test {
+                static void unused_return_value(ConfigurationContainer configurations) {
+                    configurations.register("lol");
+                    configurations.register("lol", conf -> {});
+                }
+
+                static Configuration used_return_value(ConfigurationContainer configurations) {
+                    // BUG: Diagnostic contains: use `.register`
+                    Configuration configuration = configurations.create("lol");
+                    // BUG: Diagnostic contains: use `.register`
+                    System.out.println(configurations.create("lol", conf -> {}));
+                    // BUG: Diagnostic contains: use `.register`
+                    return configurations.create("lol", conf -> {});
+                }
+
+                static void methods_with_no_directly_equivalent_register(ConfigurationContainer configurations) {
+                    // BUG: Diagnostic contains: use `.register`
+                    configurations.create("lol", Closure.IDENTITY);
                 }
             }
             """)
