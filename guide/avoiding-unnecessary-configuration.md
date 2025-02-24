@@ -44,7 +44,9 @@ This is better; we tell Gradle there is task called `foo`, but we give the confi
 
 The `register` approach now gives us a `TaskProvider`, which is a lazy handle to the task. Many  of the built-in Gradle APIs will let you pass a `TaskProvider` instead of a `Task` object.
 
-If you want to give use an output property of a task as the input to another task, you can just transform the `TaskProvider` into another `Provider` using `map` or `flatMap`. You can call `.configure` on a `TaskProvider` to lazily configure the task without realising it (avoid calling `.get()` on `TaskProvider`s).
+Never call `.get` on a `TaskProvider`. It will immediately realise it and undo any work you've done to register the task lazily. Additionally, Gradle will lose track of any task dependencies required to use the value of the task provider. Instead, you can use the `Provider` API to work with the task provider lazily.
+
+If you want to give use an output property of a task as the input to another task, you can just transform the `TaskProvider` into another `Provider` using `flatMap`:
 
 ```java
 abstract class MyTask extends DefaultTask {
@@ -56,12 +58,20 @@ abstract class MyTask extends DefaultTask {
 ```java
 TaskProvider<MyTask> myTask = project.getTasks().register("myTask", MyTask.class);
 
-otherTaskProvider.configure(task -> {
-    task.getInput().set(myTask.flatMap(MyTask::getOutputFile));
+project.getTasks().register("otherTask", OtherTask.class, otherTask -> {
+    otherTask.getInput().set(myTask.flatMap(MyTask::getOutputFile));
 });
 ```
 
-This also has the benefit of wiring up the dependencies between the two tasks automatically (no need for `dependsOn`).
+You can call `.configure` on a `TaskProvider` to lazily configure the task without realising it.
+
+```java
+myTaskProvider.configure(task -> {
+    task.getInput().set(something);
+});
+```
+
+These also has the benefit of wiring up the dependencies between the two tasks automatically (no need for `dependsOn`).
 
 ## Accessing tasks lazily
 
