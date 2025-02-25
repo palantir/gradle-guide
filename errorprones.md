@@ -24,5 +24,21 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 
 </td>
 </tr>
+
+<tr>
+<td>
+
+<a id="ProviderGet" href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">`ProviderGet`</a>
+
+</td>
+<td>
+<a href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">Please read</a>
+</td>
+<td>
+
+Do not call `Provider.get`. Instead, pass providers directly to methods that accept them, or transform providers using `Provider.map` or `Provider.flatMap`, or combine providers using `Provider.zip`. Calling `Provider.get` causes Gradle to lose track of implicit dependencies and can lead to timing issues by reading values too early.
+
+</td>
+</tr>
 </tbody>
 </table>

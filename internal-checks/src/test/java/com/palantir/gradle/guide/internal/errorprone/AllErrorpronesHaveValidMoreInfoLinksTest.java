@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 final class AllErrorpronesHaveValidMoreInfoLinksTest {
     @ParameterizedTest(name = "{0}")
-    @MethodSource("com.palantir.gradle.guide.errorprone.AllErrorprones#allErrorprones")
+    @MethodSource("com.palantir.gradle.guide.errorprone.utils.AllErrorprones#allErrorprones")
     void all_have_valid_more_info_links(GradleGuideBugChecker bugChecker) {
         MoreInfoHeadingLink moreInfo = (MoreInfoHeadingLink) bugChecker.moreInfoLink();
 
