@@ -32,6 +32,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -84,8 +85,15 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
 
                     ALREADY_REPLACED.add(newProvider);
 
-                    CharSequence sourceCode = state.getSourceCode();
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitMethodInvocation(MethodInvocationTree methodInvocationTree, Void unused) {
+                            if (methodInvocationTree.getMethodSelect())
+                            return null;
+                        }
+                    }.scan(lambdaBodyPath.getLeaf(), null);
 
+                    CharSequence sourceCode = state.getSourceCode();
                     String lambdaProviderArg = providerIdentifierName + "Value";
 
                     String lambdaBodyChanged = sourceCode.subSequence(
