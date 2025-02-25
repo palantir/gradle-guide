@@ -57,7 +57,7 @@ public final class HelloExtension_Generated extends HelloExtension {
 
 This is very similar to [the commonly used `immutables` library](https://immutables.github.io/). However, it is aware of Gradle types so will automatically create instances of properties (and other Gradle services) for us.
 
-It is possible to write extensions and tasks directly as in the `HelloExtension_Generated` class above. If you look into the depths of older Palantir Gradle code you will find many instances of this, but this is no longer recommended. All new code should use Manaded Types.
+It is possible to write extensions and tasks directly as in the `HelloExtension_Generated` class above. If you look into the depths of older Palantir Gradle code you will find many instances of this, but this is no longer recommended. All new code should use Managed Types.
 
 <!-- PreviousNext:START -->
 <hr>
