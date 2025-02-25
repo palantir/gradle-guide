@@ -19,7 +19,7 @@ com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 c
 com.google.j2objc:j2objc-annotations:3.0.0 (1 constraints: 150aeab4)
 com.palantir.gradle.auto-parallelizable:auto-parallelizable-annotations:1.4.0 (1 constraints: 0705fc35)
 com.palantir.gradle.utils:environment-variables:0.9.0 (1 constraints: ff1c23bb)
-com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.2.0 (1 constraints: 0605fb35)
+com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:999 (1 constraints: c104512c)
 io.github.eisop:dataflow-errorprone:3.41.0-eisop1 (2 constraints: 9c2c4f1c)
 io.github.java-diff-utils:java-diff-utils:4.12 (1 constraints: b412c908)
 javax.inject:javax.inject:1 (1 constraints: 201230d1)

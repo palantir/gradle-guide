@@ -24,7 +24,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
 public class GradleGuidePlugin implements Plugin<Project> {
-    private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration");
+    private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration", "ProviderGet");
 
     @Override
     public final void apply(Project project) {
@@ -48,5 +48,11 @@ public class GradleGuidePlugin implements Plugin<Project> {
                 project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
 
         suppressibleErrorProneExtension.getPatchChecks().addAll(PATCH_CHECKS);
+
+        if (project.hasProperty("gradleGuideBestEffortMode")) {
+            suppressibleErrorProneExtension.configureEachErrorProneOptions(errorProneOptions -> {
+                errorProneOptions.option("GradleGuide:BestEffortMode", true);
+            });
+        }
     }
 }
