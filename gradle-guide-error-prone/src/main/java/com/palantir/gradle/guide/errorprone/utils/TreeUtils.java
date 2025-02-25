@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.errorprone.utils;
 
 import com.google.errorprone.VisitorState;
 import com.sun.source.tree.ExpressionTree;
@@ -23,7 +23,7 @@ import com.sun.tools.javac.tree.JCTree;
 import java.util.Locale;
 import java.util.Optional;
 
-final class TreeUtils {
+public final class TreeUtils {
     public static int startPosition(Tree tree) {
         return ((JCTree) tree).getStartPosition();
     }

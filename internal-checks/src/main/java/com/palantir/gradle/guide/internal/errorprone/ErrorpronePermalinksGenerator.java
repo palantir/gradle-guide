@@ -16,9 +16,9 @@
 
 package com.palantir.gradle.guide.internal.errorprone;
 
-import com.palantir.gradle.guide.errorprone.AllErrorprones;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoHeadingLink;
+import com.palantir.gradle.guide.errorprone.utils.AllErrorprones;
 import com.palantir.gradle.guide.internal.markdown.HeadingText;
 import java.util.Set;
 import java.util.stream.Collectors;

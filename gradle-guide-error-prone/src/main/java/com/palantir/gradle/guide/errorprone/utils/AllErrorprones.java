@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.errorprone.utils;
 
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
