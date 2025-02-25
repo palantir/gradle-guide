@@ -201,6 +201,24 @@ class ProviderGetTest {
                 }
                 """);
         }
+
+        @Test
+        void doesnt_lift_get_through_multiple_lambdas() {
+            // language=Java
+            expectUnchanged(
+                    """
+                import java.util.Optional;
+                import org.gradle.api.Project;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Project project, Provider<Integer> provider) {
+                        // BUG: Diagnostic contains: Provider.get
+                        project.provider(() -> Optional.of(3).map(value -> provider.get() + value));
+                    }
+                }
+                """);
+        }
     }
 
     private void refactorFromTo(String input, String output) {

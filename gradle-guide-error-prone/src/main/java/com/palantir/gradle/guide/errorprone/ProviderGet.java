@@ -40,7 +40,7 @@ import com.sun.source.tree.MethodInvocationTree;
                 + "can lead to timing issues by reading values too early.")
 public final class ProviderGet extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ExpressionTree> MATCHER = Matchers.instanceMethod()
-            .onDescendantOfAny("org.gradle.api.provider.Provider")
+            .onDescendantOf("org.gradle.api.provider.Provider")
             .namedAnyOf("get", "getOrNull", "getOrElse");
 
     private static final Matcher<ExpressionTree> NEW_PROVIDER_MATCHER = Matchers.instanceMethod()
