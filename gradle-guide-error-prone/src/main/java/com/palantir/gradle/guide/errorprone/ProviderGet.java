@@ -84,6 +84,14 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
                         return;
                     }
 
+                    String originalMethodExpression = state.getSourceForNode(memberSelectTree.getExpression());
+
+                    boolean lambdaBodyJustReturnsProviderValue = tree == lambdaBodyPath.getLeaf();
+                    if (lambdaBodyJustReturnsProviderValue) {
+                        fix.replace(providerFactoryMethod, originalMethodExpression);
+                        return;
+                    }
+
                     CharSequence sourceCode = state.getSourceCode();
 
                     String lambdaProviderArg =
@@ -99,8 +107,7 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
 
                     fix.replace(
                             providerFactoryMethod,
-                            state.getSourceForNode(memberSelectTree.getExpression()) + ".map(" + lambdaProviderArg
-                                    + " -> " + lambdaBodyChanged + ")");
+                            originalMethodExpression + ".map(" + lambdaProviderArg + " -> " + lambdaBodyChanged + ")");
                 });
     }
 

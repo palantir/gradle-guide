@@ -219,6 +219,32 @@ class ProviderGetTest {
                 }
                 """);
         }
+
+        @Test
+        void identity_mapping() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Project;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Project project, Provider<String> provider) {
+                        System.out.println(project.provider(() -> provider.get()));
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Project;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Project project, Provider<String> provider) {
+                        System.out.println(provider);
+                    }
+                }
+                """);
+        }
     }
 
     private void refactorFromTo(String input, String output) {
