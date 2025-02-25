@@ -60,6 +60,10 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
         Description.Builder description = buildDescription(tree);
         SuggestedFix.Builder fix = SuggestedFix.builder();
 
+        if (!bestEffortModeEnabled(state)) {
+            return description.build();
+        }
+
         if (!(tree.getMethodSelect() instanceof MemberSelectTree memberSelectTree)) {
             return description.build();
         }

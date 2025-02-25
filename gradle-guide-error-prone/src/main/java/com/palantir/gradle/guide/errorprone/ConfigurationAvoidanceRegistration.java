@@ -63,39 +63,34 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
             return Description.NO_MATCH;
         }
 
-        Description.Builder descriptionBuilder = buildDescription(tree);
-        SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
+        Description.Builder description = buildDescription(tree);
+        SuggestedFix.Builder fix = SuggestedFix.builder();
 
-        boolean bestEffort = state.errorProneOptions()
-                .getFlags()
-                .getBoolean("GradleGuide:BestEffortMode")
-                .orElse(false);
-
-        if (!bestEffort) {
-            return descriptionBuilder.build();
+        if (!bestEffortModeEnabled(state)) {
+            return description.build();
         }
 
         // If the first argument is a map, or second is a Closure, there isn't an equivalent
         // `.register` method to move to (from Java code at least)
         if (NO_DIRECT_REGISTER_EQUIVALENT.matches(tree, state)) {
-            return descriptionBuilder.build();
+            return description.build();
         }
 
         TreePath parentPath = state.getPath().getParentPath();
         if (parentPath.getLeaf() instanceof VariableTree variableTree) {
-            replaceVariableDeclartionTypeWithProvider(state, fixBuilder, variableTree);
-            replaceVariableUsagesWithTaskProviderGet(fixBuilder, parentPath);
+            replaceVariableDeclartionTypeWithProvider(state, fix, variableTree);
+            replaceVariableUsagesWithTaskProviderGet(fix, parentPath);
         }
 
-        fixBuilder.replace(
+        fix.replace(
                 tree.getMethodSelect(),
                 state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register");
 
         if (parentPath.getLeaf() instanceof ExpressionTree || parentPath.getLeaf() instanceof ReturnTree) {
-            fixBuilder.postfixWith(tree, ".get()");
+            fix.postfixWith(tree, ".get()");
         }
 
-        return descriptionBuilder.addFix(fixBuilder.build()).build();
+        return description.addFix(fix.build()).build();
     }
 
     private static void replaceVariableDeclartionTypeWithProvider(

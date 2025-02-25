@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.guide.errorprone;
 
+import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 
 public abstract class GradleGuideBugChecker extends BugChecker {
@@ -29,6 +30,13 @@ public abstract class GradleGuideBugChecker extends BugChecker {
     @Override
     public final String toString() {
         return canonicalName();
+    }
+
+    protected final boolean bestEffortModeEnabled(VisitorState state) {
+        return state.errorProneOptions()
+                .getFlags()
+                .getBoolean("GradleGuide:BestEffortMode")
+                .orElse(false);
     }
 
     public interface MoreInfoLink {}

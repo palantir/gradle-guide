@@ -161,7 +161,7 @@ class ProviderGetTest {
     }
 
     private void refactorFromTo(String input, String output) {
-        refactoringValidator()
+        bestEffortRefactoringValidator()
                 .addInputLines("Test.java", input)
                 .addOutputLines("Test.java", output)
                 .doTest();
