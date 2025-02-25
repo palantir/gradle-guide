@@ -73,6 +73,49 @@ class ProviderGetTest {
         }
 
         @Test
+        void provider_factory() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.provider.Provider;
+                import org.gradle.api.provider.ProviderFactory;
+
+                class Test {
+                    void test(ProviderFactory providerFactory, Provider<String> provider) {
+                        providerFactory.provider(() -> provider.get() + " yo");
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.provider.Provider;
+                import org.gradle.api.provider.ProviderFactory;
+
+                class Test {
+                    void test(ProviderFactory providerFactory, Provider<String> provider) {
+                        provider.map(providerValue -> providerValue + " yo");
+                    }
+                }
+                """);
+        }
+
+        @Test
+        void does_not_change_unrelated_non_provider_factory_method() {
+            // language=Java
+            expectUnchanged(
+                    """
+                import com.google.common.base.Suppliers;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Provider<String> provider) {
+                        // BUG: Diagnostic contains: Provider.get
+                        Suppliers.memoize(() -> provider.get() + " yo");
+                    }
+                }
+                """);
+        }
+
+        @Test
         void braces_in_lambda() {
             // language=Java
             refactorFromTo(
@@ -164,6 +207,13 @@ class ProviderGetTest {
         bestEffortRefactoringValidator()
                 .addInputLines("Test.java", input)
                 .addOutputLines("Test.java", output)
+                .doTest();
+    }
+
+    private void expectUnchanged(String input) {
+        bestEffortRefactoringValidator()
+                .addInputLines("Test.java", input)
+                .expectUnchanged()
                 .doTest();
     }
 

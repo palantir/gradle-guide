@@ -43,6 +43,10 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
             .onDescendantOfAny("org.gradle.api.provider.Provider")
             .namedAnyOf("get", "getOrNull", "getOrElse");
 
+    private static final Matcher<ExpressionTree> NEW_PROVIDER_MATCHER = Matchers.instanceMethod()
+            .onDescendantOfAny("org.gradle.api.Project", "org.gradle.api.provider.ProviderFactory")
+            .named("provider");
+
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state)) {
@@ -73,8 +77,12 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
                         && path.getParentPath().getParentPath().getLeaf() instanceof MethodInvocationTree)
                 .findFirst()
                 .ifPresent(lambdaBodyPath -> {
-                    MethodInvocationTree newProvider = (MethodInvocationTree)
+                    MethodInvocationTree providerFactoryMethod = (MethodInvocationTree)
                             lambdaBodyPath.getParentPath().getParentPath().getLeaf();
+
+                    if (!NEW_PROVIDER_MATCHER.matches(providerFactoryMethod, state)) {
+                        return;
+                    }
 
                     CharSequence sourceCode = state.getSourceCode();
 
@@ -90,7 +98,7 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
                                     state.getEndPosition(tree), state.getEndPosition(lambdaBodyPath.getLeaf()));
 
                     fix.replace(
-                            newProvider,
+                            providerFactoryMethod,
                             state.getSourceForNode(memberSelectTree.getExpression()) + ".map(" + lambdaProviderArg
                                     + " -> " + lambdaBodyChanged + ")");
                 });
