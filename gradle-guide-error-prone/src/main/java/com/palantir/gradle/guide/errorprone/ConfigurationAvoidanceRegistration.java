@@ -30,6 +30,7 @@ import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -82,7 +83,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
 
         TreePath parentPath = state.getPath().getParentPath();
         if (parentPath.getLeaf() instanceof VariableTree variableTree) {
-            replaceVariableDeclartionTypeWithTaskProvider(fixBuilder, variableTree);
+            replaceVariableDeclartionTypeWithProvider(state, fixBuilder, variableTree);
             replaceVariableUsagesWithTaskProviderGet(fixBuilder, parentPath);
         }
 
@@ -90,14 +91,27 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
                 tree.getMethodSelect(),
                 state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register");
 
+        if (parentPath.getLeaf() instanceof ExpressionTree || parentPath.getLeaf() instanceof ReturnTree) {
+            fixBuilder.postfixWith(tree, ".get()");
+        }
+
         return descriptionBuilder.addFix(fixBuilder.build()).build();
     }
 
-    private static void replaceVariableDeclartionTypeWithTaskProvider(
-            SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
+    private static void replaceVariableDeclartionTypeWithProvider(
+            VisitorState state, SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
 
-        fixBuilder.addImport("org.gradle.api.tasks.TaskProvider");
-        fixBuilder.prefixWith(variableTree.getType(), "TaskProvider<");
+        boolean isTask = state.getTypes()
+                .isSubtype(ASTHelpers.getType(variableTree.getType()), state.getTypeFromString("org.gradle.api.Task"));
+
+        if (isTask) {
+            fixBuilder.addImport("org.gradle.api.tasks.TaskProvider");
+            fixBuilder.prefixWith(variableTree.getType(), "TaskProvider<");
+        } else {
+            fixBuilder.addImport("org.gradle.api.provider.Provider");
+            fixBuilder.prefixWith(variableTree.getType(), "Provider<");
+        }
+
         fixBuilder.postfixWith(variableTree.getType(), ">");
     }
 

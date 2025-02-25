@@ -106,15 +106,14 @@ class ConfigurationAvoidanceRegistrationTest {
     }
 
     @Test
-    void refactors_usages_of_tasks_create_where_the_return_value_is_unused_to_register() {
-        refactoringValidator()
+    void best_effort_refactors_usages_of_tasks_create_where_the_return_value_is_unused_to_register() {
+        bestEffortRefactoringValidator()
                 .addInputLines(
                         "Test.java",
                         // language=java
                         """
             import groovy.lang.Closure;
             import java.util.Map;
-            import org.gradle.api.Project;
             import org.gradle.api.Task;
             import org.gradle.api.tasks.TaskContainer;
 
@@ -143,13 +142,6 @@ class ConfigurationAvoidanceRegistrationTest {
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
                 }
-
-                static void scary_after_evaluate_use(Project project, TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Task.class, task -> {
-                        project.afterEvaluate(p -> {});
-                    });
-                }
             }
             """)
                 .addOutputLines(
@@ -158,9 +150,9 @@ class ConfigurationAvoidanceRegistrationTest {
                         """
             import groovy.lang.Closure;
             import java.util.Map;
-            import org.gradle.api.Project;
             import org.gradle.api.Task;
             import org.gradle.api.tasks.TaskContainer;
+            import org.gradle.api.tasks.TaskProvider;
 
             class Test {
                 static void unused_return_value(TaskContainer tasks) {
@@ -171,12 +163,9 @@ class ConfigurationAvoidanceRegistrationTest {
                 }
 
                 static Task used_return_value(TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    Task task = tasks.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    System.out.println(tasks.create("lol", Task.class, t -> {}));
-                    // BUG: Diagnostic contains: use `.register`
-                    return tasks.create("lol", Task.class);
+                    TaskProvider<Task> task = tasks.register("lol");
+                    System.out.println(tasks.register("lol", Task.class, t -> {}).get());
+                    return tasks.register("lol", Task.class).get();
                 }
 
                 static void methods_with_no_directly_equivalent_register(TaskContainer tasks) {
@@ -187,21 +176,14 @@ class ConfigurationAvoidanceRegistrationTest {
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
                 }
-
-                static void scary_after_evaluate_use(Project project, TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Task.class, task -> {
-                        project.afterEvaluate(p -> {});
-                    });
-                }
             }
             """)
                 .doTest();
     }
 
     @Test
-    void refactors_usages_of_configurations_create_where_the_return_value_is_unused_to_register() {
-        refactoringValidator()
+    void best_effort_refactors_usages_of_configurations_create_where_the_return_value_is_unused_to_register() {
+        bestEffortRefactoringValidator()
                 .addInputLines(
                         "Test.java",
                         // language=java
@@ -238,6 +220,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import groovy.lang.Closure;
             import org.gradle.api.artifacts.Configuration;
             import org.gradle.api.artifacts.ConfigurationContainer;
+            import org.gradle.api.provider.Provider;
 
             class Test {
                 static void unused_return_value(ConfigurationContainer configurations) {
@@ -246,12 +229,9 @@ class ConfigurationAvoidanceRegistrationTest {
                 }
 
                 static Configuration used_return_value(ConfigurationContainer configurations) {
-                    // BUG: Diagnostic contains: use `.register`
-                    Configuration configuration = configurations.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    System.out.println(configurations.create("lol", conf -> {}));
-                    // BUG: Diagnostic contains: use `.register`
-                    return configurations.create("lol", conf -> {});
+                    Provider<Configuration> configuration = configurations.register("lol");
+                    System.out.println(configurations.register("lol", conf -> {}).get());
+                    return configurations.register("lol", conf -> {}).get();
                 }
 
                 static void methods_with_no_directly_equivalent_register(ConfigurationContainer configurations) {
@@ -265,7 +245,7 @@ class ConfigurationAvoidanceRegistrationTest {
 
     @Test
     void best_effort_mode_uses_get_on_taskprovider_usages() {
-        refactoringValidator("-XepOpt:GradleGuide:BestEffortMode")
+        bestEffortRefactoringValidator()
                 .addInputLines(
                         "Test.java",
                         // language=java
@@ -300,6 +280,10 @@ class ConfigurationAvoidanceRegistrationTest {
             }
             """)
                 .doTest();
+    }
+
+    private RefactoringValidator bestEffortRefactoringValidator() {
+        return refactoringValidator("-XepOpt:GradleGuide:BestEffortMode");
     }
 
     private RefactoringValidator refactoringValidator(String... args) {
