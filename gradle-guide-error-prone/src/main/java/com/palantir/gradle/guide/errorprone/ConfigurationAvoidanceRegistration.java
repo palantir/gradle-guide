@@ -26,10 +26,13 @@ import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
-import com.sun.source.tree.ExpressionStatementTree;
+import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import java.util.Map;
 
 @AutoService(BugChecker.class)
@@ -44,9 +47,6 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
             .onDescendantOfAny("org.gradle.api.NamedDomainObjectContainer")
             .namedAnyOf("create");
 
-    private static final Matcher<Tree> UNUSED_RETURN_VALUE =
-            Matchers.parentNode(Matchers.isInstance(ExpressionStatementTree.class));
-
     private static final Matcher<MethodInvocationTree> FIRST_ARGUMENT_IS_MAP =
             Matchers.argument(0, Matchers.isSubtypeOf(Map.class));
 
@@ -56,9 +56,6 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
     private static final Matcher<MethodInvocationTree> NO_DIRECT_REGISTER_EQUIVALENT =
             Matchers.anyOf(FIRST_ARGUMENT_IS_MAP, SECOND_ARGUMENT_IS_GROOVY_CLOSURE);
 
-    private static final Matcher<MethodInvocationTree> THIRD_ARGUMENT_IS_ACTION =
-            Matchers.argument(2, Matchers.isSubtypeOf("org.gradle.api.Action"));
-
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state)) {
@@ -66,39 +63,60 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         }
 
         Description.Builder descriptionBuilder = buildDescription(tree);
+        SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
-        // If the return value is not used, we can replace `.create` with `.register` without worrying about
-        // breaking usages of the return value as it's changed from a `Task` to a `TaskProvider`,
-        // `Configuration` to `NamedDomainObjectProvider<Configuration>`, etc.
-        if (UNUSED_RETURN_VALUE.matches(tree, state)) {
-            // If the first argument is a map, or second is a Closure, there isn't an equivalent
-            // `.register` method to move to (from Java code at least)
-            if (NO_DIRECT_REGISTER_EQUIVALENT.matches(tree, state)) {
-                return descriptionBuilder.build();
-            }
+        boolean bestEffort = state.errorProneOptions()
+                .getFlags()
+                .getBoolean("GradleGuide:BestEffortMode")
+                .orElse(false);
 
-            // Even if the return value is not used, we should not change the method call if the configure action
-            // calls afterEvaluate, as we may now cause the object to be realised after the configuration phase,
-            // which will cause afterEvaluate to throw.
-            // I'm mainly worried about a couple of cases to do with `publications.create` here, as since it's to
-            // do with publishing the error may not be discovered until publish time.
-            if (THIRD_ARGUMENT_IS_ACTION.matches(tree, state)) {
-                boolean actionCallsAfterEvaluate =
-                        state.getSourceForNode(tree.getArguments().get(2)).contains("afterEvaluate");
-
-                if (actionCallsAfterEvaluate) {
-                    return descriptionBuilder.build();
-                }
-            }
-
-            return descriptionBuilder
-                    .addFix(SuggestedFix.replace(
-                            tree.getMethodSelect(),
-                            state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register"))
-                    .build();
+        if (!bestEffort) {
+            return descriptionBuilder.build();
         }
 
-        return descriptionBuilder.build();
+        // If the first argument is a map, or second is a Closure, there isn't an equivalent
+        // `.register` method to move to (from Java code at least)
+        if (NO_DIRECT_REGISTER_EQUIVALENT.matches(tree, state)) {
+            return descriptionBuilder.build();
+        }
+
+        TreePath parentPath = state.getPath().getParentPath();
+        if (parentPath.getLeaf() instanceof VariableTree variableTree) {
+            replaceVariableDeclartionTypeWithTaskProvider(fixBuilder, variableTree);
+            replaceVariableUsagesWithTaskProviderGet(fixBuilder, parentPath);
+        }
+
+        fixBuilder.replace(
+                tree.getMethodSelect(),
+                state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register");
+
+        return descriptionBuilder.addFix(fixBuilder.build()).build();
+    }
+
+    private static void replaceVariableDeclartionTypeWithTaskProvider(
+            SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
+
+        fixBuilder.addImport("org.gradle.api.tasks.TaskProvider");
+        fixBuilder.prefixWith(variableTree.getType(), "TaskProvider<");
+        fixBuilder.postfixWith(variableTree.getType(), ">");
+    }
+
+    private static void replaceVariableUsagesWithTaskProviderGet(
+            SuggestedFix.Builder fixBuilder, TreePath variableTreePath) {
+
+        TreePath variableParent = variableTreePath.getParentPath();
+        Object variableSymbol = ASTHelpers.getSymbol(variableTreePath.getLeaf());
+        if (variableParent.getLeaf() instanceof BlockTree) {
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitIdentifier(IdentifierTree identifierTree, Void unused) {
+                    if (variableSymbol.equals(ASTHelpers.getSymbol(identifierTree))) {
+                        fixBuilder.postfixWith(identifierTree, ".get()");
+                    }
+                    return null;
+                }
+            }.scan(variableParent, null);
+        }
     }
 
     @Override

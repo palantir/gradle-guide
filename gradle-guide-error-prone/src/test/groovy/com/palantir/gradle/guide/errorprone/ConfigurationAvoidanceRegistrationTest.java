@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 class ConfigurationAvoidanceRegistrationTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(ConfigurationAvoidanceRegistration.class, getClass());
-    private final RefactoringValidator refactoringValidator =
-            RefactoringValidator.of(ConfigurationAvoidanceRegistration.class, getClass());
 
     @Test
     void matches_tasks_create() {
@@ -109,7 +107,7 @@ class ConfigurationAvoidanceRegistrationTest {
 
     @Test
     void refactors_usages_of_tasks_create_where_the_return_value_is_unused_to_register() {
-        refactoringValidator
+        refactoringValidator()
                 .addInputLines(
                         "Test.java",
                         // language=java
@@ -203,7 +201,7 @@ class ConfigurationAvoidanceRegistrationTest {
 
     @Test
     void refactors_usages_of_configurations_create_where_the_return_value_is_unused_to_register() {
-        refactoringValidator
+        refactoringValidator()
                 .addInputLines(
                         "Test.java",
                         // language=java
@@ -263,5 +261,48 @@ class ConfigurationAvoidanceRegistrationTest {
             }
             """)
                 .doTest();
+    }
+
+    @Test
+    void best_effort_mode_uses_get_on_taskprovider_usages() {
+        refactoringValidator("-XepOpt:GradleGuide:BestEffortMode")
+                .addInputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.tasks.TaskContainer;
+
+            class Test {
+                class CustomTask extends DefaultTask {}
+                static CustomTask test(TaskContainer tasks) {
+                    CustomTask task = tasks.create("lol", CustomTask.class);
+                    String description = task.getDescription();
+                    return task;
+                }
+            }
+            """)
+                .addOutputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.tasks.TaskContainer;
+            import org.gradle.api.tasks.TaskProvider;
+
+            class Test {
+                class CustomTask extends DefaultTask {}
+                static CustomTask test(TaskContainer tasks) {
+                    TaskProvider<CustomTask> task = tasks.register("lol", CustomTask.class);
+                    String description = task.get().getDescription();
+                    return task.get();
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    private RefactoringValidator refactoringValidator(String... args) {
+        return RefactoringValidator.of(ConfigurationAvoidanceRegistration.class, getClass(), args);
     }
 }
