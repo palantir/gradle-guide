@@ -30,8 +30,6 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.util.TreePath;
-import java.util.stream.Stream;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -62,7 +60,15 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
             return description.build();
         }
 
-        Stream.iterate(state.getPath(), path -> path.getParentPath() != null, TreePath::getParentPath)
+        replaceNewProviderWithGetCalledInside(state, fix, tree, memberSelectTree);
+
+        return buildDescription(tree).addFix(fix.build()).build();
+    }
+
+    private static void replaceNewProviderWithGetCalledInside(
+            VisitorState state, SuggestedFixBuilder fix, MethodInvocationTree tree, MemberSelectTree memberSelectTree) {
+
+        TreeUtils.pathToRoot(state.getPath())
                 .filter(path -> path.getParentPath().getLeaf() instanceof LambdaExpressionTree
                         && path.getParentPath().getParentPath().getLeaf() instanceof MethodInvocationTree)
                 .findFirst()
@@ -88,8 +94,6 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
                             state.getSourceForNode(memberSelectTree.getExpression()) + ".map(" + lambdaProviderArg
                                     + " -> " + lambdaBodyChanged + ")");
                 });
-
-        return buildDescription(tree).addFix(fix.build()).build();
     }
 
     @Override

@@ -36,11 +36,11 @@ public final class ReplacementTracker {
      */
     private static boolean alreadyReplaced(Tree tree) {
         if (ALREADY_REPLACED.contains(tree)) {
-            return false;
+            return true;
         }
 
         ALREADY_REPLACED.add(tree);
-        return true;
+        return false;
     }
 
     public static final class SuggestedFixBuilder extends SuggestedFix.Builder {

@@ -19,13 +19,19 @@ package com.palantir.gradle.guide.errorprone.utils;
 import com.google.errorprone.VisitorState;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class TreeUtils {
     public static int startPosition(Tree tree) {
         return ((JCTree) tree).getStartPosition();
+    }
+
+    public static Stream<TreePath> pathToRoot(TreePath start) {
+        return Stream.iterate(start, path -> path.getParentPath() != null, TreePath::getParentPath);
     }
 
     public static Optional<String> expressionToIdentifier(VisitorState state, ExpressionTree expressionTree) {
