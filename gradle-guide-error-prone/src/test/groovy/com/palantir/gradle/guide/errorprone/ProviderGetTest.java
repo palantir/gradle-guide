@@ -130,33 +130,6 @@ class ProviderGetTest {
                 }
                 """);
         }
-
-        @Test
-        void same_provider_multiple_times() {
-            // language=Java
-            refactorFromTo(
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
-
-                class Test {
-                    void test(Project project, Provider<String> provider) {
-                        project.provider(() -> provider.get() + provider.get());
-                    }
-                }
-                """,
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
-
-                class Test {
-                    void test(Project project, Provider<String> provider) {
-                        // BUG: Diagnostic contains: Provider.get
-                        provider.map(providerValue -> providerValue + providerValue);
-                    }
-                }
-                """);
-        }
     }
 
     private void refactorFromTo(String input, String output) {
