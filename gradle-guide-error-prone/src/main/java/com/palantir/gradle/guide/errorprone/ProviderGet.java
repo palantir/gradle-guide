@@ -1,0 +1,110 @@
+/*
+ * (c) Copyright 2023 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.gradle.guide.errorprone;
+
+import com.google.auto.service.AutoService;
+import com.google.errorprone.BugPattern;
+import com.google.errorprone.BugPattern.SeverityLevel;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
+import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TreePath;
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.stream.Stream;
+
+@AutoService(BugChecker.class)
+@BugPattern(
+        severity = SeverityLevel.ERROR,
+        summary = "Do not call `Provider.get`. Instead, pass providers directly to methods that accept them, "
+                + "or transform providers using `Provider.map` or `Provider.flatMap`, or combine providers using "
+                + "`Provider.zip`. Calling `Provider.get` causes Gradle to lose track of implicit dependencies and "
+                + "can lead to timing issues by reading values too early.")
+public final class ProviderGet extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
+    private static final Matcher<ExpressionTree> MATCHER = Matchers.instanceMethod()
+            .onDescendantOfAny("org.gradle.api.provider.Provider")
+            .namedAnyOf("get", "getOrNull", "getOrElse");
+
+    private static final Set<Tree> ALREADY_REPLACED = Collections.newSetFromMap(new WeakHashMap<>());
+
+    @Override
+    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
+        if (!MATCHER.matches(tree, state)) {
+            return Description.NO_MATCH;
+        }
+
+        Description.Builder description = buildDescription(tree);
+        SuggestedFix.Builder fix = SuggestedFix.builder();
+
+        if (!(tree.getMethodSelect() instanceof MemberSelectTree memberSelectTree)) {
+            return description.build();
+        }
+
+        if (!(memberSelectTree.getExpression() instanceof IdentifierTree identifierTree)) {
+            return description.build();
+        }
+
+        String providerIdentifierName = identifierTree.getName().toString();
+
+        Stream.iterate(state.getPath(), path -> path.getParentPath() != null, TreePath::getParentPath)
+                .filter(path -> path.getParentPath().getLeaf() instanceof LambdaExpressionTree
+                        && path.getParentPath().getParentPath().getLeaf() instanceof MethodInvocationTree)
+                .findFirst()
+                .ifPresent(lambdaBodyPath -> {
+                    MethodInvocationTree newProvider = (MethodInvocationTree)
+                            lambdaBodyPath.getParentPath().getParentPath().getLeaf();
+
+                    if (ALREADY_REPLACED.contains(newProvider)) {
+                        return;
+                    }
+
+                    ALREADY_REPLACED.add(newProvider);
+
+                    CharSequence sourceCode = state.getSourceCode();
+
+                    String lambdaProviderArg = providerIdentifierName + "Value";
+
+                    String lambdaBodyChanged = sourceCode.subSequence(
+                                    TreeUtils.startPosition(lambdaBodyPath.getLeaf()),
+                                    TreeUtils.startPosition(memberSelectTree))
+                            + lambdaProviderArg
+                            + sourceCode.subSequence(
+                                    state.getEndPosition(tree), state.getEndPosition(lambdaBodyPath.getLeaf()));
+
+                    fix.replace(
+                            newProvider,
+                            providerIdentifierName + ".map(" + lambdaProviderArg + " -> " + lambdaBodyChanged + ")");
+                });
+
+        return buildDescription(tree).addFix(fix.build()).build();
+    }
+
+    @Override
+    public MoreInfoLink moreInfoLink() {
+        return new MoreInfoHeadingLink("avoiding-unnecessary-configuration.md", "Using `TaskProvider`s");
+    }
+}
