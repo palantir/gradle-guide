@@ -130,6 +130,34 @@ class ProviderGetTest {
                 }
                 """);
         }
+
+        @Test
+        void complex_expression_to_get_provider() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import java.util.List;
+                import org.gradle.api.Project;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Project project, List<Provider<Integer>> providers) {
+                        project.provider(() -> providers.get(0).get() + "hi");
+                    }
+                }
+                """,
+                    """
+                import java.util.List;
+                import org.gradle.api.Project;
+                import org.gradle.api.provider.Provider;
+
+                class Test {
+                    void test(Project project, List<Provider<Integer>> providers) {
+                        providers.get(0).map(providersGet0Value -> providersGet0Value + "hi");
+                    }
+                }
+                """);
+        }
     }
 
     private void refactorFromTo(String input, String output) {

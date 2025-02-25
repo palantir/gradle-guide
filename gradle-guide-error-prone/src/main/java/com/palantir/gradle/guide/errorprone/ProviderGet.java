@@ -26,7 +26,6 @@ import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -64,11 +63,8 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
             return description.build();
         }
 
-        if (!(memberSelectTree.getExpression() instanceof IdentifierTree identifierTree)) {
-            return description.build();
-        }
-
-        String providerIdentifierName = identifierTree.getName().toString();
+        String providerIdentifierName = TreeUtils.expressionToIdentifier(state, memberSelectTree.getExpression())
+                .orElse("providerValue");
 
         Stream.iterate(state.getPath(), path -> path.getParentPath() != null, TreePath::getParentPath)
                 .filter(path -> path.getParentPath().getLeaf() instanceof LambdaExpressionTree
@@ -97,7 +93,8 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
 
                     fix.replace(
                             newProvider,
-                            providerIdentifierName + ".map(" + lambdaProviderArg + " -> " + lambdaBodyChanged + ")");
+                            state.getSourceForNode(memberSelectTree.getExpression()) + ".map(" + lambdaProviderArg
+                                    + " -> " + lambdaBodyChanged + ")");
                 });
 
         return buildDescription(tree).addFix(fix.build()).build();

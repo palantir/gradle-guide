@@ -16,12 +16,55 @@
 
 package com.palantir.gradle.guide.errorprone;
 
+import com.google.errorprone.VisitorState;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.tree.JCTree;
+import java.util.Locale;
+import java.util.Optional;
 
 final class TreeUtils {
     public static int startPosition(Tree tree) {
         return ((JCTree) tree).getStartPosition();
+    }
+
+    public static Optional<String> expressionToIdentifier(VisitorState state, ExpressionTree expressionTree) {
+        String originalSource = state.getSourceForNode(expressionTree);
+
+        if (originalSource == null || originalSource.isEmpty()) {
+            return Optional.empty();
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        char firstChar = originalSource.charAt(0);
+
+        if (Character.isJavaIdentifierStart(firstChar)) {
+            stringBuilder.append(firstChar);
+        }
+
+        boolean previousCharValid = true;
+
+        for (int i = 1; i < originalSource.length(); i++) {
+            char ch = originalSource.charAt(i);
+            boolean validChar = Character.isJavaIdentifierPart(ch);
+            if (validChar) {
+                if (previousCharValid) {
+                    stringBuilder.append(ch);
+                } else {
+                    stringBuilder.append(String.valueOf(ch).toUpperCase(Locale.ROOT));
+                }
+            }
+            previousCharValid = validChar;
+        }
+
+        String identifier = stringBuilder.toString();
+
+        if (identifier.length() < 3) {
+            return Optional.empty();
+        }
+
+        return Optional.of(identifier);
     }
 
     private TreeUtils() {}
