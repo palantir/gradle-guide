@@ -21,20 +21,16 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
-import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.palantir.gradle.guide.errorprone.utils.ReplacementTracker.SuggestedFixBuilder;
 import com.palantir.gradle.guide.errorprone.utils.TreeUtils;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
-import java.util.Collections;
-import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
 @AutoService(BugChecker.class)
@@ -49,8 +45,6 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
             .onDescendantOfAny("org.gradle.api.provider.Provider")
             .namedAnyOf("get", "getOrNull", "getOrElse");
 
-    private static final Set<Tree> ALREADY_REPLACED = Collections.newSetFromMap(new WeakHashMap<>());
-
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state)) {
@@ -58,7 +52,7 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
         }
 
         Description.Builder description = buildDescription(tree);
-        SuggestedFix.Builder fix = SuggestedFix.builder();
+        SuggestedFixBuilder fix = new SuggestedFixBuilder();
 
         if (!bestEffortModeEnabled(state)) {
             return description.build();
@@ -68,9 +62,6 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
             return description.build();
         }
 
-        String providerIdentifierName = TreeUtils.expressionToIdentifier(state, memberSelectTree.getExpression())
-                .orElse("providerValue");
-
         Stream.iterate(state.getPath(), path -> path.getParentPath() != null, TreePath::getParentPath)
                 .filter(path -> path.getParentPath().getLeaf() instanceof LambdaExpressionTree
                         && path.getParentPath().getParentPath().getLeaf() instanceof MethodInvocationTree)
@@ -79,15 +70,11 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
                     MethodInvocationTree newProvider = (MethodInvocationTree)
                             lambdaBodyPath.getParentPath().getParentPath().getLeaf();
 
-                    if (ALREADY_REPLACED.contains(newProvider)) {
-                        return;
-                    }
-
-                    ALREADY_REPLACED.add(newProvider);
-
                     CharSequence sourceCode = state.getSourceCode();
 
-                    String lambdaProviderArg = providerIdentifierName + "Value";
+                    String lambdaProviderArg =
+                            TreeUtils.expressionToIdentifier(state, memberSelectTree.getExpression())
+                                            .orElse("provider") + "Value";
 
                     String lambdaBodyChanged = sourceCode.subSequence(
                                     TreeUtils.startPosition(lambdaBodyPath.getLeaf()),

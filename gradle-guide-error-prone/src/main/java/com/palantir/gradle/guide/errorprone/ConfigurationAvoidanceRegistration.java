@@ -26,6 +26,7 @@ import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.ReplacementTracker.SuggestedFixBuilder;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
@@ -64,7 +65,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         }
 
         Description.Builder description = buildDescription(tree);
-        SuggestedFix.Builder fix = SuggestedFix.builder();
+        SuggestedFixBuilder fix = new SuggestedFixBuilder();
 
         if (!bestEffortModeEnabled(state)) {
             return description.build();
