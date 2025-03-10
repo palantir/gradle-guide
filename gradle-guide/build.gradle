@@ -7,9 +7,6 @@ dependencies {
     compileOnly gradleApi()
 
     implementation 'com.palantir.suppressible-error-prone:gradle-suppressible-error-prone'
-    implementation 'com.google.guava:guava'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
     compileOnly 'org.immutables:value::annotations'
     annotationProcessor 'org.immutables:value'
