@@ -16,10 +16,12 @@
 
 package com.palantir.gradle.guide.internal.errorprone;
 
+import com.google.errorprone.BugPattern.SeverityLevel;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoHeadingLink;
 import com.palantir.gradle.guide.errorprone.utils.AllErrorprones;
 import com.palantir.gradle.guide.internal.markdown.HeadingText;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,9 @@ final class ErrorpronePermalinksGenerator {
             """;
 
         String middle = gradleGuideBugCheckers.stream()
+                // SUGGESTION is used for refactorings only, don't need docs for it
+                .filter(bugChecker -> !bugChecker.defaultSeverity().equals(SeverityLevel.SUGGESTION))
+                .sorted(Comparator.comparing(GradleGuideBugChecker::canonicalName))
                 .map(bugChecker -> {
                     MoreInfoHeadingLink moreInfoHeadingLink = (MoreInfoHeadingLink) bugChecker.moreInfoLink();
                     return """
