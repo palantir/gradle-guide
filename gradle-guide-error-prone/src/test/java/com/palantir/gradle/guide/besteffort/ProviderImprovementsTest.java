@@ -14,35 +14,14 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.besteffort;
 
-import com.google.errorprone.CompilationTestHelper;
+import com.palantir.gradle.guide.errorprone.besteffort.ProviderImprovements;
 import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class ProviderGetTest {
-    private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(ProviderGet.class, getClass());
-
-    @Test
-    void detects_provider_get_usage() {
-        compilationTestHelper
-                .addSourceLines(
-                        "Test.java",
-                        // language=Java
-                        """
-            import org.gradle.api.provider.Provider;
-
-            class Test {
-                void test(Provider<String> provider) {
-                    // BUG: Diagnostic contains: Provider.get
-                    provider.get();
-                }
-            }
-            """)
-                .doTest();
-    }
+class ProviderImprovementsTest {
 
     @Nested
     class GetInsideNewProvider {
@@ -266,6 +245,6 @@ class ProviderGetTest {
     }
 
     private RefactoringValidator refactoringValidator(String... args) {
-        return RefactoringValidator.of(ProviderGet.class, getClass(), args);
+        return RefactoringValidator.of(ProviderImprovements.class, getClass(), args);
     }
 }

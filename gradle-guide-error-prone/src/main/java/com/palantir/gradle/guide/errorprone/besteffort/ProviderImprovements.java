@@ -1,5 +1,5 @@
 /*
- * (c) Copyright 2023 Palantir Technologies Inc. All rights reserved.
+ * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.errorprone.besteffort;
 
 import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
@@ -24,6 +24,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.utils.ReplacementTracker.SuggestedFixBuilder;
 import com.palantir.gradle.guide.errorprone.utils.TreeUtils;
 import com.sun.source.tree.ExpressionTree;
@@ -33,12 +34,14 @@ import com.sun.source.tree.MethodInvocationTree;
 
 @AutoService(BugChecker.class)
 @BugPattern(
-        severity = SeverityLevel.ERROR,
+        severity = SeverityLevel.SUGGESTION,
         summary = "Do not call `Provider.get`. Instead, pass providers directly to methods that accept them, "
                 + "or transform providers using `Provider.map` or `Provider.flatMap`, or combine providers using "
                 + "`Provider.zip`. Calling `Provider.get` causes Gradle to lose track of implicit dependencies and "
                 + "can lead to timing issues by reading values too early.")
-public final class ProviderGet extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
+public final class ProviderImprovements extends GradleGuideBugChecker
+        implements BugChecker.MethodInvocationTreeMatcher {
+
     private static final Matcher<ExpressionTree> MATCHER = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.provider.Provider")
             .namedAnyOf("get", "getOrNull", "getOrElse");
@@ -49,16 +52,12 @@ public final class ProviderGet extends GradleGuideBugChecker implements BugCheck
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        if (!MATCHER.matches(tree, state)) {
+        if (!MATCHER.matches(tree, state) || !bestEffortModeEnabled(state)) {
             return Description.NO_MATCH;
         }
 
         Description.Builder description = buildDescription(tree);
         SuggestedFixBuilder fix = new SuggestedFixBuilder();
-
-        if (!bestEffortModeEnabled(state)) {
-            return description.build();
-        }
 
         if (!(tree.getMethodSelect() instanceof MemberSelectTree memberSelectTree)) {
             return description.build();
