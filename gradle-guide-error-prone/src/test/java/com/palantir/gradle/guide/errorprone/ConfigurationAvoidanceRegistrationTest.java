@@ -106,7 +106,85 @@ class ConfigurationAvoidanceRegistrationTest {
     }
 
     @Test
-    void best_effort_refactors_usages_of_tasks_create_where_the_return_value_is_unused_to_register() {
+    void when_return_value_is_unused_just_use_register_immediately() {
+        bestEffortRefactoringValidator()
+                .addInputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskContainer;
+
+            class Test {
+                static void unused_return_value(TaskContainer tasks) {
+                    tasks.create("lol");
+                    tasks.create("lol", Task.class);
+                    tasks.create("lol", Task.class, new Object());
+                    tasks.create("lol", Task.class, task -> {});
+                }
+            }
+            """)
+                .addOutputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskContainer;
+
+            class Test {
+                static void unused_return_value(TaskContainer tasks) {
+                    tasks.register("lol");
+                    tasks.register("lol", Task.class);
+                    tasks.register("lol", Task.class, new Object());
+                    tasks.register("lol", Task.class, task -> {});
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    @Test
+    void when_return_value_is_used_adds_get_calls_to_usages() {
+        bestEffortRefactoringValidator()
+                .addInputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskContainer;
+
+            class Test {
+                static Task used_return_value(TaskContainer tasks) {
+                    // BUG: Diagnostic contains: use `.register`
+                    Task task = tasks.create("lol");
+                    // BUG: Diagnostic contains: use `.register`
+                    System.out.println(tasks.create("lol", Task.class, t -> {}));
+                    // BUG: Diagnostic contains: use `.register`
+                    return tasks.create("lol", Task.class);
+                }
+            }
+            """)
+                .addOutputLines(
+                        "Test.java",
+                        // language=java
+                        """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskContainer;
+            import org.gradle.api.tasks.TaskProvider;
+
+            class Test {
+                static Task used_return_value(TaskContainer tasks) {
+                    TaskProvider<Task> task = tasks.register("lol");
+                    System.out.println(tasks.register("lol", Task.class, t -> {}).get());
+                    return tasks.register("lol", Task.class).get();
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    @Test
+    void doesnt_touch_calls_with_no_directly_equivalent_register() {
         bestEffortRefactoringValidator()
                 .addInputLines(
                         "Test.java",
@@ -118,22 +196,6 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskContainer;
 
             class Test {
-                static void unused_return_value(TaskContainer tasks) {
-                    tasks.create("lol");
-                    tasks.create("lol", Task.class);
-                    tasks.create("lol", Task.class, new Object());
-                    tasks.create("lol", Task.class, task -> {});
-                }
-
-                static Task used_return_value(TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    Task task = tasks.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    System.out.println(tasks.create("lol", Task.class, t -> {}));
-                    // BUG: Diagnostic contains: use `.register`
-                    return tasks.create("lol", Task.class);
-                }
-
                 static void methods_with_no_directly_equivalent_register(TaskContainer tasks) {
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create("lol", Closure.IDENTITY);
@@ -144,40 +206,7 @@ class ConfigurationAvoidanceRegistrationTest {
                 }
             }
             """)
-                .addOutputLines(
-                        "Test.java",
-                        // language=java
-                        """
-            import groovy.lang.Closure;
-            import java.util.Map;
-            import org.gradle.api.Task;
-            import org.gradle.api.tasks.TaskContainer;
-            import org.gradle.api.tasks.TaskProvider;
-
-            class Test {
-                static void unused_return_value(TaskContainer tasks) {
-                    tasks.register("lol");
-                    tasks.register("lol", Task.class);
-                    tasks.register("lol", Task.class, new Object());
-                    tasks.register("lol", Task.class, task -> {});
-                }
-
-                static Task used_return_value(TaskContainer tasks) {
-                    TaskProvider<Task> task = tasks.register("lol");
-                    System.out.println(tasks.register("lol", Task.class, t -> {}).get());
-                    return tasks.register("lol", Task.class).get();
-                }
-
-                static void methods_with_no_directly_equivalent_register(TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create(Map.of("name", "lol", "type", Task.class));
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
-                }
-            }
-            """)
+                .expectUnchanged()
                 .doTest();
     }
 
