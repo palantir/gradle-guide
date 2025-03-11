@@ -16,12 +16,16 @@
 
 package com.palantir.gradle.guide;
 
+import com.palantir.gradle.suppressibleerrorprone.SuppressibleErrorProneExtension;
 import com.palantir.gradle.suppressibleerrorprone.SuppressibleErrorPronePlugin;
 import java.util.Optional;
+import java.util.Set;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
 public class GradleGuidePlugin implements Plugin<Project> {
+    private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration", "ProviderGet");
+
     @Override
     public final void apply(Project project) {
         project.getPluginManager().withPlugin("java-gradle-plugin", _ignored -> {
@@ -39,5 +43,16 @@ public class GradleGuidePlugin implements Plugin<Project> {
 
         project.getDependencies()
                 .add("errorprone", "com.palantir.gradle.guide:gradle-guide-error-prone" + possibleVersion);
+
+        SuppressibleErrorProneExtension suppressibleErrorProneExtension =
+                project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
+
+        suppressibleErrorProneExtension.getPatchChecks().addAll(PATCH_CHECKS);
+
+        if (project.hasProperty("gradleGuideBestEffortMode")) {
+            suppressibleErrorProneExtension.configureEachErrorProneOptions(errorProneOptions -> {
+                errorProneOptions.option("GradleGuide:BestEffortMode", true);
+            });
+        }
     }
 }

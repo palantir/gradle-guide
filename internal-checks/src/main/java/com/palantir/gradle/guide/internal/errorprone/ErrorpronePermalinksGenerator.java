@@ -16,10 +16,12 @@
 
 package com.palantir.gradle.guide.internal.errorprone;
 
-import com.palantir.gradle.guide.errorprone.AllErrorprones;
+import com.google.errorprone.BugPattern.SeverityLevel;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoHeadingLink;
+import com.palantir.gradle.guide.errorprone.utils.AllErrorprones;
 import com.palantir.gradle.guide.internal.markdown.HeadingText;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,28 +35,33 @@ final class ErrorpronePermalinksGenerator {
             <thead>
             <tr>
             <td>Name</td>
-            <td>Description</td>
             <td>Detailed Link</td>
+            <td>Description</td>
             </tr>
             </thead>
             <tbody>
             """;
 
         String middle = gradleGuideBugCheckers.stream()
+                // SUGGESTION is used for refactorings only, don't need docs for it
+                .filter(bugChecker -> !bugChecker.defaultSeverity().equals(SeverityLevel.SUGGESTION))
+                .sorted(Comparator.comparing(GradleGuideBugChecker::canonicalName))
                 .map(bugChecker -> {
                     MoreInfoHeadingLink moreInfoHeadingLink = (MoreInfoHeadingLink) bugChecker.moreInfoLink();
                     return """
                             <tr>
                             <td>
 
-                            <a id="$NAME">`$NAME`</a>
+                            <a id="$NAME" href="guide/$LINK">`$NAME`</a>
 
                             </td>
                             <td>
-                            $MESSAGE
+                            <a href="guide/$LINK">Please read</a>
                             </td>
                             <td>
-                            <a href="guide/$LINK">More Info</a>
+
+                            $MESSAGE
+
                             </td>
                             </tr>
                             """
