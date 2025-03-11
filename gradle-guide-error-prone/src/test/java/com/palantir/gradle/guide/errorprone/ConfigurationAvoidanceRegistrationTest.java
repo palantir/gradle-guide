@@ -116,7 +116,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskContainer;
 
             class Test {
-                static void unused_return_value(TaskContainer tasks) {
+                static void test(TaskContainer tasks) {
                     tasks.create("lol");
                     tasks.create("lol", Task.class);
                     tasks.create("lol", Task.class, new Object());
@@ -132,7 +132,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskContainer;
 
             class Test {
-                static void unused_return_value(TaskContainer tasks) {
+                static void test(TaskContainer tasks) {
                     tasks.register("lol");
                     tasks.register("lol", Task.class);
                     tasks.register("lol", Task.class, new Object());
@@ -154,7 +154,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskContainer;
 
             class Test {
-                static Task used_return_value(TaskContainer tasks) {
+                static Task test(TaskContainer tasks) {
                     // BUG: Diagnostic contains: use `.register`
                     Task task = tasks.create("lol");
                     // BUG: Diagnostic contains: use `.register`
@@ -173,7 +173,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskProvider;
 
             class Test {
-                static Task used_return_value(TaskContainer tasks) {
+                static Task test(TaskContainer tasks) {
                     TaskProvider<Task> task = tasks.register("lol");
                     System.out.println(tasks.register("lol", Task.class, t -> {}).get());
                     return tasks.register("lol", Task.class).get();
@@ -196,7 +196,7 @@ class ConfigurationAvoidanceRegistrationTest {
             import org.gradle.api.tasks.TaskContainer;
 
             class Test {
-                static void methods_with_no_directly_equivalent_register(TaskContainer tasks) {
+                static void test(TaskContainer tasks) {
                     // BUG: Diagnostic contains: use `.register`
                     tasks.create("lol", Closure.IDENTITY);
                     // BUG: Diagnostic contains: use `.register`
