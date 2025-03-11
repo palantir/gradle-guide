@@ -258,34 +258,18 @@ class ConfigurationAvoidanceRegistrationTest {
         @Nested
         class Configurations {
             @Test
-            void best_effort_refactors_usages_of_configurations_create_where_the_return_value_is_unused_to_register() {
+            void unused_return_value() {
                 bestEffortRefactoringValidator()
                         .addInputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import groovy.lang.Closure;
-                    import org.gradle.api.artifacts.Configuration;
                     import org.gradle.api.artifacts.ConfigurationContainer;
 
                     class Test {
-                        static void unused_return_value(ConfigurationContainer configurations) {
+                        static void test(ConfigurationContainer configurations) {
                             configurations.create("lol");
                             configurations.create("lol", conf -> {});
-                        }
-
-                        static Configuration used_return_value(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
-                            Configuration configuration = configurations.create("lol");
-                            // BUG: Diagnostic contains: use `.register`
-                            System.out.println(configurations.create("lol", conf -> {}));
-                            // BUG: Diagnostic contains: use `.register`
-                            return configurations.create("lol", conf -> {});
-                        }
-
-                        static void methods_with_no_directly_equivalent_register(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
-                            configurations.create("lol", Closure.IDENTITY);
                         }
                     }
                     """)
@@ -293,29 +277,76 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import groovy.lang.Closure;
+                    import org.gradle.api.artifacts.ConfigurationContainer;
+
+                    class Test {
+                        static void test(ConfigurationContainer configurations) {
+                            configurations.register("lol");
+                            configurations.register("lol", conf -> {});
+                        }
+                    }
+                    """)
+                        .doTest();
+            }
+
+            @Test
+            void used_return_value() {
+                bestEffortRefactoringValidator()
+                        .addInputLines(
+                                "Test.java",
+                                // language=java
+                                """
+                    import org.gradle.api.artifacts.Configuration;
+                    import org.gradle.api.artifacts.ConfigurationContainer;
+
+                    class Test {
+                        static Configuration test(ConfigurationContainer configurations) {
+                            // BUG: Diagnostic contains: use `.register`
+                            Configuration configuration = configurations.create("lol");
+                            // BUG: Diagnostic contains: use `.register`
+                            System.out.println(configurations.create("lol", conf -> {}));
+                            // BUG: Diagnostic contains: use `.register`
+                            return configurations.create("lol", conf -> {});
+                        }
+                    }
+                    """)
+                        .addOutputLines(
+                                "Test.java",
+                                // language=java
+                                """
                     import org.gradle.api.NamedDomainObjectProvider;
                     import org.gradle.api.artifacts.Configuration;
                     import org.gradle.api.artifacts.ConfigurationContainer;
 
                     class Test {
-                        static void unused_return_value(ConfigurationContainer configurations) {
-                            configurations.register("lol");
-                            configurations.register("lol", conf -> {});
-                        }
-
-                        static Configuration used_return_value(ConfigurationContainer configurations) {
+                        static Configuration test(ConfigurationContainer configurations) {
                             NamedDomainObjectProvider<Configuration> configuration = configurations.register("lol");
                             System.out.println(configurations.register("lol", conf -> {}).get());
                             return configurations.register("lol", conf -> {}).get();
                         }
+                    }
+                    """)
+                        .doTest();
+            }
 
-                        static void methods_with_no_directly_equivalent_register(ConfigurationContainer configurations) {
+            @Test
+            void methods_with_no_directly_equivalent_register() {
+                bestEffortRefactoringValidator()
+                        .addInputLines(
+                                "Test.java",
+                                // language=java
+                                """
+                    import groovy.lang.Closure;
+                    import org.gradle.api.artifacts.ConfigurationContainer;
+
+                    class Test {
+                        static void test(ConfigurationContainer configurations) {
                             // BUG: Diagnostic contains: use `.register`
                             configurations.create("lol", Closure.IDENTITY);
                         }
                     }
                     """)
+                        .expectUnchanged()
                         .doTest();
             }
         }
