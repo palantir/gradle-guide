@@ -105,8 +105,8 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
             fixBuilder.addImport("org.gradle.api.tasks.TaskProvider");
             fixBuilder.prefixWith(variableTree.getType(), "TaskProvider<");
         } else {
-            fixBuilder.addImport("org.gradle.api.provider.Provider");
-            fixBuilder.prefixWith(variableTree.getType(), "Provider<");
+            fixBuilder.addImport("org.gradle.api.NamedDomainObjectProvider");
+            fixBuilder.prefixWith(variableTree.getType(), "NamedDomainObjectProvider<");
         }
 
         fixBuilder.postfixWith(variableTree.getType(), ">");

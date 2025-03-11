@@ -218,9 +218,9 @@ class ConfigurationAvoidanceRegistrationTest {
                         // language=java
                         """
             import groovy.lang.Closure;
+            import org.gradle.api.NamedDomainObjectProvider;
             import org.gradle.api.artifacts.Configuration;
             import org.gradle.api.artifacts.ConfigurationContainer;
-            import org.gradle.api.provider.Provider;
 
             class Test {
                 static void unused_return_value(ConfigurationContainer configurations) {
@@ -229,7 +229,7 @@ class ConfigurationAvoidanceRegistrationTest {
                 }
 
                 static Configuration used_return_value(ConfigurationContainer configurations) {
-                    Provider<Configuration> configuration = configurations.register("lol");
+                    NamedDomainObjectProvider<Configuration> configuration = configurations.register("lol");
                     System.out.println(configurations.register("lol", conf -> {}).get());
                     return configurations.register("lol", conf -> {}).get();
                 }
