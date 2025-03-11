@@ -44,7 +44,7 @@ public final class ProviderImprovements extends GradleGuideBugChecker
 
     private static final Matcher<ExpressionTree> MATCHER = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.provider.Provider")
-            .namedAnyOf("get", "getOrNull", "getOrElse");
+            .namedAnyOf("get");
 
     private static final Matcher<ExpressionTree> NEW_PROVIDER_MATCHER = Matchers.instanceMethod()
             .onDescendantOfAny("org.gradle.api.Project", "org.gradle.api.provider.ProviderFactory")
