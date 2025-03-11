@@ -82,7 +82,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         Tree leaf = parentPath.getLeaf();
 
         if (leaf instanceof VariableTree variableTree) {
-            replaceVariableDeclartionTypeWithProvider(state, fix, variableTree);
+            replaceVariableDeclarationTypeWithProvider(state, fix, variableTree);
             replaceVariableUsagesWithTaskProviderGet(fix, parentPath);
         } else if (leaf instanceof ExpressionTree || leaf instanceof ReturnTree) {
             fix.postfixWith(tree, ".get()");
@@ -95,7 +95,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         return description.addFix(fix.build()).build();
     }
 
-    private static void replaceVariableDeclartionTypeWithProvider(
+    private static void replaceVariableDeclarationTypeWithProvider(
             VisitorState state, SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
 
         boolean isTask = state.getTypes()
