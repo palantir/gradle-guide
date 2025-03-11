@@ -32,6 +32,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.ReturnTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -78,18 +79,18 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         }
 
         TreePath parentPath = state.getPath().getParentPath();
-        if (parentPath.getLeaf() instanceof VariableTree variableTree) {
+        Tree leaf = parentPath.getLeaf();
+
+        if (leaf instanceof VariableTree variableTree) {
             replaceVariableDeclartionTypeWithProvider(state, fix, variableTree);
             replaceVariableUsagesWithTaskProviderGet(fix, parentPath);
+        } else if (leaf instanceof ExpressionTree || leaf instanceof ReturnTree) {
+            fix.postfixWith(tree, ".get()");
         }
 
         fix.replace(
                 tree.getMethodSelect(),
                 state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register");
-
-        if (parentPath.getLeaf() instanceof ExpressionTree || parentPath.getLeaf() instanceof ReturnTree) {
-            fix.postfixWith(tree, ".get()");
-        }
 
         return description.addFix(fix.build()).build();
     }
