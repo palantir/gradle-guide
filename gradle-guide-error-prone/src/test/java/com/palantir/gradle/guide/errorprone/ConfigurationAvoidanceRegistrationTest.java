@@ -24,6 +24,7 @@ class ConfigurationAvoidanceRegistrationTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(ConfigurationAvoidanceRegistration.class, getClass());
 
+    @SuppressWarnings("for-rollout:MisformattedTestData")
     @Test
     void matches_tasks_create() {
         compilationTestHelper.addSourceLines(
@@ -58,6 +59,7 @@ class ConfigurationAvoidanceRegistrationTest {
         compilationTestHelper.doTest();
     }
 
+    @SuppressWarnings("for-rollout:MisformattedTestData")
     @Test
     void matches_configurations_create() {
         compilationTestHelper.addSourceLines(
@@ -82,6 +84,7 @@ class ConfigurationAvoidanceRegistrationTest {
         compilationTestHelper.doTest();
     }
 
+    @SuppressWarnings("for-rollout:MisformattedTestData")
     @Test
     void matches_sourcesets_create() {
         compilationTestHelper.addSourceLines(

@@ -17,7 +17,6 @@
 package com.palantir.gradle.guide.errorprone.utils;
 
 import com.google.errorprone.fixes.SuggestedFix;
-import com.google.errorprone.fixes.SuggestedFix.Builder;
 import com.sun.source.tree.Tree;
 import java.util.Collections;
 import java.util.Set;
@@ -45,7 +44,7 @@ public final class ReplacementTracker {
 
     public static final class SuggestedFixBuilder extends SuggestedFix.Builder {
         @Override
-        public Builder replace(Tree node, String replaceWith) {
+        public SuggestedFix.Builder replace(Tree node, String replaceWith) {
             if (alreadyReplaced(node)) {
                 return this;
             } else {
@@ -54,7 +53,8 @@ public final class ReplacementTracker {
         }
 
         @Override
-        public Builder replace(Tree node, String replaceWith, int startPosAdjustment, int endPosAdjustment) {
+        public SuggestedFix.Builder replace(
+                Tree node, String replaceWith, int startPosAdjustment, int endPosAdjustment) {
             if (alreadyReplaced(node)) {
                 return this;
             } else {
