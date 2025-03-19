@@ -98,7 +98,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
     private static void replaceVariableDeclarationTypeWithProvider(
             VisitorState state, SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
 
-        @SuppressWarnings("for-rollout:MemoizeConstantVisitorStateLookups")
+        @SuppressWarnings({"for-rollout:MemoizeConstantVisitorStateLookups", "for-rollout:RemoveRolloutSuppressions"})
         boolean isTask = state.getTypes()
                 .isSubtype(ASTHelpers.getType(variableTree.getType()), state.getTypeFromString("org.gradle.api.Task"));
 
