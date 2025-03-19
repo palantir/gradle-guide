@@ -29,7 +29,7 @@ public record LinkTargetInfo(String label, Path targetFile, Optional<Anchor> anc
     }
 
     private String relativePathAndAnchor(Path from) {
-        @SuppressWarnings("for-rollout:NullAway")
+        @SuppressWarnings({"for-rollout:NullAway", "for-rollout:RemoveRolloutSuppressions"})
         String relativePath = from.getParent().relativize(targetFile).toString();
         String possibleAnchor = anchor.map(anc -> "#" + anc).orElse("");
         return relativePath + possibleAnchor;

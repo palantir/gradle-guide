@@ -32,7 +32,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return headings.stream().map(Heading::text).map(HeadingText::text).toList();
     }
 
-    @SuppressWarnings("for-rollout:MissingOverride")
+    @SuppressWarnings({"for-rollout:MissingOverride", "for-rollout:RemoveRolloutSuppressions"})
     public String title() {
         return title;
     }
