@@ -39,7 +39,7 @@ jobs:
                 exit 0
             fi
 
-            if [ -z "${CIRCLE_TAG:+x}" ]; then
+            if [ -z "${GIT_VERSION:+x}" ]; then
                 echo "Non-tag build, deleting all tags which point to HEAD: [${ALL_TAGS/$'\n'/,}]"
                 echo "$ALL_TAGS" | while read -r TAG; do git tag -d "$TAG" 1>/dev/null; done
                 exit 0

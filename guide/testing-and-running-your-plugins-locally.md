@@ -20,9 +20,9 @@ When you made your repo, you should have a test (an `IntegrationSpec`) already e
 
 You do not need to have your code merged to developed and released to test in other repos. There is a simple way to do this locally:
 
-1. In your repo, run the command `CIRCLE_TAG=999 ./gradlew pTML`.
+1. In your repo, run the command `GIT_VERSION=999 ./gradlew pTML`.
    1. This runs the `publishToMavenLocal` task, which will locally publish your gradle plugin to the maven local repo at `~/.m2/repository`.
-   2. We set `CIRCLE_TAG=999` as an easy way to set the version, otherwise it changes each time. `999` will be greater than any published version too, meaning our code will always be used. 
+   2. We set `GIT_VERSION=999` as an easy way to set the version, otherwise it changes each time. `999` will be greater than any published version too, meaning our code will always be used. 
 2. In the repo you wish to test in, add `mavenLocal()` to `repositories` block in the `buildscript` of the root `build.gradle`:
     ```diff
     buildscript {
@@ -58,7 +58,7 @@ If you are making lots of changes in another repo, first consider: should you be
 
 If you really do need to iterate locally, you can use the `--continuous`/`-t` gradle flag to your advantage.
 
-Instead of step 1, run `CIRCLE_TAG=999 ./gradlew pTML -t`.
+Instead of step 1, run `GIT_VERSION=999 ./gradlew pTML -t`.
 
 This will automatically republish the plugin each time you make a change in your plugin repo. Then you can rerun your Gradle invocation in the target repo without having to manually run `./gradlew pTML` again.
 
@@ -133,7 +133,7 @@ This can be insightful to see what gradle is _actually_ doing in a build, but of
 
 Sometimes, you really do need to test your plugin in a CI environment. In every circumstance should prefer testing and running locally if possible. But we do have a way to do this internally:
 
-1. Run `CIRCLE_TAG=999-some-unique-id ./gradlew pTAS`
+1. Run `GIT_VERSION=999-some-unique-id ./gradlew pTAS`
    1. This will publish to place that can be accessed by CI, but artifacts will expire within days.
    2. Every time you publish you **must** the change the `some-unique-id` part. Otherwise, CI nodes will use the previous version that is in their Gradle caches and not your new change. 
 2. Do step 2 in the "Running your plugin in other repos locally" section, except instead of `mavenLocal()` add:
