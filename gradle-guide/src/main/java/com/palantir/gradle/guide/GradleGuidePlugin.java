@@ -22,13 +22,23 @@ import java.util.Optional;
 import java.util.Set;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPlugin;
 
 public class GradleGuidePlugin implements Plugin<Project> {
     private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration", "ProviderGet");
 
     @Override
-    public final void apply(Project project) {
-        project.getPluginManager().withPlugin("java-gradle-plugin", _ignored -> {
+    public final void apply(Project rootProject) {
+        if (!rootProject.equals(rootProject.getRootProject())) {
+            throw new IllegalStateException(
+                    GradleGuidePlugin.class.getSimpleName() + " must be applied to the root project");
+        }
+
+        rootProject.allprojects(GradleGuidePlugin::applyToProject);
+    }
+
+    private static void applyToProject(Project project) {
+        project.getPluginManager().withPlugin("java", _ignored -> {
             applyToJavaProject(project);
         });
     }
@@ -41,8 +51,23 @@ public class GradleGuidePlugin implements Plugin<Project> {
                 .map(version -> ":" + version)
                 .orElse("");
 
-        project.getDependencies()
-                .add("errorprone", "com.palantir.gradle.guide:gradle-guide-error-prone" + possibleVersion);
+        project.getConfigurations().named("errorprone", errorProneConfig -> {
+            errorProneConfig
+                    .getDependencies()
+                    .addAllLater(project.getConfigurations()
+                            .named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                            .map(compileClasspath -> {
+                                if (compileClasspath
+                                        .getAllDependencies()
+                                        .contains(project.getDependencies().gradleApi())) {
+                                    return Set.of(project.getDependencies()
+                                            .create("com.palantir.gradle.guide:gradle-guide-error-prone"
+                                                    + possibleVersion));
+                                } else {
+                                    return Set.of();
+                                }
+                            }));
+        });
 
         SuppressibleErrorProneExtension suppressibleErrorProneExtension =
                 project.getExtensions().getByType(SuppressibleErrorProneExtension.class);

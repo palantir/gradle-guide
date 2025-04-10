@@ -19,35 +19,55 @@ package com.palantir.gradle.guide
 import nebula.test.IntegrationSpec
 
 class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
+    File gradleApiSubproject
+    File javaWithoutGradleApiSubproject
+
     def setup() {
         // language=Gradle
         buildFile << '''
-            apply plugin: 'java-gradle-plugin'
             apply plugin: 'com.palantir.gradle-guide'
             
-            repositories {
-                mavenCentral()
-                mavenLocal()
-            }
-            
-            dependencies {
-                constraints {
-                    errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
+            allprojects {
+                repositories {
+                    mavenCentral()
+                    mavenLocal()
                 }
                 
-                errorprone 'com.google.errorprone:error_prone_core:2.36.0'
-            }
-            
-            suppressibleErrorProne {
-                // Our test source files are placed under `build/nebulatest`, which is ignored by default
-                configureEachErrorProneOptions {
-                    it.excludedPaths.unset()
+                apply plugin: 'java'
+             
+                pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
+                    suppressibleErrorProne {
+                       // Our test source files are placed under `build/nebulatest`, which is ignored by default
+                        configureEachErrorProneOptions {
+                            it.excludedPaths.unset()
+                        }   
+                    }
+                    
+                    dependencies {
+                        constraints {
+                            errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
+                        }
+                        
+                        errorprone 'com.google.errorprone:error_prone_core:2.36.0'
+                    }
                 }
             }
         '''.stripIndent(true)
+
+        gradleApiSubproject = addSubproject('gradleApi')
+        def gradleApiSubprojectBuildFile = file('build.gradle', gradleApiSubproject)
+
+        // language=Gradle
+        gradleApiSubprojectBuildFile << '''
+            dependencies {
+                compileOnly gradleApi()
+            }
+        '''.stripIndent(true)
+
+        javaWithoutGradleApiSubproject = addSubproject('javaWithoutGradleApi')
     }
 
-    def 'registers errorprones correctly'() {
+    def 'registers errorprones correctly in subproject that uses gradleApi'() {
         // language=Java
         writeJavaSourceFile('''
             import org.gradle.api.Project;
@@ -57,13 +77,21 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                     project.getTasks().create("bad");
                 }
             }
-        '''.stripIndent(true))
+        '''.stripIndent(true), gradleApiSubproject)
 
         when:
-        def stderr = runTasksWithFailure('compileJava').standardError
+        def stderr = runTasksWithFailure(':gradleApi:compileJava').standardError
 
         then:
         stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
+    }
+
+    def 'does not enable plugin in java subproject that doesnt use gradleApi'() {
+        when:
+        def stderr = runTasksSuccessfully(':javaWithoutGradleApi:compileJava').standardError
+
+        then:
+        !stderr.contains('error: [ConfigurationAvoidanceRegistration]')
     }
 
 }
