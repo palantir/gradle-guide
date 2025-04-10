@@ -19,9 +19,6 @@ package com.palantir.gradle.guide
 import nebula.test.IntegrationSpec
 
 class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
-    File gradleApiSubproject
-    File javaWithoutGradleApiSubproject
-
     def setup() {
         // language=Gradle
         buildFile << '''
@@ -53,8 +50,10 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                 }
             }
         '''.stripIndent(true)
+    }
 
-        gradleApiSubproject = addSubproject('gradleApi')
+    def 'registers errorprones correctly in subproject that uses gradleApi'() {
+        def gradleApiSubproject = addSubproject('gradleApi')
         def gradleApiSubprojectBuildFile = file('build.gradle', gradleApiSubproject)
 
         // language=Gradle
@@ -64,10 +63,6 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
             }
         '''.stripIndent(true)
 
-        javaWithoutGradleApiSubproject = addSubproject('javaWithoutGradleApi')
-    }
-
-    def 'registers errorprones correctly in subproject that uses gradleApi'() {
         // language=Java
         writeJavaSourceFile('''
             import org.gradle.api.Project;
@@ -86,12 +81,57 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
     }
 
-    def 'does not enable plugin in java subproject that doesnt use gradleApi'() {
+    def 'registers errorprones correctly in subproject that uses java gradle plugin'() {
+        def javaGradlePluginSubproject = addSubproject('javaGradlePlugin')
+        def javaGradlePluginSubprojectBuildFile = file('build.gradle', javaGradlePluginSubproject)
+
+        // language=Gradle
+        javaGradlePluginSubprojectBuildFile << '''
+            apply plugin: 'java-gradle-plugin'
+        '''.stripIndent(true)
+
+        // language=Java
+        writeJavaSourceFile('''
+            import org.gradle.api.Project;
+
+            final class Bad {
+                public void apply(Project project) {
+                    project.getTasks().create("bad");
+                }
+            }
+        '''.stripIndent(true), javaGradlePluginSubproject)
+
         when:
-        def stderr = runTasksSuccessfully(':javaWithoutGradleApi:compileJava').standardError
+        def stderr = runTasksWithFailure(':javaGradlePlugin:compileJava').standardError
 
         then:
-        !stderr.contains('error: [ConfigurationAvoidanceRegistration]')
+        stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
+    }
+
+    def 'does not enable plugin in java subproject that doesnt use gradleApi'() {
+        def javaWithoutGradleApiSubproject = addSubproject('javaWithoutGradleApi')
+        def javaWithoutGradleApiSubprojectBuildFile = file('build.gradle', javaWithoutGradleApiSubproject)
+
+        // language=Gradle
+        javaWithoutGradleApiSubprojectBuildFile << '''
+            tasks.register('hasGradleGuideErrorProneDep') {
+                inputs.property('hasDep', configurations.named('errorprone').map { 
+                    it.dependencies.stream()
+                        .map { it.toString() }
+                        .anyMatch { it.startsWith('com.palantir.gradle.guide:gradle-guide-error-prone') }
+                })
+                
+                doLast {
+                    println "Has Gradle Guide ErrorProne dep: ${inputs.properties.hasDep}"
+                }
+            }
+        '''.stripIndent(true)
+
+        when:
+        def stderr = runTasksSuccessfully(':javaWithoutGradleApi:hasGradleGuideErrorProneDep').standardOutput
+
+        then:
+        stderr.contains('Has Gradle Guide ErrorProne dep: false')
     }
 
 }
