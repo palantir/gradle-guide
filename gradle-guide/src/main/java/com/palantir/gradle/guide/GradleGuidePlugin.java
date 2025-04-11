@@ -46,20 +46,22 @@ public class GradleGuidePlugin implements Plugin<Project> {
     private static void applyToJavaProject(Project project) {
         project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
 
-        String possibleVersion = Optional.ofNullable(
-                        GradleGuidePlugin.class.getPackage().getImplementationVersion())
-                .map(version -> ":" + version)
-                .orElse("");
-
         project.getConfigurations().named("errorprone", errorProneConfig -> {
+            String possibleVersion = Optional.ofNullable(
+                            GradleGuidePlugin.class.getPackage().getImplementationVersion())
+                    .map(version -> ":" + version)
+                    .orElse("");
+
             errorProneConfig
                     .getDependencies()
                     .addAllLater(project.getConfigurations()
                             .named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
                             .map(compileClasspath -> {
-                                if (compileClasspath
+                                boolean anyCompilationConfigurationHasGradleApiDep = compileClasspath
                                         .getAllDependencies()
-                                        .contains(project.getDependencies().gradleApi())) {
+                                        .contains(project.getDependencies().gradleApi());
+
+                                if (anyCompilationConfigurationHasGradleApiDep) {
                                     return Set.of(project.getDependencies()
                                             .create("com.palantir.gradle.guide:gradle-guide-error-prone"
                                                     + possibleVersion));
