@@ -226,6 +226,35 @@ class ProviderImprovementsTest {
         }
     }
 
+    @Nested
+    class DependsOnProviderGet {
+        @Test
+        void depends_on_task_provider_get() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider) {
+                        task.dependsOn(provider.get());
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider) {
+                        task.dependsOn(provider);
+                    }
+                }
+                """);
+        }
+    }
+
     private void refactorFromTo(String input, String output) {
         bestEffortRefactoringValidator()
                 .addInputLines("Test.java", input)
