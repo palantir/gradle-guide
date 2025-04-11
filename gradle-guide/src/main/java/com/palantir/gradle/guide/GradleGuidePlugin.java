@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPlugin;
 
 public class GradleGuidePlugin implements Plugin<Project> {
     private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration", "ProviderGet");
@@ -37,79 +38,48 @@ public class GradleGuidePlugin implements Plugin<Project> {
     }
 
     private static void applyToProject(Project project) {
-        project.getPluginManager().withPlugin("java-library", _ignored -> {
+        project.getPluginManager().withPlugin("java", _ignored -> {
             applyToJavaProject(project);
         });
     }
 
     private static void applyToJavaProject(Project project) {
-        project.getConfigurations().getByName("api").getDependencies().whenObjectAdded(dependency -> {
-            if (!dependency.equals(project.getDependencies().gradleApi())) {
-                return;
-            }
+        project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
 
-            project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
+        project.getConfigurations().named("errorprone", errorProneConfig -> {
+            String possibleVersion = Optional.ofNullable(
+                            GradleGuidePlugin.class.getPackage().getImplementationVersion())
+                    .map(version -> ":" + version)
+                    .orElse("");
 
-            project.getConfigurations().named("errorprone", errorProneConfig -> {
-                String possibleVersion = Optional.ofNullable(
-                                GradleGuidePlugin.class.getPackage().getImplementationVersion())
-                        .map(version -> ":" + version)
-                        .orElse("");
+            errorProneConfig
+                    .getDependencies()
+                    .addAllLater(project.getConfigurations()
+                            .named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                            .map(compileClasspath -> {
+                                boolean anyCompilationConfigurationHasGradleApiDep = compileClasspath
+                                        .getAllDependencies()
+                                        .contains(project.getDependencies().gradleApi());
 
-                errorProneConfig
-                        .getDependencies()
-                        .add(project.getDependencies()
-                                .create("com.palantir.gradle.guide:gradle-guide-error-prone" + possibleVersion));
-            });
-
-            SuppressibleErrorProneExtension suppressibleErrorProneExtension =
-                    project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
-
-            suppressibleErrorProneExtension.getPatchChecks().addAll(PATCH_CHECKS);
-
-            if (project.hasProperty("gradleGuideBestEffortMode")) {
-                suppressibleErrorProneExtension.configureEachErrorProneOptions(errorProneOptions -> {
-                    errorProneOptions.option("GradleGuide:BestEffortMode", true);
-                });
-            }
+                                if (anyCompilationConfigurationHasGradleApiDep) {
+                                    return Set.of(project.getDependencies()
+                                            .create("com.palantir.gradle.guide:gradle-guide-error-prone"
+                                                    + possibleVersion));
+                                } else {
+                                    return Set.of();
+                                }
+                            }));
         });
 
-        //        project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
-        //
-        //        project.getConfigurations().named("errorprone", errorProneConfig -> {
-        //            String possibleVersion = Optional.ofNullable(
-        //                            GradleGuidePlugin.class.getPackage().getImplementationVersion())
-        //                    .map(version -> ":" + version)
-        //                    .orElse("");
-        //
-        //            errorProneConfig
-        //                    .getDependencies()
-        //                    .addAllLater(project.getConfigurations()
-        //                            .named(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
-        //                            .map(compileClasspath -> {
-        //                                boolean anyCompilationConfigurationHasGradleApiDep = compileClasspath
-        //                                        .getAllDependencies()
-        //                                        .contains(project.getDependencies().gradleApi());
-        //
-        //                                if (anyCompilationConfigurationHasGradleApiDep) {
-        //                                    return Set.of(project.getDependencies()
-        //                                            .create("com.palantir.gradle.guide:gradle-guide-error-prone"
-        //                                                    + possibleVersion));
-        //                                } else {
-        //                                    return Set.of();
-        //                                }
-        //                            }));
-        //        });
-        //
-        //        SuppressibleErrorProneExtension suppressibleErrorProneExtension =
-        //                project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
-        //
-        //        suppressibleErrorProneExtension.getPatchChecks().addAll(PATCH_CHECKS);
-        //
-        //        if (project.hasProperty("gradleGuideBestEffortMode")) {
-        //            suppressibleErrorProneExtension.configureEachErrorProneOptions(errorProneOptions -> {
-        //                errorProneOptions.option("GradleGuide:BestEffortMode", true);
-        //            });
-        //        }
+        SuppressibleErrorProneExtension suppressibleErrorProneExtension =
+                project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
+
+        suppressibleErrorProneExtension.getPatchChecks().addAll(PATCH_CHECKS);
+
+        if (project.hasProperty("gradleGuideBestEffortMode")) {
+            suppressibleErrorProneExtension.configureEachErrorProneOptions(errorProneOptions -> {
+                errorProneOptions.option("GradleGuide:BestEffortMode", true);
+            });
+        }
     }
 }
