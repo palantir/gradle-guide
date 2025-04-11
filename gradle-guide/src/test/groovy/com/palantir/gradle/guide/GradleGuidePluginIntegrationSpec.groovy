@@ -107,31 +107,4 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         then:
         stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
     }
-
-    def 'does not enable plugin in java subproject that doesnt use gradleApi'() {
-        def javaWithoutGradleApiSubproject = addSubproject('javaWithoutGradleApi')
-        def javaWithoutGradleApiSubprojectBuildFile = file('build.gradle', javaWithoutGradleApiSubproject)
-
-        // language=Gradle
-        javaWithoutGradleApiSubprojectBuildFile << '''
-            tasks.register('hasGradleGuideErrorProneDep') {
-                inputs.property('hasDep', configurations.named('errorprone').map { 
-                    it.dependencies.stream()
-                        .map { it.toString() }
-                        .anyMatch { it.startsWith('com.palantir.gradle.guide:gradle-guide-error-prone') }
-                })
-                
-                doLast {
-                    println "Has Gradle Guide ErrorProne dep: ${inputs.properties.hasDep}"
-                }
-            }
-        '''.stripIndent(true)
-
-        when:
-        def stderr = runTasksSuccessfully(':javaWithoutGradleApi:hasGradleGuideErrorProneDep').standardOutput
-
-        then:
-        stderr.contains('Has Gradle Guide ErrorProne dep: false')
-    }
-
 }
