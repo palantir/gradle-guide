@@ -27,13 +27,30 @@ public class GradleGuidePlugin implements Plugin<Project> {
     private static final Set<String> PATCH_CHECKS = Set.of("ConfigurationAvoidanceRegistration", "ProviderGet");
 
     @Override
-    public final void apply(Project project) {
-        project.getPluginManager().withPlugin("java-gradle-plugin", _ignored -> {
+    public final void apply(Project rootProject) {
+        if (!rootProject.equals(rootProject.getRootProject())) {
+            throw new IllegalStateException(
+                    GradleGuidePlugin.class.getSimpleName() + " must be applied to the root project");
+        }
+
+        rootProject.allprojects(GradleGuidePlugin::applyToProject);
+    }
+
+    private static void applyToProject(Project project) {
+        project.getPluginManager().withPlugin("java", _ignored -> {
             applyToJavaProject(project);
         });
     }
 
     private static void applyToJavaProject(Project project) {
+        // We simply apply the gradle-guide errorprones to every project in the repo, even if they do not
+        // have a gradleApi() dependency. It's very hard to conditionally apply the suppressible
+        // errorprone plugin (the best you can do is either put a whenObjectAdded on the dependencies of
+        // each configuration that contributes to compileClasspath, which is bad as it realises all the deps,
+        // or always apply the suppressible error prone plugin and conditionally lazily add our errorprone
+        // dep based on state the compileClasspath, which may not line up correctly timing wise).
+        // So we just apply it unconditionally - it should be fine to have errorprones that work on non-gradle types
+        // running provided we make sure they are not too expensive.
         project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
 
         String possibleVersion = Optional.ofNullable(
