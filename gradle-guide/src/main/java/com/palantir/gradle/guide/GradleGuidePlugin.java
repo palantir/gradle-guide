@@ -44,6 +44,16 @@ public class GradleGuidePlugin implements Plugin<Project> {
     }
 
     private static void applyToJavaProject(Project project) {
+        // We want to only use the gradle-guide error-prones if the project has a gradleApi()
+        // dependency. To use the error-prones, we need to apply the SuppressibleErrorPronePlugin,
+        // but it's actually kinda tricky to conditionally apply this based on the dependency.
+        // The "best" we could do is for each configuration that contributes to compileClasspath,
+        // use whenObjectAdded to detect when the gradleApi() dependency is added, then do everything.
+        // However, this forces us to realise all the dependencies, which is bad and could cause other
+        // dependencies to not be added lazily enough. So instead, we always apply the
+        // suppressible-error-prone plugin (it doesn't really do anything without an error_prone_core or
+        // other errorprone source jar on the classpath), then conditionally lazily add our errorprone
+        // dependency depending on whether the gradleApi() dependency is present.
         project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
 
         project.getConfigurations().named("errorprone", errorProneConfig -> {
