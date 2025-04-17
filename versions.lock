@@ -18,7 +18,7 @@ com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.5.0 (1 c
 io.github.eisop:dataflow-errorprone:3.41.0-eisop1 (2 constraints: 9c2c4f1c)
 io.github.java-diff-utils:java-diff-utils:4.12 (1 constraints: b412c908)
 javax.inject:javax.inject:1 (1 constraints: 201230d1)
-net.ltgt.gradle:gradle-errorprone-plugin:4.1.0 (2 constraints: 01221379)
+net.ltgt.gradle:gradle-errorprone-plugin:4.2.0 (2 constraints: 02226479)
 one.util:streamex:0.8.3 (1 constraints: 0d050636)
 org.checkerframework:checker-qual:3.49.2 (4 constraints: 53328e0d)
 org.immutables:value:2.10.1 (1 constraints: 3605303b)
