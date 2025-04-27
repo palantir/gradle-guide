@@ -80,6 +80,10 @@ final class ErrorpronePermalinksGenerator {
         return prefix + middle + suffix;
     }
 
+    public static String generate() {
+        return generate(AllErrorprones.allGradleGuideErrorprones().collect(Collectors.toSet()));
+    }
+
     private static String renderMoreInfoLink(MoreInfoLink moreInfoLink) {
         if (moreInfoLink instanceof MoreInfoPageLink pageLink) {
             return pageLink.mdFileName();
@@ -89,10 +93,6 @@ final class ErrorpronePermalinksGenerator {
 
         throw new UnsupportedOperationException(
                 "Cannot render " + moreInfoLink.getClass().getSimpleName());
-    }
-
-    public static String generate() {
-        return generate(AllErrorprones.allGradleGuideErrorprones().collect(Collectors.toSet()));
     }
 
     private ErrorpronePermalinksGenerator() {}
