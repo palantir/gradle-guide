@@ -17,6 +17,8 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.auto.service.AutoService;
+import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.ImmutableGraph;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
@@ -30,10 +32,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.util.TreePathScanner;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import com.sun.tools.javac.code.Symbol;
 
 @AutoService(BugChecker.class)
 @BugPattern(severity = SeverityLevel.ERROR, summary = ".get bad TODO CHANGE THIS")
@@ -50,32 +49,38 @@ final class TaskActionTimeSafety extends BugChecker implements MethodInvocationT
             return Description.NO_MATCH;
         }
 
-        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(state.findEnclosing(MethodTree.class));
+        Symbol owner = ASTHelpers.getSymbol(state.findEnclosing(MethodTree.class)).owner;
 
-        Set<MethodTree> callers = new HashSet<>();
+        ImmutableGraph.Builder<Symbol> callGraphBuilder =
+                GraphBuilder.directed().immutable();
 
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
-                if (ASTHelpers.getSymbol(node.getMethodSelect()).equals(enclosingMethod)) {
-                    Optional.ofNullable(state.withPath(getCurrentPath()).findEnclosing(MethodTree.class))
-                            .ifPresent(callers::add);
+                Symbol methodCalled = ASTHelpers.getSymbol(node.getMethodSelect());
+                if (methodCalled.owner.equals(owner)) {
+                    callGraphBuilder.putEdge(
+                            ASTHelpers.getSymbol(
+                                    state.withPath(getCurrentPath()).findEnclosing(MethodTree.class)),
+                            methodCalled);
                 }
                 return super.visitMethodInvocation(node, unused);
             }
         }.scan(state.getPath().getCompilationUnit(), null);
 
-        if (callers.isEmpty()) {
+        ImmutableGraph<Symbol> callGraph = callGraphBuilder.build();
+
+        if (callGraph.edges().isEmpty()) {
             return buildDescription(tree).build();
         }
 
         // Check if all callers have the @TaskAction annotation
-        boolean allCallersHaveTaskAction =
-                callers.stream().allMatch(TaskActionTimeSafety::methodHasTaskActionAnnotation);
-
-        if (allCallersHaveTaskAction) {
-            return Description.NO_MATCH;
-        }
+        //        boolean allCallersHaveTaskAction =
+        //                callers.stream().allMatch(TaskActionTimeSafety::methodHasTaskActionAnnotation);
+        //
+        //        if (allCallersHaveTaskAction) {
+        //            return Description.NO_MATCH;
+        //        }
 
         return buildDescription(tree).build();
     }
