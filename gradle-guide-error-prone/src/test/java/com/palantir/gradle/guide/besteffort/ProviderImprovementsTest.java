@@ -283,6 +283,32 @@ class ProviderImprovementsTest {
                 }
                 """);
         }
+
+        @Test
+        void multiple_task_providers_get() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
+                        task.dependsOn(provider1.get(), provider2.get());
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
+                        task.dependsOn(provider1, provider2);
+                    }
+                }
+                """);
+        }
     }
 
     private void refactorFromTo(String input, String output) {
