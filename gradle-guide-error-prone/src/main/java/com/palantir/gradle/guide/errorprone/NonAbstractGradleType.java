@@ -32,11 +32,11 @@ import javax.lang.model.element.Modifier;
 @BugPattern(
         severity = SeverityLevel.ERROR,
         summary = "When defining a custom Task or Extension, you should make it an abstract class "
-                + " and make abstract getter methods of each of the properties and other "
+                + "with abstract getter methods of each of the properties and other "
                 + "gradle containers (eg NamedDomainObjectSet). Gradle will then automatically "
-                + "create the properties and containers, removing a lot of boilerplate. If you declare "
-                + "a `public abstract Property<Integer> getFoo()`, this will automatically make the "
-                + "`foo = 3` groovy syntax work of the box.")
+                + "create the properties and containers, removing a lot of boilerplate. Additionally, "
+                + "as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically "
+                + "make the `foo = 3` groovy syntax work of the box.")
 public final class NonAbstractGradleType extends GradleGuideBugChecker implements BugChecker.ClassTreeMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
 
