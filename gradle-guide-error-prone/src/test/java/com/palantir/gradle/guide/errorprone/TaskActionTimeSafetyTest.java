@@ -72,7 +72,7 @@ class TaskActionTimeSafetyTest {
     }
 
     @Test
-    void provider_get_is_safe_inside_a_method_in_the_same_compilation_unit_that_is_only_called_from_task_actions() {
+    void provider_get_is_safe_inside_a_private_method_in_the_same_compilation_unit_only_called_from_a_task_action() {
         compilationTestHelper
                 .addSourceLines(
                         "SomePlugin.java",
@@ -94,6 +94,75 @@ class TaskActionTimeSafetyTest {
                 }
 
                 private void otherMethod() {
+                    getItem().get();
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    @Test
+    void provider_get_safe_private_method_in_same_compilation_unit_only_called_transitively_from_a_task_action() {
+        compilationTestHelper
+                .addSourceLines(
+                        "SomePlugin.java",
+                        // language=Java
+                        """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.provider.Provider;
+            import org.gradle.api.tasks.Input;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class SomeTask extends DefaultTask {
+                @Input
+                public abstract Property<String> getItem();
+
+                @TaskAction
+                public final void action() {
+                    otherMethod();
+                }
+
+                private void otherMethod() {
+                    anotherMethod();
+                }
+
+                private void anotherMethod() {
+                    getItem().get();
+                }
+            }
+            """)
+                .doTest();
+    }
+
+    @Test
+    void provider_get_unsafe_private_method_same_compilation_unit_called_from_constructor_and_task_action() {
+        compilationTestHelper
+                .addSourceLines(
+                        "SomePlugin.java",
+                        // language=Java
+                        """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.provider.Provider;
+            import org.gradle.api.tasks.Input;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class SomeTask extends DefaultTask {
+                @Input
+                public abstract Property<String> getItem();
+
+                public SomeTask() {
+                    otherMethod();
+                }
+
+                @TaskAction
+                public final void action() {
+                    otherMethod();
+                }
+
+                private void otherMethod() {
+                    // BUG: Diagnostic contains: .get
                     getItem().get();
                 }
             }

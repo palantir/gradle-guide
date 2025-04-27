@@ -65,9 +65,13 @@ final class TaskActionTimeSafety extends BugChecker implements MethodInvocationT
             }
         }.scan(state.getPath().getCompilationUnit(), null);
 
+        if (callers.isEmpty()) {
+            return buildDescription(tree).build();
+        }
+
         // Check if all callers have the @TaskAction annotation
         boolean allCallersHaveTaskAction = callers.stream()
-                .anyMatch(caller -> caller.getModifiers().getAnnotations().stream()
+                .allMatch(caller -> caller.getModifiers().getAnnotations().stream()
                         .anyMatch(annotation -> {
                             String annotationType = ASTHelpers.getAnnotationMirror(annotation)
                                     .getAnnotationType()
