@@ -25,8 +25,15 @@ import com.google.errorprone.bugpatterns.BugChecker.MethodInvocationTreeMatcher;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @AutoService(BugChecker.class)
 @BugPattern(severity = SeverityLevel.ERROR, summary = ".get bad TODO CHANGE THIS")
@@ -42,6 +49,36 @@ final class TaskActionTimeSafety extends BugChecker implements MethodInvocationT
         if (!MATCHER.matches(tree, state)) {
             return Description.NO_MATCH;
         }
+
+        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(state.findEnclosing(MethodTree.class));
+
+        Set<MethodTree> callers = new HashSet<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
+                if (ASTHelpers.getSymbol(node.getMethodSelect()).equals(enclosingMethod)) {
+                    Optional.ofNullable(state.withPath(getCurrentPath()).findEnclosing(MethodTree.class))
+                            .ifPresent(callers::add);
+                }
+                return super.visitMethodInvocation(node, unused);
+            }
+        }.scan(state.getPath().getCompilationUnit(), null);
+
+        // Check if all callers have the @TaskAction annotation
+        boolean allCallersHaveTaskAction = callers.stream()
+                .anyMatch(caller -> caller.getModifiers().getAnnotations().stream()
+                        .anyMatch(annotation -> {
+                            String annotationType = ASTHelpers.getAnnotationMirror(annotation)
+                                    .getAnnotationType()
+                                    .toString();
+                            return "org.gradle.api.tasks.TaskAction".equals(annotationType);
+                        }));
+
+        if (allCallersHaveTaskAction) {
+            return Description.NO_MATCH;
+        }
+
         return buildDescription(tree).build();
     }
 }

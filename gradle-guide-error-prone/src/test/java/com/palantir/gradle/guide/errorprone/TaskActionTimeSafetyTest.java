@@ -70,4 +70,34 @@ class TaskActionTimeSafetyTest {
             """)
                 .doTest();
     }
+
+    @Test
+    void provider_get_is_safe_inside_a_method_in_the_same_compilation_unit_that_is_only_called_from_task_actions() {
+        compilationTestHelper
+                .addSourceLines(
+                        "SomePlugin.java",
+                        // language=Java
+                        """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.provider.Provider;
+            import org.gradle.api.tasks.Input;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class SomeTask extends DefaultTask {
+                @Input
+                public abstract Property<String> getItem();
+
+                @TaskAction
+                public final void action() {
+                    otherMethod();
+                }
+
+                private void otherMethod() {
+                    getItem().get();
+                }
+            }
+            """)
+                .doTest();
+    }
 }
