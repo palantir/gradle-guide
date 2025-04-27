@@ -24,6 +24,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.palantir.gradle.guide.errorprone.utils.NameUtils;
 import com.sun.source.tree.ClassTree;
 import javax.lang.model.element.Modifier;
 
@@ -45,7 +46,8 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker implement
             return Description.NO_MATCH;
         }
 
-        if (IS_TASK.matches(tree, state) || nameEndsWith(tree.getSimpleName().toString(), "Extension")) {
+        if (IS_TASK.matches(tree, state)
+                || NameUtils.endsWith(tree.getSimpleName().toString(), "Extension")) {
             return buildDescription(tree).build();
         }
 
@@ -55,19 +57,5 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker implement
     @Override
     public MoreInfoLink moreInfoLink() {
         return new MoreInfoPageLink("managed-types-and-properties.md");
-    }
-
-    private static boolean nameEndsWith(CharSequence name, CharSequence suffix) {
-        for (int i = 0; i < suffix.length(); i++) {
-            int nameIndex = name.length() - suffix.length() + i;
-            if (nameIndex >= name.length()) {
-                return false;
-            }
-            if (name.charAt(nameIndex) != suffix.charAt(i)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
