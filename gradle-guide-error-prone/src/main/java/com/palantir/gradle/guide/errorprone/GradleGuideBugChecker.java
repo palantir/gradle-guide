@@ -39,7 +39,11 @@ public abstract class GradleGuideBugChecker extends BugChecker {
                 .orElse(false);
     }
 
-    public interface MoreInfoLink {}
+    public interface MoreInfoLink {
+        String mdFileName();
+    }
+
+    public record MoreInfoPageLink(String mdFileName) implements MoreInfoLink {}
 
     public record MoreInfoHeadingLink(String mdFileName, String heading) implements MoreInfoLink {}
 }

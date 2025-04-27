@@ -1,0 +1,73 @@
+/*
+ * (c) Copyright 2023 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.gradle.guide.errorprone;
+
+import com.google.auto.service.AutoService;
+import com.google.errorprone.BugPattern;
+import com.google.errorprone.BugPattern.SeverityLevel;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
+import com.sun.source.tree.ClassTree;
+import javax.lang.model.element.Modifier;
+
+@AutoService(BugChecker.class)
+@BugPattern(
+        severity = SeverityLevel.ERROR,
+        summary = "When defining a custom Task or Extension, you should make it an abstract class "
+                + " and make abstract getter methods of each of the properties and other "
+                + "gradle containers (eg NamedDomainObjectSet). Gradle will then automatically "
+                + "create the properties and containers, removing a lot of boilerplate. If you declare "
+                + "a `public abstract Property<Integer> getFoo()`, this will automatically make the "
+                + "`foo = 3` groovy syntax work of the box.")
+public final class NonAbstractGradleType extends GradleGuideBugChecker implements BugChecker.ClassTreeMatcher {
+    private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
+
+    @Override
+    public Description matchClass(ClassTree tree, VisitorState state) {
+        if (tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+            return Description.NO_MATCH;
+        }
+
+        if (IS_TASK.matches(tree, state) || nameEndsWith(tree.getSimpleName().toString(), "Extension")) {
+            return buildDescription(tree).build();
+        }
+
+        return Description.NO_MATCH;
+    }
+
+    @Override
+    public MoreInfoLink moreInfoLink() {
+        return new MoreInfoPageLink("managed-types-and-properties.md");
+    }
+
+    private static boolean nameEndsWith(CharSequence name, CharSequence suffix) {
+        for (int i = 0; i < suffix.length(); i++) {
+            int nameIndex = name.length() - suffix.length() + i;
+            if (nameIndex >= name.length()) {
+                return false;
+            }
+            if (name.charAt(nameIndex) != suffix.charAt(i)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

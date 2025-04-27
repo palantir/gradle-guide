@@ -38,6 +38,7 @@ public final class HelloExtension_Generated extends HelloExtension {
     private final Property<String> name;
     private final RegularFileProperty outputFile;
     
+    @Inject
     public HelloExtension_Generated(ObjectFactory objects) {
         this.name = objects.property(String.class);
         this.outputFile = objects.fileProperty();
@@ -58,6 +59,25 @@ public final class HelloExtension_Generated extends HelloExtension {
 This is very similar to [the commonly used `immutables` library](https://immutables.github.io/). However, it is aware of Gradle types so will automatically create instances of properties (and other Gradle services) for us.
 
 It is possible to write extensions and tasks directly as in the `HelloExtension_Generated` class above. If you look into the depths of older Palantir Gradle code you will find many instances of this, but this is no longer recommended. All new code should use Managed Types.
+
+## Tasks
+
+Similarly, for tasks, they should look like below rather than being manually specified:
+
+```java
+public abstract class SomeTask extends DefaultTask {
+    @Input
+    public abstract Property<String> getName();
+    
+    @Output
+    public abstract RegularFileProperty getOutputFile();
+    
+    @TaskAction
+    public final void action() {
+        // ...
+    }
+} 
+```
 
 <!-- PreviousNext:START -->
 <hr>

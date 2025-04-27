@@ -38,6 +38,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
     5. [Next steps](guide/anatomy-of-a-gradle-plugin.md#next-steps)
 4. [Managed Types and Properties](guide/managed-types-and-properties.md)
     1. [Managed types](guide/managed-types-and-properties.md#managed-types)
+    2. [Tasks](guide/managed-types-and-properties.md#tasks)
 5. [Lifecycle of a Gradle Build](guide/lifecycle-of-a-gradle-build.md)
     1. [Starting the build](guide/lifecycle-of-a-gradle-build.md#starting-the-build)
     2. [Settings evaluation](guide/lifecycle-of-a-gradle-build.md#settings-evaluation)
