@@ -70,19 +70,22 @@ final class TaskActionTimeSafety extends BugChecker implements MethodInvocationT
         }
 
         // Check if all callers have the @TaskAction annotation
-        boolean allCallersHaveTaskAction = callers.stream()
-                .allMatch(caller -> caller.getModifiers().getAnnotations().stream()
-                        .anyMatch(annotation -> {
-                            String annotationType = ASTHelpers.getAnnotationMirror(annotation)
-                                    .getAnnotationType()
-                                    .toString();
-                            return "org.gradle.api.tasks.TaskAction".equals(annotationType);
-                        }));
+        boolean allCallersHaveTaskAction =
+                callers.stream().allMatch(TaskActionTimeSafety::methodHasTaskActionAnnotation);
 
         if (allCallersHaveTaskAction) {
             return Description.NO_MATCH;
         }
 
         return buildDescription(tree).build();
+    }
+
+    private static boolean methodHasTaskActionAnnotation(MethodTree caller) {
+        return caller.getModifiers().getAnnotations().stream().anyMatch(annotation -> {
+            String annotationType = ASTHelpers.getAnnotationMirror(annotation)
+                    .getAnnotationType()
+                    .toString();
+            return "org.gradle.api.tasks.TaskAction".equals(annotationType);
+        });
     }
 }
