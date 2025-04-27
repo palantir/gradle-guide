@@ -36,7 +36,7 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 </td>
 <td>
 
-When defining a custom Task or Extension, you should make it an abstract class  and make abstract getter methods of each of the properties and other gradle containers (eg NamedDomainObjectSet). Gradle will then automatically create the properties and containers, removing a lot of boilerplate. If you declare a `public abstract Property<Integer> getFoo()`, this will automatically make the `foo = 3` groovy syntax work of the box.
+When defining a custom Task or Extension, you should make it an abstract class with abstract getter methods of each of the properties and other gradle containers (eg NamedDomainObjectSet). Gradle will then automatically create the properties and containers, removing a lot of boilerplate. Additionally, as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically make the `foo = 3` groovy syntax work of the box.
 
 </td>
 </tr>
