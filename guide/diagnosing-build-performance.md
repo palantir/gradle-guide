@@ -319,12 +319,13 @@ It has high upside, but the downside is it slows down compilation, usually by 1.
 
 We can verify that error prone is the cause of the slowness by turning it off:
 
-1. First run you compile tasks as normal but with `--rerun-tasks` (eg `./gradlew compileJava compileTestJava --rerun-tasks` etc).
-2. Then run the same command but with `-Pcom.palantir.baseline-error-prone.disable`.
+1. First run you compile tasks as normal but with `--rerun-tasks` (eg `./gradlew compileAllErrorProne --rerun-tasks` etc).
+2. Then run the same command but with `-PerrorProneDisable`.
 3. Using buildscans, compare the compile tasks times (ensure they were not up-to-date/actually ran again)
 
 If there is slowness, there's a few things you can try:
 
+* Run `./gradlew compileAllErrorProne --rerun-tasks -PerrorProneTimings` to run again but collect timings for each error-prone check (they'll end up in `build/errorprone-timings/compileTaskName` in each project ([readme](https://github.com/palantir/suppressible-error-prone#:~:text=timings%20report%20using-,%2DPerrorProneTimings,-.%20This%20will%20place))). From here, you can attempt to either speed up the errorprone or disable it.
 * If it is slow on generated code, the generated code is not marked as generated properly and error prone is not ignoring it. Try putting in the `build/` directory where it belongs, which error prone will detect as generated.
 * Use the internal Gradle plugin `gradle-jfr` to take a Java Flight Recorder file of the compile processes (follow the readme).
   * Analyse this JFR using Java Mission Control to see which error prone check(s) are taking the most time.
