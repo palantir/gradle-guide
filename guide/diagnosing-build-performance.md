@@ -265,42 +265,6 @@ Where possible classes should be consumed rather than jar files (jars are essent
 * It's a common pattern to put a version number in jar files, usually in the manifest or somewhere else in `META-INF`. If the versions numbers have commit hashes in, this will destroy the up-to-date-ness of the task consuming the jars, even if nothing in the actual class files have changed.
 * Sometimes expensive operations run part of `processResources`. Just consuming class files avoid this processing resources entirely.
 
-### Over-broad constraints/versions.props pins
-
-You may be suffering from this if you notice your build is always pausing whenever you invoke Gradle trying to download a particular version of a library that takes a long time to resolve. It looks like it's paused on a dependency like this:
-
-![](imgs/overbroad-versions-props.png)
-
-You can also see these in the Performance > Network tab in the build scan (8 seconds wasted in this example! Note the `0 B` transferred - indicates a 404):
-
-![](imgs/overbroad-versions-props-scan.png)
-
-This is likely because you have a `*` entry in `version.props` (or generally a constraint) which is "over-broad" - it's applying to more dependencies than it should.
-
-For example, given this `versions.props`:
-
-```properties
-org.junit.*:* = 5.10.2
-```
-
-And in `versions.lock` you see you have these two dependencies:
-
-```
-org.junit.jupiter:junit-jupiter:5.10.2
-org.junit.platform:junit-platform-commons:1.10.2
-```
-
-Since `5.10.2` > `1.10.2`, whenever Gradle tries to resolve `org.junit.platform:junit-platform-commons`, it first tries version `5.10.2` thanks to the `versions.props` pin. This returns a 404, and it falls back to trying the next constraint `1.10.2`, which works.
-
-However, that 404 can be very expensive. In particular, if you are hitting an Artifactory virtual repository, which is backed by many upstream Maven repositories, Artifactory will try each of these upstreams serially until it gets a 200. This can take many seconds. You can see this by appending `?trace` to the Artifactory url.
-
-The solution is break up the over-broad versions prop into non-overlapping pieces:
-
-```
-org.junit.jupiter:* = 5.10.2
-org.junit.platform:* = 1.10.2
-```
-
 ### Slow network requests
 
 You can go to Performance > Network in the build scan to see how long each network request took.
@@ -466,6 +430,45 @@ It's particularly bad for cacheable [Artifact Transforms](https://docs.gradle.or
 ```
 
 In these cases, unless each artifact transform takes seconds or longer to run, it's probably not worth caching.
+
+### Over-broad constraints/versions.props pins
+
+> [!NOTE]
+> This should be fixed now by gradle-consistent-versions 2.29.0 ([PR](https://github.com/palantir/gradle-consistent-versions/pull/1049))
+
+You may be suffering from this if you notice your build is always pausing whenever you invoke Gradle trying to download a particular version of a library that takes a long time to resolve. It looks like it's paused on a dependency like this:
+
+![](imgs/overbroad-versions-props.png)
+
+You can also see these in the Performance > Network tab in the build scan (8 seconds wasted in this example! Note the `0 B` transferred - indicates a 404):
+
+![](imgs/overbroad-versions-props-scan.png)
+
+This is likely because you have a `*` entry in `version.props` (or generally a constraint) which is "over-broad" - it's applying to more dependencies than it should.
+
+For example, given this `versions.props`:
+
+```properties
+org.junit.*:* = 5.10.2
+```
+
+And in `versions.lock` you see you have these two dependencies:
+
+```
+org.junit.jupiter:junit-jupiter:5.10.2
+org.junit.platform:junit-platform-commons:1.10.2
+```
+
+Since `5.10.2` > `1.10.2`, whenever Gradle tries to resolve `org.junit.platform:junit-platform-commons`, it first tries version `5.10.2` thanks to the `versions.props` pin. This returns a 404, and it falls back to trying the next constraint `1.10.2`, which works.
+
+However, that 404 can be very expensive. In particular, if you are hitting an Artifactory virtual repository, which is backed by many upstream Maven repositories, Artifactory will try each of these upstreams serially until it gets a 200. This can take many seconds. You can see this by appending `?trace` to the Artifactory url.
+
+The solution is break up the over-broad versions prop into non-overlapping pieces:
+
+```
+org.junit.jupiter:* = 5.10.2
+org.junit.platform:* = 1.10.2
+```
 
 <!-- PreviousNext:START -->
 <hr>
