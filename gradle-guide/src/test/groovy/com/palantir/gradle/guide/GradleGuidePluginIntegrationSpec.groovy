@@ -107,4 +107,31 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         then:
         stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
     }
+
+    def 'does not register errorprones in subproject that does not have gradleApi() or java gradle plugin'() {
+        def noGradleDepSubproject = addSubproject('noGradleDep')
+        def noGradleDepBuildFile = file('build.gradle', noGradleDepSubproject)
+
+        // language=Java
+        writeJavaSourceFile('''
+            final class BadExtension { }
+        '''.stripIndent(true), noGradleDepSubproject)
+
+        when: 'java-gradle-plugin is used'
+        // language=Gradle
+        noGradleDepBuildFile << '''
+            apply plugin: 'java-gradle-plugin'
+        '''.stripIndent(true)
+
+        def stderr = runTasksWithFailure(':noGradleDep:compileJava').standardError
+
+        then: 'the Extension example fails'
+        stderr.contains 'error: [NonAbstractGradleType]'
+
+        when: 'not using java-gradle-plugin'
+        noGradleDepBuildFile.text = ''
+
+        then: 'the Extension example does not fail'
+        runTasksSuccessfully(':noGradleDep:compileJava')
+    }
 }

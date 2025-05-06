@@ -20,6 +20,7 @@ import com.palantir.gradle.suppressibleerrorprone.SuppressibleErrorProneExtensio
 import com.palantir.gradle.suppressibleerrorprone.SuppressibleErrorPronePlugin;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -46,9 +47,7 @@ public class GradleGuidePlugin implements Plugin<Project> {
         // We simply apply the gradle-guide errorprones to every project in the repo, even if they do not
         // have a gradleApi() dependency. It's very hard to conditionally apply the suppressible
         // errorprone plugin (the best you can do is either put a whenObjectAdded on the dependencies of
-        // each configuration that contributes to compileClasspath, which is bad as it realises all the deps,
-        // or always apply the suppressible error prone plugin and conditionally lazily add our errorprone
-        // dep based on state the compileClasspath, which may not line up correctly timing wise).
+        // each configuration that contributes to compileClasspath, which is bad as it realises all the deps.
         // So we just apply it unconditionally - it should be fine to have errorprones that work on non-gradle types
         // running provided we make sure they are not too expensive.
         project.getPluginManager().apply(SuppressibleErrorPronePlugin.class);
@@ -58,8 +57,23 @@ public class GradleGuidePlugin implements Plugin<Project> {
                 .map(version -> ":" + version)
                 .orElse("");
 
-        project.getDependencies()
-                .add("errorprone", "com.palantir.gradle.guide:gradle-guide-error-prone" + possibleVersion);
+        project.getConfigurations().named("errorprone", errorproneConf -> {
+            errorproneConf
+                    .getDependencies()
+                    .addAllLater(project.getConfigurations()
+                            .named("compileClasspath")
+                            .map(compileClasspath -> {
+                                if (compileClasspath.getAllDependencies().stream()
+                                        .anyMatch(Predicate.isEqual(
+                                                project.getDependencies().gradleApi()))) {
+                                    return Set.of(project.getDependencies()
+                                            .create("com.palantir.gradle.guide:gradle-guide-error-prone"
+                                                    + possibleVersion));
+                                }
+
+                                return Set.of();
+                            }));
+        });
 
         SuppressibleErrorProneExtension suppressibleErrorProneExtension =
                 project.getExtensions().getByType(SuppressibleErrorProneExtension.class);
