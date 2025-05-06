@@ -71,8 +71,8 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         // We have to do our checks on Extensions where they are created rather than on the Extension types themselves
         // This is because Extension types do not extend a class or implement an interface. There's no way to tell if
-        // a certain class is an extension or not. Especially given there are many other types ending in Extension, eg
-        // Junit 5 extensions.
+        // a certain class is an extension or not just looking at its type declaration alone.. Especially given
+        // there are many other types with names ending in Extension, eg Junit 5 extensions.
         if (!IS_EXTENSION_CREATE.matches(tree, state)) {
             return Description.NO_MATCH;
         }
