@@ -24,8 +24,16 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
-import com.palantir.gradle.guide.errorprone.utils.NameUtils;
+import com.google.errorprone.suppliers.Supplier;
+import com.google.errorprone.suppliers.Suppliers;
+import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Type;
+import java.util.Optional;
+import java.util.function.Predicate;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -37,8 +45,14 @@ import javax.lang.model.element.Modifier;
                 + "create the properties and containers, removing a lot of boilerplate. Additionally, "
                 + "as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically "
                 + "make the `foo = 3` groovy syntax work of the box.")
-public final class NonAbstractGradleType extends GradleGuideBugChecker implements BugChecker.ClassTreeMatcher {
+public final class NonAbstractGradleType extends GradleGuideBugChecker
+        implements BugChecker.ClassTreeMatcher, BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
+    private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE =
+            Matchers.methodInvocation(Matchers.instanceMethod()
+                    .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
+                    .named("create"));
+    private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
@@ -46,12 +60,44 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker implement
             return Description.NO_MATCH;
         }
 
-        if (IS_TASK.matches(tree, state)
-                || NameUtils.endsWith(tree.getSimpleName().toString(), "Extension")) {
+        if (IS_TASK.matches(tree, state)) {
             return buildDescription(tree).build();
         }
 
         return Description.NO_MATCH;
+    }
+
+    @Override
+    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
+        // Check if this is a call to ExtensionContainer.create
+        if (!IS_EXTENSION_CREATE.matches(tree, state)) {
+            return Description.NO_MATCH;
+        }
+
+        // We need at least 2 arguments (name and class)
+        if (tree.getArguments().size() < 2) {
+            return Description.NO_MATCH;
+        }
+
+        // Get the second argument which should be the class type
+        ExpressionTree classArg = tree.getArguments().get(1);
+
+        return extensionTypeFromPossibleClassType(state, classArg)
+                .filter(Predicate.not(NonAbstractGradleType::isTypeAbstract))
+                .map(nonAbstractType -> buildDescription(tree).build())
+                .orElse(Description.NO_MATCH);
+    }
+
+    private static boolean isTypeAbstract(Type type) {
+        return (type.tsym.flags() & Flags.ABSTRACT) != 0;
+    }
+
+    private static Optional<Type> extensionTypeFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
+        return Optional.ofNullable(ASTHelpers.getType(classArg))
+                .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
+                .filter(argType -> !argType.getTypeArguments().isEmpty())
+                .map(argType -> argType.getTypeArguments().get(0))
+                .filter(extensionType -> extensionType.tsym != null);
     }
 
     @Override
