@@ -69,7 +69,6 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        // Check if this is a call to ExtensionContainer.create
         if (!IS_EXTENSION_CREATE.matches(tree, state)) {
             return Description.NO_MATCH;
         }
@@ -82,22 +81,23 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         // Get the second argument which should be the class type
         ExpressionTree classArg = tree.getArguments().get(1);
 
-        return extensionTypeFromPossibleClassType(state, classArg)
+        return typeArgumentFromPossibleClassType(state, classArg)
                 .filter(Predicate.not(NonAbstractGradleType::isTypeAbstract))
                 .map(nonAbstractType -> buildDescription(tree).build())
                 .orElse(Description.NO_MATCH);
     }
 
-    private static boolean isTypeAbstract(Type type) {
-        return (type.tsym.flags() & Flags.ABSTRACT) != 0;
-    }
-
-    private static Optional<Type> extensionTypeFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
+    private static Optional<Type> typeArgumentFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
+        // From a possible Class<T> extract T
         return Optional.ofNullable(ASTHelpers.getType(classArg))
                 .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
                 .filter(argType -> !argType.getTypeArguments().isEmpty())
                 .map(argType -> argType.getTypeArguments().get(0))
                 .filter(extensionType -> extensionType.tsym != null);
+    }
+
+    private static boolean isTypeAbstract(Type type) {
+        return (type.tsym.flags() & Flags.ABSTRACT) != 0;
     }
 
     @Override
