@@ -74,7 +74,7 @@ class NonAbstractGradleTypeTest {
                     // BUG: Diagnostic contains: abstract class
                     project.getExtensions().create("foo", FooExtension.class);
 
-                    Class<?> fooExtensionClass = FooExtension.class;
+                    Class<FooExtension> fooExtensionClass = FooExtension.class;
                     // BUG: Diagnostic contains: abstract class
                     project.getExtensions().create("foo", fooExtensionClass);
                 }
@@ -100,6 +100,7 @@ class NonAbstractGradleTypeTest {
                             // language=Java
                             "abstract class FooExtension {}")
                     .addSourceLines("FooPlugin.java", pluginCode)
+                    .expectNoDiagnostics()
                     .doTest();
         }
 
@@ -111,6 +112,7 @@ class NonAbstractGradleTypeTest {
                             // language=Java
                             "interface FooExtension {}")
                     .addSourceLines("FooPlugin.java", pluginCode)
+                    .expectNoDiagnostics()
                     .doTest();
         }
     }

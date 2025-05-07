@@ -89,7 +89,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         ExpressionTree classArg = tree.getArguments().get(1);
 
         return typeArgumentFromPossibleClassType(state, classArg)
-                .filter(type -> !isTypeAbstract(type) && !isTypeInterface(type))
+                .filter(type -> !(isTypeAbstract(type) || type.isInterface()))
                 .map(nonAbstractType -> buildDescription(tree).build())
                 .orElse(Description.NO_MATCH);
     }
@@ -105,10 +105,6 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     private static boolean isTypeAbstract(Type type) {
         return (type.tsym.flags() & Flags.ABSTRACT) != 0;
-    }
-
-    private static boolean isTypeInterface(Type type) {
-        return (type.tsym.flags() & Flags.INTERFACE) != 0;
     }
 
     @Override
