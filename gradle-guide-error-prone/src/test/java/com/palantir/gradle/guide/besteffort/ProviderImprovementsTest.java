@@ -226,6 +226,91 @@ class ProviderImprovementsTest {
         }
     }
 
+    @Nested
+    class DependsOnProviderGet {
+        @Test
+        void depends_on_task_provider_get() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider) {
+                        task.dependsOn(provider.get());
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider) {
+                        task.dependsOn(provider);
+                    }
+                }
+                """);
+        }
+
+        @Test
+        void works_with_custom_task() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    class CustomTask extends org.gradle.api.DefaultTask {}
+
+                    void test(CustomTask customTask, TaskProvider<?> provider) {
+                        customTask.dependsOn(provider.get());
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    class CustomTask extends org.gradle.api.DefaultTask {}
+
+                    void test(CustomTask customTask, TaskProvider<?> provider) {
+                        customTask.dependsOn(provider);
+                    }
+                }
+                """);
+        }
+
+        @Test
+        void multiple_task_providers_get() {
+            // language=Java
+            refactorFromTo(
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
+                        task.dependsOn(provider1.get(), provider2.get());
+                    }
+                }
+                """,
+                    """
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskProvider;
+
+                class Test {
+                    void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
+                        task.dependsOn(provider1, provider2);
+                    }
+                }
+                """);
+        }
+    }
+
     private void refactorFromTo(String input, String output) {
         bestEffortRefactoringValidator()
                 .addInputLines("Test.java", input)

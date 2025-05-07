@@ -50,6 +50,9 @@ public final class ProviderImprovements extends GradleGuideBugChecker
             .onDescendantOfAny("org.gradle.api.Project", "org.gradle.api.provider.ProviderFactory")
             .named("provider");
 
+    private static final Matcher<ExpressionTree> DEPENDS_ON_MATCHER =
+            Matchers.instanceMethod().onDescendantOf("org.gradle.api.Task").named("dependsOn");
+
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!MATCHER.matches(tree, state) || !bestEffortModeEnabled(state)) {
@@ -63,9 +66,40 @@ public final class ProviderImprovements extends GradleGuideBugChecker
             return description.build();
         }
 
+        // Check if this is a TaskProvider.get() being passed to dependsOn
+        if (handleDependsOnTaskProviderGet(state, fix, tree, memberSelectTree)) {
+            return buildDescription(tree).addFix(fix.build()).build();
+        }
+
+        // Handle the existing case
         replaceNewProviderWithGetCalledInside(state, fix, tree, memberSelectTree);
 
         return buildDescription(tree).addFix(fix.build()).build();
+    }
+
+    private static boolean handleDependsOnTaskProviderGet(
+            VisitorState state, SuggestedFixBuilder fix, MethodInvocationTree tree, MemberSelectTree memberSelectTree) {
+
+        // Check if the parent is a method invocation
+        if (!(state.getPath().getParentPath().getLeaf() instanceof MethodInvocationTree parentMethodInvocation)) {
+            return false;
+        }
+
+        // Check if the parent method is dependsOn
+        if (!DEPENDS_ON_MATCHER.matches(parentMethodInvocation, state)) {
+            return false;
+        }
+
+        // Check if this get() call is an argument to dependsOn
+        for (ExpressionTree arg : parentMethodInvocation.getArguments()) {
+            if (arg.equals(tree)) {
+                // Replace the provider.get() with just provider
+                fix.replace(tree, state.getSourceForNode(memberSelectTree.getExpression()));
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void replaceNewProviderWithGetCalledInside(
