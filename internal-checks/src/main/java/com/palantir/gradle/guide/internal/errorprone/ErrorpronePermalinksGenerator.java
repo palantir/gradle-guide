@@ -19,6 +19,8 @@ package com.palantir.gradle.guide.internal.errorprone;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoHeadingLink;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoLink;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoPageLink;
 import com.palantir.gradle.guide.errorprone.utils.AllErrorprones;
 import com.palantir.gradle.guide.internal.markdown.HeadingText;
 import java.util.Comparator;
@@ -47,7 +49,6 @@ final class ErrorpronePermalinksGenerator {
                 .filter(bugChecker -> !bugChecker.defaultSeverity().equals(SeverityLevel.SUGGESTION))
                 .sorted(Comparator.comparing(GradleGuideBugChecker::canonicalName))
                 .map(bugChecker -> {
-                    MoreInfoHeadingLink moreInfoHeadingLink = (MoreInfoHeadingLink) bugChecker.moreInfoLink();
                     return """
                             <tr>
                             <td>
@@ -67,10 +68,7 @@ final class ErrorpronePermalinksGenerator {
                             """
                             .replace("$NAME", bugChecker.canonicalName())
                             .replace("$MESSAGE", bugChecker.message())
-                            .replace(
-                                    "$LINK",
-                                    moreInfoHeadingLink.mdFileName() + "#"
-                                            + new HeadingText(moreInfoHeadingLink.heading()).asAnchor());
+                            .replace("$LINK", renderMoreInfoLink(bugChecker.moreInfoLink()));
                 })
                 .collect(Collectors.joining("\n"));
 
@@ -84,6 +82,17 @@ final class ErrorpronePermalinksGenerator {
 
     public static String generate() {
         return generate(AllErrorprones.allGradleGuideErrorprones().collect(Collectors.toSet()));
+    }
+
+    private static String renderMoreInfoLink(MoreInfoLink moreInfoLink) {
+        if (moreInfoLink instanceof MoreInfoPageLink pageLink) {
+            return pageLink.mdFileName();
+        } else if (moreInfoLink instanceof MoreInfoHeadingLink headingLink) {
+            return headingLink.mdFileName() + "#" + new HeadingText(headingLink.heading()).asAnchor();
+        }
+
+        throw new UnsupportedOperationException(
+                "Cannot render " + moreInfoLink.getClass().getSimpleName());
     }
 
     private ErrorpronePermalinksGenerator() {}

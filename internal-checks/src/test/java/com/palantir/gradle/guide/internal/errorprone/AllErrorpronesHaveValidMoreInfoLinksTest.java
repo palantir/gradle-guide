@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoHeadingLink;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker.MoreInfoLink;
 import com.palantir.gradle.guide.internal.markdown.MdFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,19 +31,21 @@ final class AllErrorpronesHaveValidMoreInfoLinksTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("com.palantir.gradle.guide.errorprone.utils.AllErrorprones#allErrorprones")
     void all_have_valid_more_info_links(GradleGuideBugChecker bugChecker) {
-        MoreInfoHeadingLink moreInfo = (MoreInfoHeadingLink) bugChecker.moreInfoLink();
+        MoreInfoLink moreInfoLink = bugChecker.moreInfoLink();
 
-        Path mdFile = Paths.get("../guide").resolve(moreInfo.mdFileName());
+        Path mdFile = Paths.get("../guide").resolve(moreInfoLink.mdFileName());
         assertThat(mdFile)
                 .describedAs(String.format(
                         "The md file '%s' linked by the %s#moreInfoLink() method exists",
                         mdFile, bugChecker.canonicalName()))
                 .exists();
 
-        assertThat(MdFile.fromPath(mdFile).headingsAsStrings())
-                .describedAs(String.format(
-                        "The heading '%s' linked by %s#moreInfoLink() exists in the md file '%s'",
-                        moreInfo.heading(), bugChecker.canonicalName(), mdFile))
-                .contains(moreInfo.heading());
+        if (moreInfoLink instanceof MoreInfoHeadingLink moreInfoHeadingLink) {
+            assertThat(MdFile.fromPath(mdFile).headingsAsStrings())
+                    .describedAs(String.format(
+                            "The heading '%s' linked by %s#moreInfoLink() exists in the md file '%s'",
+                            moreInfoHeadingLink.heading(), bugChecker.canonicalName(), mdFile))
+                    .contains(moreInfoHeadingLink.heading());
+        }
     }
 }
