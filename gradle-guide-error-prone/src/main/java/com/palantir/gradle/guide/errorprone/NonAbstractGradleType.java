@@ -30,10 +30,10 @@ import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Type;
 import java.util.Optional;
-import java.util.function.Predicate;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -48,14 +48,17 @@ import javax.lang.model.element.Modifier;
 public final class NonAbstractGradleType extends GradleGuideBugChecker
         implements BugChecker.ClassTreeMatcher, BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE =
-            Matchers.methodInvocation(Matchers.instanceMethod()
-                    .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
-                    .named("create"));
+    private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
+            .named("create");
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
+        if (tree.getKind().equals(Kind.INTERFACE)) {
+            return Description.NO_MATCH;
+        }
+
         if (tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
             return Description.NO_MATCH;
         }
@@ -86,7 +89,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         ExpressionTree classArg = tree.getArguments().get(1);
 
         return typeArgumentFromPossibleClassType(state, classArg)
-                .filter(Predicate.not(NonAbstractGradleType::isTypeAbstract))
+                .filter(type -> !isTypeAbstract(type) && !isTypeInterface(type))
                 .map(nonAbstractType -> buildDescription(tree).build())
                 .orElse(Description.NO_MATCH);
     }
@@ -102,6 +105,10 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     private static boolean isTypeAbstract(Type type) {
         return (type.tsym.flags() & Flags.ABSTRACT) != 0;
+    }
+
+    private static boolean isTypeInterface(Type type) {
+        return (type.tsym.flags() & Flags.INTERFACE) != 0;
     }
 
     @Override
