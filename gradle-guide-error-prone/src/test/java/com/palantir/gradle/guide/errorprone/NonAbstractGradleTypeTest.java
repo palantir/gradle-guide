@@ -47,10 +47,40 @@ class NonAbstractGradleTypeTest {
                     abstract class Test extends DefaultTask {}
                     """);
         }
+
+        @Test
+        void interface_task_should_be_fine() {
+            test(
+                    """
+                    import org.gradle.api.Task;
+
+                    interface TestTask extends Task {}
+                    """);
+        }
     }
 
     @Nested
     class Extensions {
+
+        // language=Java
+        private String pluginCode =
+                """
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+
+            public class FooPlugin implements Plugin<Project> {
+                @Override
+                public void apply(Project project) {
+                    // BUG: Diagnostic contains: abstract class
+                    project.getExtensions().create("foo", FooExtension.class);
+
+                    Class<FooExtension> fooExtensionClass = FooExtension.class;
+                    // BUG: Diagnostic contains: abstract class
+                    project.getExtensions().create("foo", fooExtensionClass);
+                }
+            }
+            """;
+
         @Test
         void non_abstract_extension_should_fail() {
             compilationTestHelper
@@ -58,33 +88,32 @@ class NonAbstractGradleTypeTest {
                             "FooExtension.java",
                             // language=Java
                             "class FooExtension {}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            // language=Java
-                            """
-                    import org.gradle.api.Plugin;
-                    import org.gradle.api.Project;
-
-                    public class FooPlugin implements Plugin<Project> {
-                        @Override
-                        public void apply(Project project) {
-                            // BUG: Diagnostic contains: abstract class
-                            project.getExtensions().create("foo", FooExtension.class);
-
-                            Class<?> fooExtensionClass = FooExtension.class;
-                            // BUG: Diagnostic contains: abstract class
-                            project.getExtensions().create("foo", fooExtensionClass);
-                        }
-                    }
-                    """)
+                    .addSourceLines("FooPlugin.java", pluginCode)
                     .doTest();
         }
 
         @Test
         void abstract_extension_is_fine() {
-            test("""
-                abstract class FooExtension {}
-                """);
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            // language=Java
+                            "abstract class FooExtension {}")
+                    .addSourceLines("FooPlugin.java", pluginCode)
+                    .expectNoDiagnostics()
+                    .doTest();
+        }
+
+        @Test
+        void interface_extension_is_fine() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            // language=Java
+                            "interface FooExtension {}")
+                    .addSourceLines("FooPlugin.java", pluginCode)
+                    .expectNoDiagnostics()
+                    .doTest();
         }
     }
 
