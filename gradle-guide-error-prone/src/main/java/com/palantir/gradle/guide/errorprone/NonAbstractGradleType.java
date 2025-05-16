@@ -137,9 +137,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
         // Check: must be abstract, not interface
         if (!(isTypeAbstract(extensionType) || extensionType.isInterface())) {
-            return buildDescription(tree)
-                    .setMessage("Gradle managed Extension types must be abstract classes.")
-                    .build();
+            return buildDescription(tree).build();
         }
 
         ClassSymbol extSym = (ClassSymbol) extensionType.tsym;
