@@ -194,7 +194,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: managed property getter in Extension must be abstract
+                                    // BUG: Diagnostic contains: managed property getter methods must be abstract
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }
@@ -219,7 +219,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: must start with 'get'
+                                    // BUG: Diagnostic contains: methods must be named starting with 'get'
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }

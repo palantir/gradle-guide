@@ -85,12 +85,20 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                     .map(method -> {
                         if (!method.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
                             return buildDescription(method)
-                                    .setMessage("Gradle managed property getter must be abstract.")
+                                    .setMessage("Gradle managed property getter methods must be abstract. "
+                                            + "Declare this method as 'public abstract', e.g., "
+                                            + "'public abstract Property<Integer> getFoo();'. "
+                                            + "This enables Gradle to inject the property implementation "
+                                            + "automatically, removing boilerplate and supporting the Groovy DSL.")
                                     .build();
                         }
                         if (!method.getName().toString().startsWith("get")) {
                             return buildDescription(method)
-                                    .setMessage("Gradle managed property getter must be named starting with 'get'.")
+                                    .setMessage(
+                                            "Gradle managed property getter methods must be named starting with 'get', "
+                                                    + "e.g., 'getFoo'. This naming convention is required for Gradle "
+                                                    + "to recognize and manage the property, enabling automatic "
+                                                    + "property wiring and Groovy DSL support.")
                                     .build();
                         }
                         return null;
@@ -143,14 +151,19 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                 .map(memberSym -> {
                     if ((memberSym.flags() & Flags.ABSTRACT) == 0) {
                         return buildDescription(tree)
-                                .setMessage("Gradle managed property getter in Extension must be abstract: "
-                                        + memberSym.getSimpleName())
+                                .setMessage("Gradle managed property getter methods must be abstract. "
+                                        + "Declare this method as 'public abstract', e.g., "
+                                        + "'public abstract Property<Integer> getFoo();'. "
+                                        + "This enables Gradle to inject the property implementation automatically, "
+                                        + "removing boilerplate and supporting the Groovy DSL.")
                                 .build();
                     }
                     if (!memberSym.getSimpleName().toString().startsWith("get")) {
                         return buildDescription(tree)
-                                .setMessage("Gradle managed property getter in Extension must start with 'get': "
-                                        + memberSym.getSimpleName())
+                                .setMessage("Gradle managed property getter methods must be named starting with 'get', "
+                                        + "e.g., 'getFoo'. This naming convention is required for Gradle to recognize "
+                                        + "and manage the property, enabling automatic property wiring and Groovy DSL "
+                                        + "support.")
                                 .build();
                     }
                     return null;
