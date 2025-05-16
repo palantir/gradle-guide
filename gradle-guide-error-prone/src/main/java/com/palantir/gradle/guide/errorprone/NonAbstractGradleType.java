@@ -1,19 +1,3 @@
-/*
- * (c) Copyright 2023 Palantir Technologies Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.auto.service.AutoService;
@@ -30,10 +14,16 @@ import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.StreamSupport;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -53,18 +43,48 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             .named("create");
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
+    private static final Set<String> SUPPORTED_PROPERTY_TYPES = Set.of(
+            "org.gradle.api.provider.Property",
+            "org.gradle.api.provider.ListProperty",
+            "org.gradle.api.provider.SetProperty",
+            "org.gradle.api.provider.MapProperty",
+            "org.gradle.api.file.RegularFileProperty",
+            "org.gradle.api.file.DirectoryProperty",
+            "org.gradle.api.provider.Provider",
+            "org.gradle.api.model.ObjectFactory");
+
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
         if (tree.getKind().equals(Kind.INTERFACE)) {
             return Description.NO_MATCH;
         }
 
-        if (tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
-            return Description.NO_MATCH;
-        }
-
         if (IS_TASK.matches(tree, state)) {
-            return buildDescription(tree).build();
+            if (!tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+                return buildDescription(tree)
+                        .setMessage("Gradle managed Task types must be abstract classes.")
+                        .build();
+            }
+            return tree.getMembers().stream()
+                    .filter(member -> member instanceof MethodTree)
+                    .map(member -> (MethodTree) member)
+                    .filter(method -> isManagedPropertyGetter(method, state))
+                    .map(method -> {
+                        if (!method.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+                            return buildDescription(method)
+                                    .setMessage("Gradle managed property getter must be abstract.")
+                                    .build();
+                        }
+                        if (!method.getName().toString().startsWith("get")) {
+                            return buildDescription(method)
+                                    .setMessage("Gradle managed property getter must be named starting with 'get'.")
+                                    .build();
+                        }
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(Description.NO_MATCH);
         }
 
         return Description.NO_MATCH;
@@ -88,9 +108,43 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         // Get the second argument which should be the class type
         ExpressionTree classArg = tree.getArguments().get(1);
 
-        return typeArgumentFromPossibleClassType(state, classArg)
-                .filter(type -> !(isTypeAbstract(type) || type.isInterface()))
-                .map(nonAbstractType -> buildDescription(tree).build())
+        Optional<Type> extensionTypeOpt = typeArgumentFromPossibleClassType(state, classArg);
+        if (extensionTypeOpt.isEmpty()) {
+            return Description.NO_MATCH;
+        }
+        Type extensionType = extensionTypeOpt.get();
+
+        // Check: must be abstract, not interface
+        if (!(isTypeAbstract(extensionType) || extensionType.isInterface())) {
+            return buildDescription(tree)
+                    .setMessage("Gradle managed Extension types must be abstract classes.")
+                    .build();
+        }
+
+        ClassSymbol extSym = (ClassSymbol) extensionType.tsym;
+        // Stream over the symbol table for methods
+        return StreamSupport.stream(extSym.members().getSymbols().spliterator(), false)
+                .filter(memberSym -> memberSym instanceof MethodSymbol)
+                .map(memberSym -> (MethodSymbol) memberSym)
+                .filter(memberSym -> isManagedPropertyGetter(memberSym, state))
+                .map(memberSym -> {
+                    if ((memberSym.flags() & Flags.ABSTRACT) == 0) {
+                        return buildDescription(tree)
+                                .setMessage("Gradle managed property getter in Extension must be abstract: "
+                                        + memberSym.getSimpleName())
+                                .build();
+                    }
+                    if (!memberSym.getSimpleName().toString().startsWith("get")) {
+                        return buildDescription(tree)
+                                .setMessage(
+                                        "Gradle managed property getter in Extension must be named starting with 'get': "
+                                                + memberSym.getSimpleName())
+                                .build();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
                 .orElse(Description.NO_MATCH);
     }
 
@@ -105,6 +159,30 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     private static boolean isTypeAbstract(Type type) {
         return (type.tsym.flags() & Flags.ABSTRACT) != 0;
+    }
+
+    private static boolean isManagedPropertyGetter(MethodTree method, VisitorState state) {
+        if (!method.getParameters().isEmpty()) {
+            return false;
+        }
+        Type returnType = ASTHelpers.getType(method.getReturnType());
+        if (returnType == null || returnType.tsym == null) {
+            return false;
+        }
+        String rawType = returnType.tsym.getQualifiedName().toString();
+        return SUPPORTED_PROPERTY_TYPES.contains(rawType);
+    }
+
+    private static boolean isManagedPropertyGetter(MethodSymbol method, VisitorState state) {
+        if (!method.getParameters().isEmpty()) {
+            return false;
+        }
+        Type returnType = method.getReturnType();
+        if (returnType == null || returnType.tsym == null) {
+            return false;
+        }
+        String rawType = returnType.tsym.getQualifiedName().toString();
+        return SUPPORTED_PROPERTY_TYPES.contains(rawType);
     }
 
     @Override

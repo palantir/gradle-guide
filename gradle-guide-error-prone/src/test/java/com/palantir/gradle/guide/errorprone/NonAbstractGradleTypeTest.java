@@ -57,6 +57,67 @@ class NonAbstractGradleTypeTest {
                     interface TestTask extends Task {}
                     """);
         }
+
+        @Test
+        void abstract_task_with_non_abstract_property_getter_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: must be abstract
+                        public Property<String> getFoo() { return null; }
+                    }
+                    """);
+        }
+
+        @Test
+        void abstract_task_with_property_getter_not_starting_with_get_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: must be named starting with 'get'
+                        public abstract Property<String> name();
+                    }
+                    """);
+        }
+
+        @Test
+        void abstract_task_with_abstract_property_getter_is_fine() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+                    abstract class Test extends DefaultTask {
+                        public abstract Property<String> getFoo();
+                    }
+                    """);
+        }
+
+        @Test
+        void abstract_task_with_non_property_getter_is_fine() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    abstract class Test extends DefaultTask {
+                        public String getSomething() { return "hello"; }
+                    }
+                    """);
+        }
+
+        @Test
+        void abstract_task_with_property_getter_with_parameter_is_fine() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+                    abstract class Test extends DefaultTask {
+                        public Property<String> getFoo(String ignored) { return null; }
+                    }
+                    """);
+        }
     }
 
     @Nested
@@ -115,12 +176,146 @@ class NonAbstractGradleTypeTest {
                     .expectNoDiagnostics()
                     .doTest();
         }
+
+        @Test
+        void extension_with_non_abstract_property_getter_should_fail() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "import org.gradle.api.provider.Property;",
+                            "abstract class FooExtension {",
+                            "    public Property<String> getFoo() { return null; }",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    // BUG: Diagnostic contains: managed property getter in Extension must be abstract
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .doTest();
+        }
+
+        @Test
+        void extension_with_property_getter_not_starting_with_get_should_fail() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "import org.gradle.api.provider.Property;",
+                            "abstract class FooExtension {",
+                            "    public abstract Property<String> name();",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    // BUG: Diagnostic contains: must be named starting with 'get'
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .doTest();
+        }
+
+        @Test
+        void extension_with_abstract_property_getter_is_fine() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "import org.gradle.api.provider.Property;",
+                            "abstract class FooExtension {",
+                            "    public abstract Property<String> getFoo();",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .expectNoDiagnostics()
+                    .doTest();
+        }
+
+        @Test
+        void extension_with_non_property_getter_is_fine() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "abstract class FooExtension {",
+                            "    public String getSomething() { return \"hello\"; }",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .expectNoDiagnostics()
+                    .doTest();
+        }
+
+        @Test
+        void extension_with_property_getter_with_parameter_is_fine() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "import org.gradle.api.provider.Property;",
+                            "abstract class FooExtension {",
+                            "    public Property<String> getFoo(String ignored) { return null; }",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .expectNoDiagnostics()
+                    .doTest();
+        }
     }
 
     @Test
     void non_abstract_other_type_is_fine() {
         test("""
                 class SomethingElse {}
+                """);
+    }
+
+    @Test
+    void unrelated_abstract_class_with_property_getter_is_fine() {
+        test(
+                """
+                abstract class NotATaskOrExtension {
+                    public abstract String getFoo();
+                }
                 """);
     }
 
