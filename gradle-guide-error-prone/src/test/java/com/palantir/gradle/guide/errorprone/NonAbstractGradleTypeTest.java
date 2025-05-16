@@ -219,7 +219,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: must be named starting with 'get'
+                                    // BUG: Diagnostic contains: must start with 'get'
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }
