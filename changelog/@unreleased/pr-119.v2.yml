@@ -1,0 +1,6 @@
+type: improvement
+improvement:
+  description: Expanded NonAbstractGradleType to add ability to detect if gradle managed
+    properties are abstract and start with get
+  links:
+  - https://github.com/palantir/gradle-guide/pull/119
