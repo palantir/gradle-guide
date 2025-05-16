@@ -76,9 +76,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
         if (IS_TASK.matches(tree, state)) {
             if (!tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
-                return buildDescription(tree)
-                        .setMessage("Gradle managed Task types must be abstract classes.")
-                        .build();
+                return buildDescription(tree).build();
             }
             return tree.getMembers().stream()
                     .filter(member -> member instanceof MethodTree)
