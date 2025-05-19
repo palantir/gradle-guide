@@ -31,9 +31,11 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree.Kind;
+import com.sun.source.tree.VariableTree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +53,10 @@ import javax.lang.model.element.Modifier;
                 + "as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically "
                 + "make the `foo = 3` groovy syntax work of the box.")
 public final class NonAbstractGradleType extends GradleGuideBugChecker
-        implements BugChecker.ClassTreeMatcher, BugChecker.MethodInvocationTreeMatcher, BugChecker.MethodTreeMatcher {
+        implements BugChecker.ClassTreeMatcher,
+                BugChecker.MethodInvocationTreeMatcher,
+                BugChecker.MethodTreeMatcher,
+                BugChecker.VariableTreeMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
     private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
@@ -69,6 +74,11 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                     + "convention is required for Gradle to recognize and manage the property, enabling automatic "
                     + "property wiring and Groovy DSL support, this will automatically this will make the `foo = 3` "
                     + "groovy syntax work of the box.";
+
+    private static final String PROPERTY_FIELD_MSG = "Do not declare Property fields directly on Tasks or Extensions. "
+            + "Instead, declare an abstract getter method, e.g., 'public abstract Property<String> getFoo();'. This "
+            + "enables Gradle to inject the property implementation automatically, removes boilerplate, and supports "
+            + "the Groovy DSL (e.g. `foo = 3`).";
 
     private static final Set<String> SUPPORTED_PROPERTY_TYPES = Set.of(
             "org.gradle.api.provider.Property",
@@ -125,6 +135,27 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     }
 
     @Override
+    public Description matchVariable(VariableTree tree, VisitorState state) {
+        ClassTree enclosingClass = ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class);
+        if (enclosingClass == null) {
+            return Description.NO_MATCH;
+        }
+
+        if (!IS_TASK.matches(enclosingClass, state)) {
+            return Description.NO_MATCH;
+        }
+
+        Type varType = ASTHelpers.getType(tree);
+        if (varType != null
+                && SUPPORTED_PROPERTY_TYPES.contains(
+                        varType.tsym.getQualifiedName().toString())) {
+            return buildDescription(tree).setMessage(PROPERTY_FIELD_MSG).build();
+        }
+
+        return Description.NO_MATCH;
+    }
+
+    @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         // We have to do our checks on Extensions where they are created rather than on the Extension types themselves
         // This is because Extension types do not extend a class or implement an interface. There's no way to tell if
@@ -148,13 +179,32 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
         Type extensionType = extensionTypeOpt.get();
 
-        // Check: must be abstract, not interface
         if (!(isAbstract(extensionType.tsym) || extensionType.isInterface())) {
             return buildDescription(tree).build();
         }
 
         ClassSymbol extSym = (ClassSymbol) extensionType.tsym;
-        // Stream over the symbol table for methods
+        if (hasPropertyField(extSym)) {
+            return buildDescription(tree).setMessage(PROPERTY_FIELD_MSG).build();
+        }
+
+        return checkManagedPropertyGetters(extSym, tree, state);
+    }
+
+    private static boolean hasPropertyField(ClassSymbol extSym) {
+        return StreamSupport.stream(extSym.members().getSymbols().spliterator(), false)
+                .filter(memberSym -> memberSym instanceof VarSymbol)
+                .map(memberSym -> (VarSymbol) memberSym)
+                .anyMatch(varSym -> {
+                    Type fieldType = varSym.type;
+                    return fieldType != null
+                            && fieldType.tsym != null
+                            && SUPPORTED_PROPERTY_TYPES.contains(
+                                    fieldType.tsym.getQualifiedName().toString());
+                });
+    }
+
+    private Description checkManagedPropertyGetters(ClassSymbol extSym, MethodInvocationTree tree, VisitorState state) {
         return StreamSupport.stream(extSym.members().getSymbols().spliterator(), false)
                 .filter(memberSym -> memberSym instanceof MethodSymbol)
                 .map(memberSym -> (MethodSymbol) memberSym)

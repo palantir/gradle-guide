@@ -118,6 +118,23 @@ class NonAbstractGradleTypeTest {
                     }
                     """);
         }
+
+        @Test
+        void abstract_task_with_property_field_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: Do not declare Property fields directly on Tasks or Extensions
+                        private final Property<String> foo;
+                        public Test() {
+                            this.foo = getProject().getObjects().property(String.class);
+                        }
+                    }
+                    """);
+        }
     }
 
     @Nested
@@ -300,6 +317,34 @@ class NonAbstractGradleTypeTest {
                     .expectNoDiagnostics()
                     .doTest();
         }
+
+        @Test
+        void abstract_extension_with_property_field_should_fail() {
+            compilationTestHelper
+                    .addSourceLines(
+                            "FooExtension.java",
+                            "import org.gradle.api.provider.Property;",
+                            "abstract class FooExtension {",
+                            "    private final Property<String> foo;",
+                            "    public FooExtension(org.gradle.api.Project project) {",
+                            "        this.foo = project.getObjects().property(String.class);",
+                            "    }",
+                            "}")
+                    .addSourceLines(
+                            "FooPlugin.java",
+                            """
+                            import org.gradle.api.Plugin;
+                            import org.gradle.api.Project;
+                            public class FooPlugin implements Plugin<Project> {
+                                @Override
+                                public void apply(Project project) {
+                                    // BUG: Diagnostic contains: Do not declare Property fields directly
+                                    project.getExtensions().create("foo", FooExtension.class);
+                                }
+                            }
+                            """)
+                    .doTest();
+        }
     }
 
     @Test
@@ -324,8 +369,22 @@ class NonAbstractGradleTypeTest {
         test(
                 """
                 import org.gradle.api.provider.Property;
-                abstract class Test {
+                abstract class NotATaskOrExtension {
                     public Property<String> getFoo() { return null; }
+                }
+                """);
+    }
+
+    @Test
+    void unrelated_class_with_property_field_is_fine() {
+        test(
+                """
+                import org.gradle.api.provider.Property;
+                class NotATaskOrExtension {
+                    private final Property<String> foo;
+                    public NotATaskOrExtension(Property<String> foo) {
+                        this.foo = foo;
+                    }
                 }
                 """);
     }
