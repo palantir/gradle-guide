@@ -78,7 +78,7 @@ class NonAbstractGradleTypeTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.provider.Property;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: must be named starting with 'get'
+                        // BUG: Diagnostic contains: should be named starting with 'get'
                         public abstract Property<String> name();
                     }
                     """);
@@ -194,7 +194,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
+                                    // BUG: Diagnostic contains: should be declared abstract
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }
@@ -219,7 +219,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: methods must be named starting with 'get'
+                                    // BUG: Diagnostic contains: should be named starting with 'get'
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }
