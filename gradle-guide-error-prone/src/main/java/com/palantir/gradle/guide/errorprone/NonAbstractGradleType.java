@@ -65,7 +65,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             + "syntax work of the box.";
 
     private static final String PROPERTY_GETTER_NAMING_MSG =
-            "Gradle managed property getter methods must be named starting with 'get', e.g., 'getFoo'. This naming "
+            "Properties on Tasks or Extensions should be named starting with 'get', e.g., 'getFoo'. This naming "
                     + "convention is required for Gradle to recognize and manage the property, enabling automatic "
                     + "property wiring and Groovy DSL support, this will automatically this will make the `foo = 3` "
                     + "groovy syntax work of the box.";
