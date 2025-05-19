@@ -31,7 +31,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree.Kind;
-import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
@@ -73,7 +73,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+        if (isAbstract(ASTHelpers.getSymbol(tree))) {
             return Description.NO_MATCH;
         }
 
@@ -99,7 +99,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (!method.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+        if (!isAbstract(ASTHelpers.getSymbol(method))) {
             return buildDescription(method)
                     .setMessage("Gradle managed property getter methods must be abstract. "
                             + "Declare this method as 'public abstract', e.g., "
@@ -144,7 +144,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         Type extensionType = extensionTypeOpt.get();
 
         // Check: must be abstract, not interface
-        if (!(isTypeAbstract(extensionType) || extensionType.isInterface())) {
+        if (!(isAbstract(extensionType.tsym) || extensionType.isInterface())) {
             return buildDescription(tree).build();
         }
 
@@ -155,7 +155,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                 .map(memberSym -> (MethodSymbol) memberSym)
                 .filter(memberSym -> isManagedPropertyGetter(memberSym, state))
                 .map(memberSym -> {
-                    if ((memberSym.flags() & Flags.ABSTRACT) == 0) {
+                    if (!isAbstract(memberSym)) {
                         return buildDescription(tree)
                                 .setMessage("Gradle managed property getter methods must be abstract. "
                                         + "Declare this method as 'public abstract', e.g., "
@@ -188,8 +188,8 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                 .filter(extensionType -> extensionType.tsym != null);
     }
 
-    private static boolean isTypeAbstract(Type type) {
-        return (type.tsym.flags() & Flags.ABSTRACT) != 0;
+    private static boolean isAbstract(Symbol symbol) {
+        return symbol != null && symbol.getModifiers().contains(Modifier.ABSTRACT);
     }
 
     private static boolean isManagedPropertyGetter(MethodTree method, VisitorState state) {
