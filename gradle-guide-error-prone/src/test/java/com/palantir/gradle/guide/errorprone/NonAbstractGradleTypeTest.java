@@ -319,6 +319,17 @@ class NonAbstractGradleTypeTest {
                 """);
     }
 
+    @Test
+    void unrelated_class_with_property_getter_is_fine() {
+        test(
+                """
+                import org.gradle.api.provider.Property;
+                abstract class Test {
+                    public Property<String> getFoo() { return null; }
+                }
+                """);
+    }
+
     private void test(@Language("Java") String source) {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
     }

@@ -91,9 +91,11 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         if (enclosingClass == null) {
             return Description.NO_MATCH;
         }
+
         if (!IS_TASK.matches(enclosingClass, state)) {
             return Description.NO_MATCH;
         }
+
         if (!isManagedPropertyGetter(method, state)) {
             return Description.NO_MATCH;
         }
