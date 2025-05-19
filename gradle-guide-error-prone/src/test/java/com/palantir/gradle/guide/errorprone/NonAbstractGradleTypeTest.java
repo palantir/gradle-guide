@@ -85,6 +85,21 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
+        void abstract_task_with_non_abstract_property_getter_and_incorrect_naming_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.provider.Property;
+
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: should be named starting with 'get'
+                        // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
+                        public Property<String> foo() { return null; }
+                    }
+                    """);
+        }
+
+        @Test
         void abstract_task_with_abstract_property_getter_is_fine() {
             test(
                     """

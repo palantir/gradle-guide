@@ -1,18 +1,3 @@
-/*
- * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.auto.service.AutoService;
@@ -39,7 +24,6 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 import javax.lang.model.element.Modifier;
 
@@ -62,6 +46,8 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
             .named("create");
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
+    private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
+            Suppliers.typeFromString("org.gradle.api.provider.Provider");
 
     private static final String ABSTRACT_PROPERTY_METHOD_MSG = "Properties on Tasks or Extensions should be declared "
             + "abstract. Declare this method as 'public abstract', e.g., 'public abstract Property<Integer> "
@@ -79,15 +65,6 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             + "Instead, declare an abstract getter method, e.g., 'public abstract Property<String> getFoo();'. This "
             + "enables Gradle to inject the property implementation automatically, removes boilerplate, and supports "
             + "the Groovy DSL (e.g. `foo = 3`).";
-
-    private static final Set<String> SUPPORTED_PROPERTY_TYPES = Set.of(
-            "org.gradle.api.provider.Property",
-            "org.gradle.api.provider.ListProperty",
-            "org.gradle.api.provider.SetProperty",
-            "org.gradle.api.provider.MapProperty",
-            "org.gradle.api.file.RegularFileProperty",
-            "org.gradle.api.file.DirectoryProperty",
-            "org.gradle.api.provider.Provider");
 
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
@@ -146,9 +123,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
 
         Type varType = ASTHelpers.getType(tree);
-        if (varType != null
-                && SUPPORTED_PROPERTY_TYPES.contains(
-                        varType.tsym.getQualifiedName().toString())) {
+        if (varType != null && isSubtypeOfProvider(varType, state)) {
             return buildDescription(tree).setMessage(PROPERTY_FIELD_MSG).build();
         }
 
@@ -184,24 +159,18 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
 
         ClassSymbol extSym = (ClassSymbol) extensionType.tsym;
-        if (hasPropertyField(extSym)) {
+        if (hasPropertyField(extSym, state)) {
             return buildDescription(tree).setMessage(PROPERTY_FIELD_MSG).build();
         }
 
         return checkManagedPropertyGetters(extSym, tree, state);
     }
 
-    private static boolean hasPropertyField(ClassSymbol extSym) {
+    private static boolean hasPropertyField(ClassSymbol extSym, VisitorState state) {
         return StreamSupport.stream(extSym.members().getSymbols().spliterator(), false)
                 .filter(memberSym -> memberSym instanceof VarSymbol)
                 .map(memberSym -> (VarSymbol) memberSym)
-                .anyMatch(varSym -> {
-                    Type fieldType = varSym.type;
-                    return fieldType != null
-                            && fieldType.tsym != null
-                            && SUPPORTED_PROPERTY_TYPES.contains(
-                                    fieldType.tsym.getQualifiedName().toString());
-                });
+                .anyMatch(varSym -> isSubtypeOfProvider(varSym.type, state));
     }
 
     private Description checkManagedPropertyGetters(ClassSymbol extSym, MethodInvocationTree tree, VisitorState state) {
@@ -228,7 +197,6 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     }
 
     private static Optional<Type> typeArgumentFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
-        // From a possible Class<T> extract T
         return Optional.ofNullable(ASTHelpers.getType(classArg))
                 .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
                 .filter(argType -> !argType.getTypeArguments().isEmpty())
@@ -245,11 +213,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return false;
         }
         Type returnType = ASTHelpers.getType(method.getReturnType());
-        if (returnType == null || returnType.tsym == null) {
-            return false;
-        }
-        String rawType = returnType.tsym.getQualifiedName().toString();
-        return SUPPORTED_PROPERTY_TYPES.contains(rawType);
+        return returnType != null && isSubtypeOfProvider(returnType, state);
     }
 
     private static boolean isManagedPropertyGetter(MethodSymbol method, VisitorState state) {
@@ -257,11 +221,11 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return false;
         }
         Type returnType = method.getReturnType();
-        if (returnType == null || returnType.tsym == null) {
-            return false;
-        }
-        String rawType = returnType.tsym.getQualifiedName().toString();
-        return SUPPORTED_PROPERTY_TYPES.contains(rawType);
+        return returnType != null && isSubtypeOfProvider(returnType, state);
+    }
+
+    private static boolean isSubtypeOfProvider(Type type, VisitorState state) {
+        return ASTHelpers.isSubtype(type, PROVIDER_TYPE_SUPPLIER.get(state), state);
     }
 
     @Override
