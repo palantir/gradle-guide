@@ -72,6 +72,32 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
+        void abstract_task_with_non_abstract_DomainObjectCollection_getter_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.NamedDomainObjectContainer;
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
+                        public NamedDomainObjectContainer<String> getFoo() { return null; }
+                    }
+                    """);
+        }
+
+        @Test
+        void abstract_task_with_non_abstract_FileCollection_getter_should_fail() {
+            test(
+                    """
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.file.ConfigurableFileTree;
+                    abstract class Test extends DefaultTask {
+                        // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
+                        public ConfigurableFileTree getFoo() { return null; }
+                    }
+                    """);
+        }
+
+        @Test
         void abstract_task_with_provider_getter_not_starting_with_get_should_fail() {
             test(
                     """

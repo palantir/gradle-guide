@@ -63,6 +63,10 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
     private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
             Suppliers.typeFromString("org.gradle.api.provider.Provider");
+    private static final Supplier<Type> DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER =
+            Suppliers.typeFromString("org.gradle.api.DomainObjectCollection");
+    private static final Supplier<Type> FILE_COLLECTION_TYPE_SUPPLIER =
+            Suppliers.typeFromString("org.gradle.api.file.FileCollection");
 
     private static final String ABSTRACT_PROPERTY_METHOD_MSG = "Properties on Tasks or Extensions should be declared "
             + "abstract. Declare this method as 'public abstract', e.g., 'public abstract Property<Integer> "
@@ -138,7 +142,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
 
         Type varType = ASTHelpers.getType(tree);
-        if (varType != null && isSubtypeOfProvider(varType, state)) {
+        if (varType != null && isManagedPropertyType(varType, state)) {
             return buildDescription(tree).setMessage(PROPERTY_FIELD_MSG).build();
         }
 
@@ -185,7 +189,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         return StreamSupport.stream(extSym.members().getSymbols().spliterator(), false)
                 .filter(memberSym -> memberSym instanceof VarSymbol)
                 .map(memberSym -> (VarSymbol) memberSym)
-                .anyMatch(varSym -> isSubtypeOfProvider(varSym.type, state));
+                .anyMatch(varSym -> isManagedPropertyType(varSym.type, state));
     }
 
     private Description checkManagedPropertyGetters(ClassSymbol extSym, MethodInvocationTree tree, VisitorState state) {
@@ -223,12 +227,30 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         return symbol != null && symbol.getModifiers().contains(Modifier.ABSTRACT);
     }
 
+    private static boolean isManagedPropertyType(Type type, VisitorState state) {
+        return isSubtypeOfProvider(type, state)
+                || isSubtypeOfDomainObjectCollection(type, state)
+                || isSubtypeOfFileCollection(type, state);
+    }
+
+    private static boolean isSubtypeOfProvider(Type type, VisitorState state) {
+        return ASTHelpers.isSubtype(type, PROVIDER_TYPE_SUPPLIER.get(state), state);
+    }
+
+    private static boolean isSubtypeOfDomainObjectCollection(Type type, VisitorState state) {
+        return ASTHelpers.isSubtype(type, DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER.get(state), state);
+    }
+
+    private static boolean isSubtypeOfFileCollection(Type type, VisitorState state) {
+        return ASTHelpers.isSubtype(type, FILE_COLLECTION_TYPE_SUPPLIER.get(state), state);
+    }
+
     private static boolean isManagedPropertyGetter(MethodTree method, VisitorState state) {
         if (!method.getParameters().isEmpty()) {
             return false;
         }
         Type returnType = ASTHelpers.getType(method.getReturnType());
-        return returnType != null && isSubtypeOfProvider(returnType, state);
+        return returnType != null && isManagedPropertyType(returnType, state);
     }
 
     private static boolean isManagedPropertyGetter(MethodSymbol method, VisitorState state) {
@@ -236,11 +258,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return false;
         }
         Type returnType = method.getReturnType();
-        return returnType != null && isSubtypeOfProvider(returnType, state);
-    }
-
-    private static boolean isSubtypeOfProvider(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, PROVIDER_TYPE_SUPPLIER.get(state), state);
+        return returnType != null && isManagedPropertyType(returnType, state);
     }
 
     @Override
