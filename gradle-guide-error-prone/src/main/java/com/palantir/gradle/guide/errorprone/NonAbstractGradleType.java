@@ -58,6 +58,18 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             .named("create");
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
+    private static final String ABSTRACT_PROPERTY_METHOD_MSG = "Properties on Tasks or Extensions should be declared "
+            + "abstract. Declare this method as 'public abstract', e.g., 'public abstract Property<Integer> "
+            + "getFoo();'. This enables Gradle to inject the property implementation automatically, removing "
+            + "boilerplate and supporting the Groovy DSL , this will automatically this will make the `foo = 3` groovy "
+            + "syntax work of the box.";
+
+    private static final String PROPERTY_GETTER_NAMING_MSG =
+            "Gradle managed property getter methods must be named starting with 'get', e.g., 'getFoo'. This naming "
+                    + "convention is required for Gradle to recognize and manage the property, enabling automatic "
+                    + "property wiring and Groovy DSL support, this will automatically this will make the `foo = 3` "
+                    + "groovy syntax work of the box.";
+
     private static final Set<String> SUPPORTED_PROPERTY_TYPES = Set.of(
             "org.gradle.api.provider.Property",
             "org.gradle.api.provider.ListProperty",
@@ -101,19 +113,12 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
         if (!isAbstract(ASTHelpers.getSymbol(method))) {
             return buildDescription(method)
-                    .setMessage("Gradle managed property getter methods must be abstract. "
-                            + "Declare this method as 'public abstract', e.g., "
-                            + "'public abstract Property<Integer> getFoo();'. "
-                            + "This enables Gradle to inject the property implementation "
-                            + "automatically, removing boilerplate and supporting the Groovy DSL.")
+                    .setMessage(ABSTRACT_PROPERTY_METHOD_MSG)
                     .build();
         }
         if (!method.getName().toString().startsWith("get")) {
             return buildDescription(method)
-                    .setMessage("Gradle managed property getter methods must be named starting with 'get', "
-                            + "e.g., 'getFoo'. This naming convention is required for Gradle "
-                            + "to recognize and manage the property, enabling automatic "
-                            + "property wiring and Groovy DSL support.")
+                    .setMessage(PROPERTY_GETTER_NAMING_MSG)
                     .build();
         }
         return Description.NO_MATCH;
@@ -157,19 +162,12 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                 .map(memberSym -> {
                     if (!isAbstract(memberSym)) {
                         return buildDescription(tree)
-                                .setMessage("Gradle managed property getter methods must be abstract. "
-                                        + "Declare this method as 'public abstract', e.g., "
-                                        + "'public abstract Property<Integer> getFoo();'. "
-                                        + "This enables Gradle to inject the property implementation automatically, "
-                                        + "removing boilerplate and supporting the Groovy DSL.")
+                                .setMessage(ABSTRACT_PROPERTY_METHOD_MSG)
                                 .build();
                     }
                     if (!memberSym.getSimpleName().toString().startsWith("get")) {
                         return buildDescription(tree)
-                                .setMessage("Gradle managed property getter methods must be named starting with 'get', "
-                                        + "e.g., 'getFoo'. This naming convention is required for Gradle to recognize "
-                                        + "and manage the property, enabling automatic property wiring and Groovy DSL "
-                                        + "support.")
+                                .setMessage(PROPERTY_GETTER_NAMING_MSG)
                                 .build();
                     }
                     return null;

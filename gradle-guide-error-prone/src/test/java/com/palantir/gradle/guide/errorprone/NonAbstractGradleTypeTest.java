@@ -65,7 +65,7 @@ class NonAbstractGradleTypeTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.provider.Property;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: must be abstract
+                        // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
                         public Property<String> getFoo() { return null; }
                     }
                     """);
@@ -194,7 +194,7 @@ class NonAbstractGradleTypeTest {
                             public class FooPlugin implements Plugin<Project> {
                                 @Override
                                 public void apply(Project project) {
-                                    // BUG: Diagnostic contains: managed property getter methods must be abstract
+                                    // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
                                     project.getExtensions().create("foo", FooExtension.class);
                                 }
                             }
