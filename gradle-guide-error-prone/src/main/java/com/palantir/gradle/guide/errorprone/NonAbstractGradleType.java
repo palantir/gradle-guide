@@ -77,7 +77,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
 
         if (IS_TASK.matches(tree, state)) {
-            return buildDescription(tree).build();
+            return describeMatch(tree);
         }
 
         return Description.NO_MATCH;
@@ -155,7 +155,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         Type extensionType = extensionTypeOpt.get();
 
         if (!(isAbstract(extensionType.tsym) || extensionType.isInterface())) {
-            return buildDescription(tree).build();
+            return describeMatch(tree);
         }
 
         ClassSymbol extSym = (ClassSymbol) extensionType.tsym;

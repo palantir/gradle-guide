@@ -59,20 +59,20 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void abstract_task_with_non_abstract_property_getter_should_fail() {
+        void abstract_task_with_non_abstract_provider_getter_should_fail() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
+                    import org.gradle.api.file.RegularFileProperty;
                     abstract class Test extends DefaultTask {
                         // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
-                        public Property<String> getFoo() { return null; }
+                        public RegularFileProperty getFoo() { return null; }
                     }
                     """);
         }
 
         @Test
-        void abstract_task_with_property_getter_not_starting_with_get_should_fail() {
+        void abstract_task_with_provider_getter_not_starting_with_get_should_fail() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
@@ -85,34 +85,19 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void abstract_task_with_non_abstract_property_getter_and_incorrect_naming_should_fail() {
+        void abstract_task_with_abstract_provider_getter_is_fine() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-
+                    import org.gradle.api.provider.SetProperty;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: should be named starting with 'get'
-                        // BUG: Diagnostic contains: Properties on Tasks or Extensions should be declared abstract
-                        public Property<String> foo() { return null; }
+                        public abstract SetProperty<String> getFoo();
                     }
                     """);
         }
 
         @Test
-        void abstract_task_with_abstract_property_getter_is_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public abstract Property<String> getFoo();
-                    }
-                    """);
-        }
-
-        @Test
-        void abstract_task_with_non_property_getter_is_fine() {
+        void abstract_task_with_non_provider_getter_is_fine() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
@@ -123,7 +108,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void abstract_task_with_property_getter_with_parameter_is_fine() {
+        void abstract_task_with_provider_getter_with_parameter_is_fine() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
@@ -135,7 +120,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void abstract_task_with_property_field_should_fail() {
+        void abstract_task_with_provider_field_should_fail() {
             test(
                     """
                     import org.gradle.api.DefaultTask;
@@ -210,7 +195,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void extension_with_non_abstract_property_getter_should_fail() {
+        void extension_with_non_abstract_provider_getter_should_fail() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -235,7 +220,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void extension_with_property_getter_not_starting_with_get_should_fail() {
+        void extension_with_provider_getter_not_starting_with_get_should_fail() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -260,7 +245,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void extension_with_abstract_property_getter_is_fine() {
+        void extension_with_abstract_provider_getter_is_fine() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -285,7 +270,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void extension_with_non_property_getter_is_fine() {
+        void extension_with_non_provider_getter_is_fine() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -309,7 +294,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void extension_with_property_getter_with_parameter_is_fine() {
+        void extension_with_provider_getter_with_parameter_is_fine() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -334,7 +319,7 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
-        void abstract_extension_with_property_field_should_fail() {
+        void abstract_extension_with_provider_field_should_fail() {
             compilationTestHelper
                     .addSourceLines(
                             "FooExtension.java",
@@ -370,7 +355,7 @@ class NonAbstractGradleTypeTest {
     }
 
     @Test
-    void unrelated_abstract_class_with_property_getter_is_fine() {
+    void unrelated_abstract_class_with_provider_getter_is_fine() {
         test(
                 """
                 abstract class NotATaskOrExtension {
@@ -380,7 +365,7 @@ class NonAbstractGradleTypeTest {
     }
 
     @Test
-    void unrelated_class_with_property_getter_is_fine() {
+    void unrelated_class_with_provider_getter_is_fine() {
         test(
                 """
                 import org.gradle.api.provider.Property;
@@ -391,7 +376,7 @@ class NonAbstractGradleTypeTest {
     }
 
     @Test
-    void unrelated_class_with_property_field_is_fine() {
+    void unrelated_class_with_provider_field_is_fine() {
         test(
                 """
                 import org.gradle.api.provider.Property;
