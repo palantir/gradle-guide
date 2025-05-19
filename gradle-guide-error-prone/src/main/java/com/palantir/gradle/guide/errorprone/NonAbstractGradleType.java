@@ -65,8 +65,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             "org.gradle.api.provider.MapProperty",
             "org.gradle.api.file.RegularFileProperty",
             "org.gradle.api.file.DirectoryProperty",
-            "org.gradle.api.provider.Provider",
-            "org.gradle.api.model.ObjectFactory");
+            "org.gradle.api.provider.Provider");
 
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
