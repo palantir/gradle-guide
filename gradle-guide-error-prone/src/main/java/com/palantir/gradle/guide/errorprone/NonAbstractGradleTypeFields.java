@@ -28,12 +28,10 @@ import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.suppliers.Suppliers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -96,15 +94,6 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
                     return Description.NO_MATCH;
                 })
                 .orElse(Description.NO_MATCH);
-    }
-
-    private static Optional<Type> typeArgumentFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
-        // From a possible Class<T> extract T
-        return Optional.ofNullable(ASTHelpers.getType(classArg))
-                .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
-                .filter(argType -> !argType.getTypeArguments().isEmpty())
-                .map(argType -> argType.getTypeArguments().get(0))
-                .filter(extensionType -> extensionType.tsym != null);
     }
 
     private static boolean isManagedPropertyType(Type type, VisitorState state) {

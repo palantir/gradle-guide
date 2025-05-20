@@ -26,14 +26,11 @@ import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.suppliers.Suppliers;
-import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Type;
-import java.util.Optional;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -74,17 +71,8 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
                     Type type = extSym.type;
                     return !(isTypeAbstract(type) || type.isInterface());
                 })
-                .map(nonAbstractType -> buildDescription(tree).build())
+                .map(nonAbstractType -> describeMatch(tree))
                 .orElse(Description.NO_MATCH);
-    }
-
-    private static Optional<Type> typeArgumentFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
-        // From a possible Class<T> extract T
-        return Optional.ofNullable(ASTHelpers.getType(classArg))
-                .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
-                .filter(argType -> !argType.getTypeArguments().isEmpty())
-                .map(argType -> argType.getTypeArguments().get(0))
-                .filter(extensionType -> extensionType.tsym != null);
     }
 
     private static boolean isTypeAbstract(Type type) {
