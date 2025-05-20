@@ -163,214 +163,135 @@ class NonAbstractGradleTypeFieldsTest {
     @Nested
     class Extensions {
 
-        // language=Java
-        private String pluginCode =
+        @Language("Java")
+        private static final String PLUGIN_CODE_BUG =
                 """
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
+        import org.gradle.api.Plugin;
+        import org.gradle.api.Project;
+        public class FooPlugin implements Plugin<Project> {
+            @Override
+            public void apply(Project project) {
+                // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                project.getExtensions().create("foo", FooExtension.class);
+            }
+        }
+        """;
 
-                public class FooPlugin implements Plugin<Project> {
-                    @Override
-                    public void apply(Project project) {
-                        // BUG: Diagnostic contains: abstract class
-                        project.getExtensions().create("foo", FooExtension.class);
-
-                        Class<FooExtension> fooExtensionClass = FooExtension.class;
-                        // BUG: Diagnostic contains: abstract class
-                        project.getExtensions().create("foo", fooExtensionClass);
-                    }
-                }
-                """;
+        @Language("Java")
+        private static final String PLUGIN_CODE_NO_BUG =
+                """
+        import org.gradle.api.Plugin;
+        import org.gradle.api.Project;
+        public class FooPlugin implements Plugin<Project> {
+            @Override
+            public void apply(Project project) {
+                project.getExtensions().create("foo", FooExtension.class);
+            }
+        }
+        """;
 
         @Test
         void provider_field_in_constructor_should_fail() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.provider.Property;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    private final Property<String> property;",
-                            "    public FooExtension(Project project) {",
-                            "        this.property = project.getObjects().property(String.class);",
-                            "    }",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                private final Property<String> property;
+                public FooExtension(Project project) {
+                    this.property = project.getObjects().property(String.class);
+                }
+            }
+            """,
+                    PLUGIN_CODE_BUG);
         }
 
         @Test
         void file_collection_field_in_constructor_should_fail() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.file.FileCollection;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    private final FileCollection files;",
-                            "    public FooExtension(Project project) {",
-                            "        this.files = project.files(\"somefile.txt\");",
-                            "    }",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.file.FileCollection;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                private final FileCollection files;
+                public FooExtension(Project project) {
+                    this.files = project.files("somefile.txt");
+                }
+            }
+            """,
+                    PLUGIN_CODE_BUG);
         }
 
         @Test
         void named_domain_container_field_in_constructor_should_fail() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.NamedDomainObjectContainer;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    private final NamedDomainObjectContainer<String> container;",
-                            "    public FooExtension(Project project) {",
-                            "        this.container = project.container(String.class);",
-                            "    }",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.NamedDomainObjectContainer;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                private final NamedDomainObjectContainer<String> container;
+                public FooExtension(Project project) {
+                    this.container = project.container(String.class);
+                }
+            }
+            """,
+                    PLUGIN_CODE_BUG);
         }
 
         @Test
         void provider_local_variable_in_method_should_be_fine() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.provider.Property;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    public FooExtension(Project project) {",
-                            "        Property<String> bar = project.getObjects().property(String.class);",
-                            "    }",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                public FooExtension(Project project) {
+                    Property<String> bar = project.getObjects().property(String.class);
+                }
+            }
+            """,
+                    PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void provider_method_parameter_should_be_fine() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.provider.Property;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    public FooExtension(Property<String> bar) {}",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                public FooExtension(Property<String> bar) {}
+            }
+            """,
+                    PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void provider_field_on_inner_class_should_be_fine() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "import org.gradle.api.provider.Property;",
-                            "import org.gradle.api.Project;",
-                            "abstract class FooExtension {",
-                            "    public FooExtension(Project project) {}",
-                            "    class Inner {",
-                            "        private final Property<String> bar = null;",
-                            "    }",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            import org.gradle.api.provider.Property;
+            import org.gradle.api.Project;
+            abstract class FooExtension {
+                public FooExtension(Project project) {}
+                class Inner {
+                    private final Property<String> bar = null;
+                }
+            }
+            """,
+                    PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void unrelated_field_should_be_fine() {
-            compilationTestHelper
-                    .addSourceLines(
-                            "FooExtension.java",
-                            "abstract class FooExtension {",
-                            "    private final String bar = \"hello\";",
-                            "    public FooExtension() {}",
-                            "}")
-                    .addSourceLines(
-                            "FooPlugin.java",
-                            """
-                            import org.gradle.api.Plugin;
-                            import org.gradle.api.Project;
-                            public class FooPlugin implements Plugin<Project> {
-                                @Override
-                                public void apply(Project project) {
-                                    project.getExtensions().create("foo", FooExtension.class);
-                                }
-                            }
-                            """)
-                    .doTest();
+            testExtension(
+                    """
+            abstract class FooExtension {
+                private final String bar = "hello";
+                public FooExtension() {}
+            }
+            """,
+                    PLUGIN_CODE_NO_BUG);
         }
     }
 
@@ -394,5 +315,12 @@ class NonAbstractGradleTypeFieldsTest {
 
     private void test(@Language("Java") String source) {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
+    }
+
+    private void testExtension(@Language("Java") String extensionSource, @Language("Java") String pluginCode) {
+        compilationTestHelper
+                .addSourceLines("FooExtension.java", extensionSource)
+                .addSourceLines("FooPlugin.java", pluginCode)
+                .doTest();
     }
 }
