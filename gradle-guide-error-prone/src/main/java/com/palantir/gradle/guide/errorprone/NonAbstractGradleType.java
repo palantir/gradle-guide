@@ -28,6 +28,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import javax.lang.model.element.Modifier;
 
@@ -62,14 +63,12 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     }
 
     @Override
-    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        return matchExtensionClass(tree, state)
-                .filter(extSym -> {
-                    Type type = extSym.type;
-                    return !(isTypeAbstract(type) || type.isInterface());
-                })
-                .map(nonAbstractType -> describeMatch(tree))
-                .orElse(Description.NO_MATCH);
+    public Description matchExtensionClass(ClassSymbol extensionClass, MethodInvocationTree tree, VisitorState state) {
+        if (isTypeAbstract(extensionClass.type) || extensionClass.type.isInterface()) {
+            return Description.NO_MATCH;
+        }
+
+        return describeMatch(tree);
     }
 
     private static boolean isTypeAbstract(Type type) {

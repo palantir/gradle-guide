@@ -30,6 +30,7 @@ import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.VariableTree;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 import java.util.stream.Collectors;
@@ -72,27 +73,23 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
     }
 
     @Override
-    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        return matchExtensionClass(tree, state)
-                .map(extSym -> {
-                    String fieldNames = StreamSupport.stream(
-                                    extSym.members().getSymbols().spliterator(), false)
-                            .filter(memberSym -> memberSym instanceof VarSymbol)
-                            .map(memberSym -> (VarSymbol) memberSym)
-                            .filter(varSym -> varSym.owner.equals(extSym))
-                            .filter(varSym -> isManagedPropertyType(varSym.type, state))
-                            .map(varSym -> varSym.getSimpleName().toString())
-                            .collect(Collectors.joining(", "));
+    public Description matchExtensionClass(ClassSymbol extensionClass, MethodInvocationTree tree, VisitorState state) {
+        String fieldNames = StreamSupport.stream(
+                        extensionClass.members().getSymbols().spliterator(), false)
+                .filter(memberSym -> memberSym instanceof VarSymbol)
+                .map(memberSym -> (VarSymbol) memberSym)
+                .filter(varSym -> varSym.owner.equals(extensionClass))
+                .filter(varSym -> isManagedPropertyType(varSym.type, state))
+                .map(varSym -> varSym.getSimpleName().toString())
+                .collect(Collectors.joining(", "));
 
-                    if (!fieldNames.isEmpty()) {
-                        return buildDescription(tree)
-                                .setMessage(SUMMARY + "\n Declared fields: " + fieldNames + "\n")
-                                .build();
-                    }
+        if (!fieldNames.isEmpty()) {
+            return buildDescription(tree)
+                    .setMessage(SUMMARY + "\n Declared fields: " + fieldNames + "\n")
+                    .build();
+        }
 
-                    return Description.NO_MATCH;
-                })
-                .orElse(Description.NO_MATCH);
+        return Description.NO_MATCH;
     }
 
     private static boolean isManagedPropertyType(Type type, VisitorState state) {
