@@ -46,11 +46,8 @@ import javax.lang.model.element.Modifier;
                 + "as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically "
                 + "make the `foo = 3` groovy syntax work of the box.")
 public final class NonAbstractGradleType extends GradleGuideBugChecker
-        implements BugChecker.ClassTreeMatcher, BugChecker.MethodInvocationTreeMatcher {
+        implements BugChecker.ClassTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE = Matchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
-            .named("create");
     private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
     @Override
@@ -72,24 +69,11 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        // We have to do our checks on Extensions where they are created rather than on the Extension types themselves
-        // This is because Extension types do not extend a class or implement an interface. There's no way to tell if
-        // a certain class is an extension or not just looking at its type declaration alone.. Especially given
-        // there are many other types with names ending in Extension, eg Junit 5 extensions.
-        if (!IS_EXTENSION_CREATE.matches(tree, state)) {
-            return Description.NO_MATCH;
-        }
-
-        // We need at least 2 arguments (name and class)
-        if (tree.getArguments().size() < 2) {
-            return Description.NO_MATCH;
-        }
-
-        // Get the second argument which should be the class type
-        ExpressionTree classArg = tree.getArguments().get(1);
-
-        return typeArgumentFromPossibleClassType(state, classArg)
-                .filter(type -> !(isTypeAbstract(type) || type.isInterface()))
+        return matchExtensionClass(tree, state)
+                .filter(extSym -> {
+                    Type type = extSym.type;
+                    return !(isTypeAbstract(type) || type.isInterface());
+                })
                 .map(nonAbstractType -> buildDescription(tree).build())
                 .orElse(Description.NO_MATCH);
     }
