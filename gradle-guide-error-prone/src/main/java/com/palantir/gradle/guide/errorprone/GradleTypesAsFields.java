@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = NonAbstractGradleTypeFields.SUMMARY)
-public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
+@BugPattern(severity = SeverityLevel.ERROR, summary = GradleTypesAsFields.SUMMARY)
+public final class GradleTypesAsFields extends GradleGuideBugChecker
         implements BugChecker.VariableTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
     private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
@@ -49,10 +49,10 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
             Suppliers.typeFromString("org.gradle.api.file.FileCollection");
 
     public static final String SUMMARY =
-            "Do not declare class fields directly on Tasks or Extensions. Instead, declare an abstract getter "
-                    + "method, e.g., 'public abstract Property<String> getFoo();'. This enables Gradle to inject the "
-                    + "property implementation automatically, removes boilerplate, and supports the Groovy DSL "
-                    + "(e.g. `foo = 3`).";
+            "Do not declare Properties, FileCollections and other Gradle managed types as fields directly on Tasks or "
+                    + "Extensions. Instead, declare an abstract getter method, e.g., 'public abstract Property<String> "
+                    + "getFoo();'. This enables Gradle to inject the property implementation automatically, removes "
+                    + "boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).";
 
     @Override
     public Description matchVariable(VariableTree tree, VisitorState state) {

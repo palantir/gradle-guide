@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("MisformattedTestData")
-class NonAbstractGradleTypeFieldsTest {
+class GradleTypesAsFieldsTest {
     private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(NonAbstractGradleTypeFields.class, getClass());
+            CompilationTestHelper.newInstance(GradleTypesAsFields.class, getClass());
 
     @Nested
     class Tasks {
@@ -34,7 +34,7 @@ class NonAbstractGradleTypeFieldsTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.provider.Property;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                        // BUG: Diagnostic contains: declare an abstract getter method,
                         private final Property<String> foo;
                         public Test() {
                             this.foo = getProject().getObjects().property(String.class);
@@ -50,7 +50,7 @@ class NonAbstractGradleTypeFieldsTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.NamedDomainObjectContainer;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                        // BUG: Diagnostic contains: declare an abstract getter method,
                         private final NamedDomainObjectContainer<String> foo;
                         public Test() {
                             this.foo = getProject().container(String.class);
@@ -66,7 +66,7 @@ class NonAbstractGradleTypeFieldsTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.file.FileCollection;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                        // BUG: Diagnostic contains: declare an abstract getter method,
                         private final FileCollection foo;
                         public Test() {
                             this.foo = getProject().files("somefile.txt");
@@ -82,7 +82,7 @@ class NonAbstractGradleTypeFieldsTest {
                     import org.gradle.api.DefaultTask;
                     import org.gradle.api.provider.Property;
                     abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                        // BUG: Diagnostic contains: declare an abstract getter method,
                         private final Property<String> foo = getProject().getObjects().property(String.class);
                         public Test() {}
                     }
@@ -171,7 +171,7 @@ class NonAbstractGradleTypeFieldsTest {
         public class FooPlugin implements Plugin<Project> {
             @Override
             public void apply(Project project) {
-                // BUG: Diagnostic contains: declare class fields directly on Tasks or Extensions
+                // BUG: Diagnostic contains: declare an abstract getter method,
                 project.getExtensions().create("foo", FooExtension.class);
             }
         }
