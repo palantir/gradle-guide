@@ -40,7 +40,6 @@ import java.util.stream.StreamSupport;
 public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
         implements BugChecker.VariableTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
     private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
             Suppliers.typeFromString("org.gradle.api.provider.Provider");
     private static final Supplier<Type> DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER =
