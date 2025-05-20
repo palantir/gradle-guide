@@ -62,16 +62,11 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
 
     @Override
     public Description matchVariable(VariableTree tree, VisitorState state) {
-        ClassTree enclosingClass = ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class);
-        if (enclosingClass == null) {
+        if (!(state.getPath().getParentPath().getLeaf() instanceof ClassTree enclosingClass)) {
             return Description.NO_MATCH;
         }
 
         if (!IS_TASK.matches(enclosingClass, state)) {
-            return Description.NO_MATCH;
-        }
-
-        if (!enclosingClass.getMembers().contains(tree)) {
             return Description.NO_MATCH;
         }
 
