@@ -28,6 +28,22 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 <tr>
 <td>
 
+<a id="NonAbstractClassField" href="guide/managed-types-and-properties.md">`NonAbstractClassField`</a>
+
+</td>
+<td>
+<a href="guide/managed-types-and-properties.md">Please read</a>
+</td>
+<td>
+
+Do not declare class fields directly on Tasks or Extensions. Instead, declare an abstract getter method, e.g., 'public abstract Property<String> getFoo();'. This enables Gradle to inject the property implementation automatically, removes boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="NonAbstractGradleType" href="guide/managed-types-and-properties.md">`NonAbstractGradleType`</a>
 
 </td>
