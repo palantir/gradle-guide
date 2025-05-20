@@ -24,16 +24,12 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
-import com.google.errorprone.suppliers.Supplier;
-import com.google.errorprone.suppliers.Suppliers;
-import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
-import java.util.Optional;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -46,12 +42,8 @@ import javax.lang.model.element.Modifier;
                 + "as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically "
                 + "make the `foo = 3` groovy syntax work of the box.")
 public final class NonAbstractGradleType extends GradleGuideBugChecker
-        implements BugChecker.ClassTreeMatcher, BugChecker.MethodInvocationTreeMatcher {
+        implements BugChecker.ClassTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE = Matchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.plugins.ExtensionContainer")
-            .named("create");
-    private static final Supplier<Type> CLASS_TYPE_SUPPLIER = Suppliers.typeFromString("java.lang.Class");
 
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
@@ -71,36 +63,13 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     }
 
     @Override
-    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        // We have to do our checks on Extensions where they are created rather than on the Extension types themselves
-        // This is because Extension types do not extend a class or implement an interface. There's no way to tell if
-        // a certain class is an extension or not just looking at its type declaration alone.. Especially given
-        // there are many other types with names ending in Extension, eg Junit 5 extensions.
-        if (!IS_EXTENSION_CREATE.matches(tree, state)) {
+    public Description matchExtensionClass(
+            ClassSymbol extensionClass, MethodInvocationTree extensionContainerCreateTree, VisitorState state) {
+        if (isTypeAbstract(extensionClass.type) || extensionClass.type.isInterface()) {
             return Description.NO_MATCH;
         }
 
-        // We need at least 2 arguments (name and class)
-        if (tree.getArguments().size() < 2) {
-            return Description.NO_MATCH;
-        }
-
-        // Get the second argument which should be the class type
-        ExpressionTree classArg = tree.getArguments().get(1);
-
-        return typeArgumentFromPossibleClassType(state, classArg)
-                .filter(type -> !(isTypeAbstract(type) || type.isInterface()))
-                .map(nonAbstractType -> buildDescription(tree).build())
-                .orElse(Description.NO_MATCH);
-    }
-
-    private static Optional<Type> typeArgumentFromPossibleClassType(VisitorState state, ExpressionTree classArg) {
-        // From a possible Class<T> extract T
-        return Optional.ofNullable(ASTHelpers.getType(classArg))
-                .filter(argType -> ASTHelpers.isSubtype(argType, CLASS_TYPE_SUPPLIER.get(state), state))
-                .filter(argType -> !argType.getTypeArguments().isEmpty())
-                .map(argType -> argType.getTypeArguments().get(0))
-                .filter(extensionType -> extensionType.tsym != null);
+        return describeMatch(extensionContainerCreateTree);
     }
 
     private static boolean isTypeAbstract(Type type) {
