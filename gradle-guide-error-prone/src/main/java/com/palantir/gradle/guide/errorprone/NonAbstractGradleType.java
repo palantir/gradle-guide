@@ -63,12 +63,13 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
     }
 
     @Override
-    public Description matchExtensionClass(ClassSymbol extensionClass, MethodInvocationTree tree, VisitorState state) {
+    public Description matchExtensionClass(
+            ClassSymbol extensionClass, MethodInvocationTree extensionContainerCreateTree, VisitorState state) {
         if (isTypeAbstract(extensionClass.type) || extensionClass.type.isInterface()) {
             return Description.NO_MATCH;
         }
 
-        return describeMatch(tree);
+        return describeMatch(extensionContainerCreateTree);
     }
 
     private static boolean isTypeAbstract(Type type) {

@@ -73,7 +73,8 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
     }
 
     @Override
-    public Description matchExtensionClass(ClassSymbol extensionClass, MethodInvocationTree tree, VisitorState state) {
+    public Description matchExtensionClass(
+            ClassSymbol extensionClass, MethodInvocationTree extensionContainerCreateTree, VisitorState state) {
         String fieldNames = StreamSupport.stream(
                         extensionClass.members().getSymbols().spliterator(), false)
                 .filter(memberSym -> memberSym instanceof VarSymbol)
@@ -84,7 +85,7 @@ public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
                 .collect(Collectors.joining(", "));
 
         if (!fieldNames.isEmpty()) {
-            return buildDescription(tree)
+            return buildDescription(extensionContainerCreateTree)
                     .setMessage(SUMMARY + "\n Declared fields: " + fieldNames + "\n")
                     .build();
         }
