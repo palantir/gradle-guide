@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("MisformattedTestData")
-class NonAbstractClassFieldTest {
+class NonAbstractGradleTypeFieldsTest {
     private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(NonAbstractClassField.class, getClass());
+            CompilationTestHelper.newInstance(NonAbstractGradleTypeFields.class, getClass());
 
     @Nested
     class Tasks {

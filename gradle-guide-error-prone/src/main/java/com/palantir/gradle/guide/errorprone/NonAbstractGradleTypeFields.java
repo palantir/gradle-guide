@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = NonAbstractClassField.SUMMARY)
-public final class NonAbstractClassField extends GradleGuideBugChecker
+@BugPattern(severity = SeverityLevel.ERROR, summary = NonAbstractGradleTypeFields.SUMMARY)
+public final class NonAbstractGradleTypeFields extends GradleGuideBugChecker
         implements BugChecker.VariableTreeMatcher, BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
     private static final Matcher<ExpressionTree> IS_EXTENSION_CREATE = Matchers.instanceMethod()
