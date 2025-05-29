@@ -29,17 +29,19 @@ import com.google.errorprone.suppliers.Suppliers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = GradleTypesAsFields.SUMMARY)
-public final class GradleTypesAsFields extends GradleGuideBugChecker
-        implements BugChecker.VariableTreeMatcher, ExtensionClassMatcher {
+@BugPattern(severity = SeverityLevel.ERROR, summary = GradleManagedTypeGetPrefix.SUMMARY)
+public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
+        implements BugChecker.MethodTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
     private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
             Suppliers.typeFromString("org.gradle.api.provider.Provider");
@@ -49,14 +51,16 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
             Suppliers.typeFromString("org.gradle.api.file.FileCollection");
 
     public static final String SUMMARY =
-            "Do not declare Properties, FileCollections and other Gradle managed types as fields directly on Tasks or "
-                    + "Extensions. Instead, declare an abstract getter method, e.g., 'public abstract Property<String> "
-                    + "getFoo();'. This enables Gradle to inject the property implementation automatically, removes "
-                    + "boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).";
+            "Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. "
+                    + "This naming convention ensures consistency and allows Gradle to handle property injection "
+                    + "correctly. For example, use 'public abstract Property<String> getFoo();' instead of 'public "
+                    + "abstract Property<String> foo();'. This enables Gradle to inject the property implementation "
+                    + "automatically, removes boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).";
 
     @Override
-    public Description matchVariable(VariableTree tree, VisitorState state) {
-        if (!(state.getPath().getParentPath().getLeaf() instanceof ClassTree enclosingClass)) {
+    public Description matchMethod(MethodTree method, VisitorState state) {
+        ClassTree enclosingClass = ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class);
+        if (enclosingClass == null) {
             return Description.NO_MATCH;
         }
 
@@ -64,9 +68,16 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        Type varType = ASTHelpers.getType(tree);
-        if (varType != null && isManagedPropertyType(varType, state)) {
-            return describeMatch(tree);
+        if (!isManagedPropertyType(ASTHelpers.getType(method.getReturnType()), state)) {
+            return Description.NO_MATCH;
+        }
+
+        if (!isAbstract(ASTHelpers.getSymbol(method))) {
+            return Description.NO_MATCH;
+        }
+
+        if (!method.getName().toString().startsWith("get")) {
+            return describeMatch(method);
         }
 
         return Description.NO_MATCH;
@@ -75,24 +86,32 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
     @Override
     public Description matchExtensionClass(
             ClassSymbol extensionClass, MethodInvocationTree extensionContainerCreateTree, VisitorState state) {
-        String fieldNames = StreamSupport.stream(
+
+        String methodNames = StreamSupport.stream(
                         extensionClass.members().getSymbols().spliterator(), false)
-                .filter(memberSym -> memberSym instanceof VarSymbol)
-                .map(memberSym -> (VarSymbol) memberSym)
-                .filter(varSym -> varSym.owner.equals(extensionClass))
-                .filter(varSym -> isManagedPropertyType(varSym.type, state))
-                .map(varSym -> varSym.getSimpleName().toString())
+                .filter(memberSym -> memberSym instanceof MethodSymbol)
+                .map(memberSym -> (MethodSymbol) memberSym)
+                .filter(methodSym -> methodSym.owner.equals(extensionClass))
+                .filter(GradleManagedTypeGetPrefix::isAbstract)
+                .filter(methodSym -> isManagedPropertyType(methodSym.getReturnType(), state))
+                .map(MethodSymbol::getSimpleName)
+                .filter(simpleName -> !simpleName.toString().startsWith("get"))
+                .map(Object::toString)
                 .collect(Collectors.joining(", "));
 
-        if (!fieldNames.isEmpty()) {
+        if (!methodNames.isEmpty()) {
             return buildDescription(extensionContainerCreateTree)
                     .setMessage("Within the " + extensionClass.getSimpleName()
-                            + " extension, the following declared fields are not abstract: " + fieldNames + "\n"
+                            + " extension, the following methods do not start with 'get': " + methodNames + "\n"
                             + SUMMARY)
                     .build();
         }
 
         return Description.NO_MATCH;
+    }
+
+    private static boolean isAbstract(Symbol symbol) {
+        return symbol != null && symbol.getModifiers().contains(Modifier.ABSTRACT);
     }
 
     private static boolean isManagedPropertyType(Type type, VisitorState state) {
