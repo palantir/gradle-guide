@@ -36,7 +36,7 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 </td>
 <td>
 
-Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. This naming convention ensures consistency and allows Gradle to handle property injection correctly. For example, use 'public abstract Property<String> getFoo();' instead of 'public abstract Property<String> foo();'. This enables Gradle to inject the property implementation automatically, removes boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).
+Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. This allows Gradle to handle property injection correctly. For example, use 'public abstract Property<String> getFoo();' instead of 'public abstract Property<String> foo();'. This enables Gradle to inject the property implementation automatically, removes boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).
 
 </td>
 </tr>

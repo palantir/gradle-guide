@@ -24,16 +24,14 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
-import com.google.errorprone.suppliers.Supplier;
-import com.google.errorprone.suppliers.Suppliers;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.GradleManagedTypes;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Type;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.lang.model.element.Modifier;
@@ -43,12 +41,6 @@ import javax.lang.model.element.Modifier;
 public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
         implements BugChecker.MethodTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.provider.Provider");
-    private static final Supplier<Type> DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.DomainObjectCollection");
-    private static final Supplier<Type> FILE_COLLECTION_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.file.FileCollection");
 
     public static final String SUMMARY =
             "Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. "
@@ -69,7 +61,7 @@ public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (!isManagedPropertyType(ASTHelpers.getType(method.getReturnType()), state)) {
+        if (!GradleManagedTypes.isManagedType(ASTHelpers.getType(method.getReturnType()), state)) {
             return Description.NO_MATCH;
         }
 
@@ -94,7 +86,7 @@ public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
                 .map(memberSym -> (MethodSymbol) memberSym)
                 .filter(methodSym -> methodSym.owner.equals(extensionClass))
                 .filter(GradleManagedTypeGetPrefix::isAbstract)
-                .filter(methodSym -> isManagedPropertyType(methodSym.getReturnType(), state))
+                .filter(methodSym -> GradleManagedTypes.isManagedType(methodSym.getReturnType(), state))
                 .map(MethodSymbol::getSimpleName)
                 .filter(simpleName -> !simpleName.toString().startsWith("get"))
                 .map(Object::toString)
@@ -113,24 +105,6 @@ public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
 
     private static boolean isAbstract(Symbol symbol) {
         return symbol != null && symbol.getModifiers().contains(Modifier.ABSTRACT);
-    }
-
-    private static boolean isManagedPropertyType(Type type, VisitorState state) {
-        return isSubtypeOfProvider(type, state)
-                || isSubtypeOfDomainObjectCollection(type, state)
-                || isSubtypeOfFileCollection(type, state);
-    }
-
-    private static boolean isSubtypeOfProvider(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, PROVIDER_TYPE_SUPPLIER.get(state), state);
-    }
-
-    private static boolean isSubtypeOfDomainObjectCollection(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER.get(state), state);
-    }
-
-    private static boolean isSubtypeOfFileCollection(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, FILE_COLLECTION_TYPE_SUPPLIER.get(state), state);
     }
 
     @Override

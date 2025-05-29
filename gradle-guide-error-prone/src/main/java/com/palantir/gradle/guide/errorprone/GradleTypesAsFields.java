@@ -24,9 +24,8 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
-import com.google.errorprone.suppliers.Supplier;
-import com.google.errorprone.suppliers.Suppliers;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.GradleManagedTypes;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.VariableTree;
@@ -41,12 +40,6 @@ import java.util.stream.StreamSupport;
 public final class GradleTypesAsFields extends GradleGuideBugChecker
         implements BugChecker.VariableTreeMatcher, ExtensionClassMatcher {
     private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    private static final Supplier<Type> PROVIDER_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.provider.Provider");
-    private static final Supplier<Type> DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.DomainObjectCollection");
-    private static final Supplier<Type> FILE_COLLECTION_TYPE_SUPPLIER =
-            Suppliers.typeFromString("org.gradle.api.file.FileCollection");
 
     public static final String SUMMARY =
             "Do not declare Properties, FileCollections and other Gradle managed types as fields directly on Tasks or "
@@ -65,7 +58,7 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
         }
 
         Type varType = ASTHelpers.getType(tree);
-        if (varType != null && isManagedPropertyType(varType, state)) {
+        if (varType != null && GradleManagedTypes.isManagedType(varType, state)) {
             return describeMatch(tree);
         }
 
@@ -80,7 +73,7 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
                 .filter(memberSym -> memberSym instanceof VarSymbol)
                 .map(memberSym -> (VarSymbol) memberSym)
                 .filter(varSym -> varSym.owner.equals(extensionClass))
-                .filter(varSym -> isManagedPropertyType(varSym.type, state))
+                .filter(varSym -> GradleManagedTypes.isManagedType(varSym.type, state))
                 .map(varSym -> varSym.getSimpleName().toString())
                 .collect(Collectors.joining(", "));
 
@@ -93,24 +86,6 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
         }
 
         return Description.NO_MATCH;
-    }
-
-    private static boolean isManagedPropertyType(Type type, VisitorState state) {
-        return isSubtypeOfProvider(type, state)
-                || isSubtypeOfDomainObjectCollection(type, state)
-                || isSubtypeOfFileCollection(type, state);
-    }
-
-    private static boolean isSubtypeOfProvider(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, PROVIDER_TYPE_SUPPLIER.get(state), state);
-    }
-
-    private static boolean isSubtypeOfDomainObjectCollection(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, DOMAIN_OBJECT_COLLECTION_TYPE_SUPPLIER.get(state), state);
-    }
-
-    private static boolean isSubtypeOfFileCollection(Type type, VisitorState state) {
-        return ASTHelpers.isSubtype(type, FILE_COLLECTION_TYPE_SUPPLIER.get(state), state);
     }
 
     @Override
