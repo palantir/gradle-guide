@@ -28,6 +28,22 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 <tr>
 <td>
 
+<a id="GradleManagedTypeGetPrefix" href="guide/managed-types-and-properties.md">`GradleManagedTypeGetPrefix`</a>
+
+</td>
+<td>
+<a href="guide/managed-types-and-properties.md">Please read</a>
+</td>
+<td>
+
+Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. This allows Gradle to handle property injection correctly. For example, use 'public abstract Property<String> getFoo();' instead of 'public abstract Property<String> foo();'. This enables Gradle to inject the property implementation automatically, removes boilerplate, and supports the Groovy DSL (e.g. `foo = 3`).
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="GradleTypesAsFields" href="guide/managed-types-and-properties.md">`GradleTypesAsFields`</a>
 
 </td>
