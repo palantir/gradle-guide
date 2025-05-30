@@ -60,6 +60,25 @@ This is very similar to [the commonly used `immutables` library](https://immutab
 
 It is possible to write extensions and tasks directly as in the `HelloExtension_Generated` class above. If you look into the depths of older Palantir Gradle code you will find many instances of this, but this is no longer recommended. All new code should use Managed Types.
 
+### Why prefer `create` over `add` for extensions?
+
+Always register an extension via
+
+```java
+project.getExtensions().create("name", MyExtension.class);
+```
+rather than
+
+```java
+project.getExtensions().add("name", new MyExtension(/* … */));
+```
+create asks Gradle to
+- build a managed instance (using Gradle’s code-generation),
+- wire that instance into Gradle’s lifecycle and dependency-injection system
+- keep all properties lazily realizable so they can still be configured after creation but before task-graph realisation. 
+
+Passing a manually constructed new MyExtension(…) to add skips all of this—the object is unmanaged, Gradle cannot inject services, and property realisation becomes eager, often leading to brittle or misconfigured builds.
+
 ## Tasks
 
 Similarly, for tasks, they should look like below rather than being manually specified:
