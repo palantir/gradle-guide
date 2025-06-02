@@ -36,7 +36,7 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 </td>
 <td>
 
-Gradle extensions should be registered using `create` rather than by constructing and passing a new instance to `add`. `create` ensures that Gradle manages the extension's lifecycle, type, and dependency injection correctly, while `add` with a manually constructed instance can lead to misconfigured extensions and bypasses Gradle's internal management.
+Gradle extensions should be registered using `create` rather than by constructing and passing a new instance to `add`. Using `create` enables Gradle to properly manage the extension's type. Manual construction with `add` can interfere with certain error-prone checks.
 
 </td>
 </tr>
