@@ -62,7 +62,7 @@ It is possible to write extensions and tasks directly as in the `HelloExtension_
 
 ### Why prefer `create` over `add` for extensions?
 
-Always register an extension via
+Prefer register an extension via
 
 ```java
 project.getExtensions().create("name", MyExtension.class);
@@ -75,9 +75,8 @@ project.getExtensions().add("name", new MyExtension(/* … */));
 create asks Gradle to
 - build a managed instance (using Gradle’s code-generation),
 - wire that instance into Gradle’s lifecycle and dependency-injection system
-- keep all properties lazily realizable so they can still be configured after creation but before task-graph realisation. 
 
-Passing a manually constructed new MyExtension(…) to add skips all of this—the object is unmanaged, Gradle cannot inject services, and property realisation becomes eager, often leading to brittle or misconfigured builds.
+This is mostly stylistic but is important as our Errorprones are built to detect extensions instantiated via `create`
 
 ## Tasks
 
