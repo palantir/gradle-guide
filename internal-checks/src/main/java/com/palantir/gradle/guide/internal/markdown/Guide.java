@@ -44,6 +44,7 @@ public record Guide(Readme readme, Set<MdFile> mdFiles) {
         return new Guide(readme, allMdFiles);
     }
 
+    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     private static Set<Path> allMdFiles(Path guideDir) {
         try (Stream<Path> allMdFiles = Files.list(guideDir)) {
             return allMdFiles

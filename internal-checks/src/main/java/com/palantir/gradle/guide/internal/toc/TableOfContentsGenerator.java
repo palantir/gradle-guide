@@ -43,8 +43,10 @@ public final class TableOfContentsGenerator {
     }
 
     private static String contentsSectionForMdFile(Readme readme, MdFile mdFile, Integer index) {
+        @SuppressWarnings("for-rollout:DefaultLocale")
         String top = String.format("%d. %s", index, readme.mdFile().markdownLinkTo(mdFile));
 
+        @SuppressWarnings("for-rollout:DefaultLocale")
         String subheadings = StreamEx.of(mdFile.headingsAtLevel(2))
                 .zipWith(integers())
                 .mapKeyValue((heading, subIndex) ->
