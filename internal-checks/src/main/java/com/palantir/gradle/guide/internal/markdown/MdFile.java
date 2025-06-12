@@ -32,7 +32,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return headings.stream().map(Heading::text).map(HeadingText::text).toList();
     }
 
-    @SuppressWarnings("for-rollout:MissingOverride")
+    @Override
     public String title() {
         return title;
     }
@@ -67,7 +67,6 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return linkTarget.linkTarget().htmlLinkFrom(path);
     }
 
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public String readContent() {
         try {
             return Files.readString(path);
@@ -76,7 +75,6 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         }
     }
 
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public void writeContent(String content) {
         try {
             Files.writeString(path, content);
@@ -85,7 +83,6 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         }
     }
 
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public static MdFile fromPath(Path mdFilePath) {
         try {
             String content = Files.readString(mdFilePath);

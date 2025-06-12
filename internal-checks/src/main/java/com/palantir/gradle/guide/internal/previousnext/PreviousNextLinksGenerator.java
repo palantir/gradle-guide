@@ -41,9 +41,8 @@ public final class PreviousNextLinksGenerator {
                     .after(mdFile)
                     .map(nextMdFile -> "<td align=\"right\">Next: " + mdFile.htmlLinkTo(nextMdFile) + "</td>");
 
-            @SuppressWarnings("for-rollout:StreamFlatMapOptional")
             String tds = Stream.of(previous, Optional.of(tableOfContents), next)
-                    .flatMap(Optional::stream)
+                    .mapMulti(Optional::ifPresent)
                     .map(text -> "  " + text)
                     .collect(Collectors.joining("\n"));
 

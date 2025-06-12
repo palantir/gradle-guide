@@ -25,7 +25,6 @@ public record TableOfContentsSource(List<MdFile> referencedFiles) {
     private static final String TOC_SOURCE_START = "<!-- TableOfContentsSource:";
     private static final String TOC_SOURCE_END = "-->";
 
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public static Optional<TableOfContentsSource> fromString(Set<MdFile> mdFiles, String readme) {
         List<String> lines = readme.lines()
                 .dropWhile(line -> !line.contains(TOC_SOURCE_START))
