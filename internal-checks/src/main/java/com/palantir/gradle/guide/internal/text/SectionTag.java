@@ -30,7 +30,6 @@ public record SectionTag(String startTag, String endTag) {
         return pattern.matcher(text).replaceAll("");
     }
 
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public String replaceTaggedSection(String text, String replacement) {
         int start = text.indexOf(startTag) + startTag.length();
 
