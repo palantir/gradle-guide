@@ -127,7 +127,7 @@ class GetProjectInvocationsTest {
             """;
 
         /**
-         * Tests for @TaskAction.
+         * Tests for {@code @TaskAction}.
          */
         @SuppressWarnings("MisformattedTestData")
         @Test
@@ -142,7 +142,7 @@ class GetProjectInvocationsTest {
         }
 
         /**
-         * Tests for overrides of `public void execute(Task)` in `Action<Task>`.
+         * Tests for overrides of {@code public void execute(Task)} in {@code Action<Task>}.
          * Note that this way of defining task actions is deprecated, and should NOT be used!
          */
         @Test

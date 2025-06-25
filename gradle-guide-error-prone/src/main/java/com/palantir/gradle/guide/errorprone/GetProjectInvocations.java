@@ -28,6 +28,7 @@ import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
@@ -78,8 +79,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
         });
     }
 
-    // Returns true if `tree` is an override of `public void execute(org.gradle.api.Task)` from
-    // `org.gradle.api.Action<org.gradle.api.Task>`
+    // Returns true if `tree` is an override of `public void execute(Task)` from `Action<Task>`
     private boolean overridesExecute(MethodTree tree, VisitorState state) {
         return matchesExecuteSignature(tree)
                 && implementsActionOfTask(ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class), state);
@@ -102,7 +102,6 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
             return false;
         }
         ClassSymbol classSym = ASTHelpers.getSymbol(tree);
-
         ClassSymbol actionSym = ACTION_SYM.get(state);
         ClassSymbol taskSym = TASK_SYM.get(state);
 
@@ -113,27 +112,16 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
                         && ifaceType.getTypeArguments().get(0).tsym.equals(taskSym));
     }
 
-    private boolean reportAllViolations(
+    private void reportAllViolations(
             Tree tree, VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
-        return new TreeScanner<Boolean, Void>() {
+        new TreeScanner<Boolean, Void>() {
             @Override
-            public Boolean scan(Tree node, Void unused) {
-                if (node == null) {
-                    return false;
-                }
-
-                if (node instanceof ExpressionTree expr && violationMatcher.matches(expr, state)) {
+            public Boolean visitMethodInvocation(MethodInvocationTree node, Void unused) {
+                if (violationMatcher.matches(node, state)) {
                     state.reportMatch(
-                            buildDescription(expr).setMessage(violationMessage).build());
-                    return true;
+                            buildDescription(node).setMessage(violationMessage).build());
                 }
-
-                return node.accept(this, null);
-            }
-
-            @Override
-            public Boolean reduce(Boolean r1, Boolean r2) {
-                return (r1 != null && r1) || (r2 != null && r2);
+                return super.visitMethodInvocation(node, unused);
             }
         }.scan(tree, null);
     }
