@@ -74,13 +74,11 @@ class GetProjectInvocationsTest {
             }
             """;
 
-        @SuppressWarnings("MisformattedTestData")
         @Test
         void getProjectWithinTaskActionsShouldFail() {
             compilationTestHelper.addSourceLines("CustomTask.java", badTask).doTest();
         }
 
-        @SuppressWarnings("MisformattedTestData")
         @Test
         void getProjectWithoutTaskActionsShouldPass() {
             compilationTestHelper.addSourceLines("CustomTask.java", goodTask).doTest();
