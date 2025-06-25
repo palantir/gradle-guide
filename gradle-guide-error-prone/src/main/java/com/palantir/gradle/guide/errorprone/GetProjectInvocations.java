@@ -72,7 +72,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
         return Description.NO_MATCH;
     }
 
-    private boolean isTaskAction(MethodTree tree, VisitorState state) {
+    private static boolean isTaskAction(MethodTree tree, VisitorState state) {
         return tree.getModifiers().getAnnotations().stream().anyMatch(annotation -> {
             String source = state.getSourceForNode(annotation.getAnnotationType());
             return source.equals("TaskAction");
@@ -80,12 +80,12 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
     }
 
     // Returns true if `tree` is an override of `public void execute(Task)` from `Action<Task>`
-    private boolean overridesExecute(MethodTree tree, VisitorState state) {
+    private static boolean overridesExecute(MethodTree tree, VisitorState state) {
         return matchesExecuteSignature(tree)
                 && implementsActionOfTask(ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class), state);
     }
 
-    private boolean matchesExecuteSignature(MethodTree tree) {
+    private static boolean matchesExecuteSignature(MethodTree tree) {
         MethodSymbol sym = ASTHelpers.getSymbol(tree);
         List<Type> paramTypes = sym.getParameters().stream().map(v -> v.type).toList();
 
@@ -97,7 +97,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
                 && paramTypes.get(0).toString().equals("org.gradle.api.Task");
     }
 
-    private boolean implementsActionOfTask(ClassTree tree, VisitorState state) {
+    private static boolean implementsActionOfTask(ClassTree tree, VisitorState state) {
         if (tree == null) {
             return false;
         }
