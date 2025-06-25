@@ -36,7 +36,7 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 </td>
 <td>
 
-Don't call getProject() in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
+Don't call `getProject()` in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
 `Project` should not be passed into tasks as inputs. Instead, your tasks should take in the "smallest" type
 required for the task's functionality. For example, instead of taking in `Project` to later do
 `project.version`, you should declare the project version as a `Property<String>`.
