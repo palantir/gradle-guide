@@ -25,6 +25,9 @@ class GetProjectInvocationsTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(GetProjectInvocations.class, getClass());
 
+    /**
+     * Tests for {@code @TaskAction}.
+     */
     @Nested
     class Tasks {
         // language=JAVA
@@ -71,6 +74,25 @@ class GetProjectInvocationsTest {
             }
             """;
 
+        @SuppressWarnings("MisformattedTestData")
+        @Test
+        void getProjectWithinTaskActionsShouldFail() {
+            compilationTestHelper.addSourceLines("CustomTask.java", badTask).doTest();
+        }
+
+        @SuppressWarnings("MisformattedTestData")
+        @Test
+        void getProjectWithoutTaskActionsShouldPass() {
+            compilationTestHelper.addSourceLines("CustomTask.java", goodTask).doTest();
+        }
+    }
+
+    /**
+     * Tests for overrides of {@code public void execute(Task)} in {@code Action<Task>}.
+     * Note that this way of defining task actions is deprecated, and should NOT be used!
+     */
+    @Nested
+    class Actions {
         // language=JAVA
         private static final String badTaskAction =
                 """
@@ -97,8 +119,8 @@ class GetProjectInvocationsTest {
             public abstract class CustomTaskAction implements Action<Task> {
                 Provider<String> projectName;
 
-                public CustomTaskAction(Provider projectName) {
-                    projectName = projectName;
+                public CustomTaskAction(Provider<String> projectName) {
+                    this.projectName = projectName;
                 }
 
                 @Override
@@ -117,8 +139,8 @@ class GetProjectInvocationsTest {
             public abstract class CustomAction implements Action<Object> {
                 @Override
                 public void execute(Object obj) {
-                    // This should NOT be flagged, because this is not Action<Task>
                     if (obj instanceof Task) {
+                        // This should NOT be flagged, because this is not Action<Task>
                         String projectName = ((Task) obj).getProject().getName();
                         System.out.println("Project name: " + projectName);
                     }
@@ -126,25 +148,6 @@ class GetProjectInvocationsTest {
             }
             """;
 
-        /**
-         * Tests for {@code @TaskAction}.
-         */
-        @SuppressWarnings("MisformattedTestData")
-        @Test
-        void getProjectWithinTaskActionsShouldFail() {
-            compilationTestHelper.addSourceLines("CustomTask.java", badTask).doTest();
-        }
-
-        @SuppressWarnings("MisformattedTestData")
-        @Test
-        void getProjectWithoutTaskActionsShouldPass() {
-            compilationTestHelper.addSourceLines("CustomTask.java", goodTask).doTest();
-        }
-
-        /**
-         * Tests for overrides of {@code public void execute(Task)} in {@code Action<Task>}.
-         * Note that this way of defining task actions is deprecated, and should NOT be used!
-         */
         @Test
         void getProjectWithinActionOfTaskShouldFail() {
             compilationTestHelper
