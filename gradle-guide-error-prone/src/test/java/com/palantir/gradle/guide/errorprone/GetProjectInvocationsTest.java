@@ -35,7 +35,7 @@ class GetProjectInvocationsTest {
             import org.gradle.api.Project;
             import org.gradle.api.tasks.TaskAction;
 
-            public abstract class PrintProjectName extends DefaultTask {
+            public abstract class CustomTask extends DefaultTask {
                 @TaskAction
                 public final void action() {
                     // BUG: Diagnostic contains: Don't call `getProject()` in task actions
@@ -57,10 +57,10 @@ class GetProjectInvocationsTest {
             import org.gradle.api.Project;
             import org.gradle.api.tasks.TaskAction;
 
-            public abstract class PrintProjectName extends DefaultTask {
+            public abstract class CustomTask extends DefaultTask {
                 private String projectName;
 
-                PrintProjectName() {
+                CustomTask() {
                     projectName = getProject().getName();
                 }
 
@@ -132,17 +132,13 @@ class GetProjectInvocationsTest {
         @SuppressWarnings("MisformattedTestData")
         @Test
         void getProjectWithinTaskActionsShouldFail() {
-            compilationTestHelper
-                    .addSourceLines("PrintProjectName.java", badTask)
-                    .doTest();
+            compilationTestHelper.addSourceLines("CustomTask.java", badTask).doTest();
         }
 
         @SuppressWarnings("MisformattedTestData")
         @Test
         void getProjectWithoutTaskActionsShouldPass() {
-            compilationTestHelper
-                    .addSourceLines("PrintProjectName.java", goodTask)
-                    .doTest();
+            compilationTestHelper.addSourceLines("CustomTask.java", goodTask).doTest();
         }
 
         /**
