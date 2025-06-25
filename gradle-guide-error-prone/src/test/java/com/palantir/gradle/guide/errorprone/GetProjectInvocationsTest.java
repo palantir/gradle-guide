@@ -28,7 +28,7 @@ class GetProjectInvocationsTest {
     @Nested
     class Tasks {
         // language=JAVA
-        private String badTaskCode =
+        private static final String badTask =
                 """
             import org.gradle.api.DefaultTask;
             import org.gradle.api.Plugin;
@@ -37,16 +37,20 @@ class GetProjectInvocationsTest {
 
             public abstract class PrintProjectName extends DefaultTask {
                 @TaskAction
-                // BUG: Diagnostic contains: Don't call getProject() in task actions
                 public final void action() {
+                    // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                     String projectName = getProject().getName();
                     System.out.println("Project name: " + projectName);
+
+                    // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                    String projectPath = getProject().getPath();
+                    System.out.println("Project path: " + projectPath);
                 }
             }
             """;
 
         // language=JAVA
-        private String goodTaskCode =
+        private static final String goodTask =
                 """
             import org.gradle.api.DefaultTask;
             import org.gradle.api.Plugin;
@@ -67,11 +71,69 @@ class GetProjectInvocationsTest {
             }
             """;
 
+        // language=JAVA
+        private static final String badTaskAction =
+                """
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+
+            public abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                    String projectName = task.getProject().getName();
+                    System.out.println("Project name: " + projectName);
+                }
+            }
+            """;
+
+        // language=JAVA
+        private static final String goodTaskAction =
+                """
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+            import org.gradle.api.provider.Provider;
+
+            public abstract class CustomTaskAction implements Action<Task> {
+                Provider<String> projectName;
+
+                public CustomTaskAction(Provider projectName) {
+                    projectName = projectName;
+                }
+
+                @Override
+                public void execute(Task task) {
+                    System.out.println("Project name: " + projectName.get());
+                }
+            }
+            """;
+
+        // language=JAVA
+        private static final String action =
+                """
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+
+            public abstract class CustomAction implements Action<Object> {
+                @Override
+                public void execute(Object obj) {
+                    // This should NOT be flagged, because this is not Action<Task>
+                    if (obj instanceof Task) {
+                        String projectName = ((Task) obj).getProject().getName();
+                        System.out.println("Project name: " + projectName);
+                    }
+                }
+            }
+            """;
+
+        /**
+         * Tests for @TaskAction.
+         */
         @SuppressWarnings("MisformattedTestData")
         @Test
         void getProjectWithinTaskActionsShouldFail() {
             compilationTestHelper
-                    .addSourceLines("PrintProjectName.java", badTaskCode)
+                    .addSourceLines("PrintProjectName.java", badTask)
                     .doTest();
         }
 
@@ -79,8 +141,31 @@ class GetProjectInvocationsTest {
         @Test
         void getProjectWithoutTaskActionsShouldPass() {
             compilationTestHelper
-                    .addSourceLines("PrintProjectName.java", goodTaskCode)
+                    .addSourceLines("PrintProjectName.java", goodTask)
                     .doTest();
+        }
+
+        /**
+         * Tests for overrides of `public void execute(Task)` in `Action<Task>`.
+         * Note that this way of defining task actions is deprecated, and should NOT be used!
+         */
+        @Test
+        void getProjectWithinActionOfTaskShouldFail() {
+            compilationTestHelper
+                    .addSourceLines("CustomTaskAction.java", badTaskAction)
+                    .doTest();
+        }
+
+        @Test
+        void actionOfTaskShouldPass() {
+            compilationTestHelper
+                    .addSourceLines("CustomTaskAction.java", goodTaskAction)
+                    .doTest();
+        }
+
+        @Test
+        void getProjectWithinActionOfNonTaskShouldPass() {
+            compilationTestHelper.addSourceLines("CustomAction.java", action).doTest();
         }
     }
 }

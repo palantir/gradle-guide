@@ -28,6 +28,29 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 <tr>
 <td>
 
+<a id="GetProjectInvocations" href="guide/diagnosing-build-performance.md#unrelated-tasks-not-running-in-parallel-within-the-same-project">`GetProjectInvocations`</a>
+
+</td>
+<td>
+<a href="guide/diagnosing-build-performance.md#unrelated-tasks-not-running-in-parallel-within-the-same-project">Please read</a>
+</td>
+<td>
+
+Don't call getProject() in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
+`Project` should not be passed into tasks as inputs. Instead, your tasks should take in the "smallest" type
+required for the task's functionality. For example, instead of taking in `Project` to later do
+`project.version`, you should declare the project version as a `Property<String>`.
+Doing so improves performance in two ways:
+1. It makes your tasks compatible with the configuration cache
+2. It prevents tasks from being rendered out-of-date by a mutation unrelated to the task, e.g. to `project.name`
+
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="GradleManagedTypeGetPrefix" href="guide/managed-types-and-properties.md">`GradleManagedTypeGetPrefix`</a>
 
 </td>
