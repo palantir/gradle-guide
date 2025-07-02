@@ -18,9 +18,10 @@ package com.palantir.gradle.guide.errorprone;
 import com.google.errorprone.CompilationTestHelper;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("MisformattedTestData")
-class Test {
+class GradleManagedTypeGetPrefixTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(GradleManagedTypeGetPrefix.class, getClass());
 

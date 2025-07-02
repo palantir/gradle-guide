@@ -22,6 +22,7 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
@@ -102,10 +103,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
     }
 
     private static boolean isTaskAction(MethodTree tree, VisitorState state) {
-        return tree.getModifiers().getAnnotations().stream().anyMatch(annotation -> {
-            String source = state.getSourceForNode(annotation.getAnnotationType());
-            return source.equals("TaskAction");
-        });
+        return Matchers.hasAnnotation("org.gradle.api.tasks.TaskAction").matches(tree, state);
     }
 
     private static boolean overridesExecute(MethodTree tree, VisitorState state) {
