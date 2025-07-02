@@ -22,55 +22,48 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
-import com.palantir.logsafe.Preconditions;
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Types;
 import java.util.List;
+import java.util.Optional;
 
 @AutoService(BugChecker.class)
 @BugPattern(severity = SeverityLevel.ERROR, summary = GetProjectInvocations.SUMMARY)
 public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
-    private static final Supplier<ClassSymbol> ACTION_SYM =
-            VisitorState.memoize(s -> (ClassSymbol) s.getSymbolFromString("org.gradle.api.Action"));
-    private static final Supplier<ClassSymbol> TASK_SYM =
-            VisitorState.memoize(s -> (ClassSymbol) s.getSymbolFromString("org.gradle.api.Task"));
+    private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
+            s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Action")));
+    private static final Supplier<Optional<ClassSymbol>> TASK_SYM =
+            VisitorState.memoize(s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Task")));
 
-    private static final Supplier<MethodSymbol> GET_PROJECT_SYM =
-            (state) -> (MethodSymbol) TASK_SYM.get(state).getEnclosedElements().stream()
-                    .filter(e -> e.getSimpleName().contentEquals("getProject"))
-                    .findAny()
-                    .get();
+    @SuppressWarnings("ASTHelpersSuggestions")
+    private static final Supplier<Optional<MethodSymbol>> GET_PROJECT_SYM = state -> {
+        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
+        return taskMaybe.flatMap(task -> task.getEnclosedElements().stream()
+                .filter(enclosed -> enclosed.getSimpleName().contentEquals("getProject"))
+                .filter(getProject -> getProject instanceof MethodSymbol)
+                .map(getProject -> (MethodSymbol) getProject)
+                .findAny());
+    };
 
-    private static final Matcher<ExpressionTree> TASK_GET_PROJECT_METHOD = MethodMatchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.Task")
-            .named("getProject");
+    @SuppressWarnings("ASTHelpersSuggestions")
+    private static final Supplier<Optional<MethodSymbol>> EXECUTE_SYM = state -> {
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        return actionMaybe.flatMap(action -> action.getEnclosedElements().stream()
+                .filter(enclosed -> enclosed.getSimpleName().contentEquals("execute"))
+                .filter(execute -> execute instanceof MethodSymbol)
+                .map(execute -> (MethodSymbol) execute)
+                .findAny());
+    };
+
+    private final MethodCallGraph callGraph = new MethodCallGraph();
 
     public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
-
-    public static Matcher<MethodTree> methodWithSubclassAndName(String baseClassName, String methodName) {
-        return (methodTree, state) -> {
-            MethodSymbol methodSymbol = ASTHelpers.getSymbol(methodTree);
-            TypeSymbol enclosingClass = (TypeSymbol) methodSymbol.getEnclosingElement();
-
-            return methodTree.getName().contentEquals(methodName)
-                    && ASTHelpers.isSubtype(enclosingClass.type, state.getTypeFromString(baseClassName), state);
-        };
-    }
-
-    private static final Matcher<MethodTree> TASK_GET_PROJECT_DECLARATION =
-            methodWithSubclassAndName("org.gradle.api.DefaultTask", "getProject");
 
     public static final String SUMMARY =
             """
@@ -86,9 +79,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            //            JavacProcessingEnvironment javacEnv = JavacProcessingEnvironment.instance(state.context);
-            //            Trees trees = Trees.instance(javacEnv);
-            MethodCallGraph.scan(
+            callGraph.scan(
                     tree,
                     methodSym -> isGetProjectOnTask(methodSym, state),
                     (methodSym, invocTrees) ->
@@ -101,13 +92,13 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
     }
 
     private boolean isGetProjectOnTask(MethodSymbol methodSymbol, VisitorState state) {
-        return methodSymbol.overrides(GET_PROJECT_SYM.get(state), TASK_SYM.get(state), state.getTypes(), true);
-    }
+        Optional<MethodSymbol> getProjectMaybe = GET_PROJECT_SYM.get(state);
+        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
+        if (getProjectMaybe.isEmpty() || taskMaybe.isEmpty()) {
+            return false;
+        }
 
-    private boolean isDefaultTaskOrSubclass(ClassSymbol classSymbol, VisitorState state) {
-        Types types = state.getTypes();
-        Type defaultTaskType = Preconditions.checkNotNull(state.getSymbolFromString("org.gradle.api.DefaultTask")).type;
-        return types.isAssignable(classSymbol.type, defaultTaskType);
+        return methodSymbol.overrides(getProjectMaybe.get(), taskMaybe.get(), state.getTypes(), true);
     }
 
     private static boolean isTaskAction(MethodTree tree, VisitorState state) {
@@ -117,38 +108,34 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
         });
     }
 
-    // TODO: maybe use MethodSymbol::overrides
-    // Returns true if `tree` is an override of `public void execute(Task)` from `Action<Task>`
     private static boolean overridesExecute(MethodTree tree, VisitorState state) {
-        return matchesExecuteSignature(tree)
-                && implementsActionOfTask(ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class), state);
+        MethodSymbol methodSymbol = ASTHelpers.getSymbol(tree);
+        Optional<ClassSymbol> enclosingClass = Optional.ofNullable(ASTHelpers.enclosingClass(methodSymbol));
+        return isExecute(methodSymbol, state)
+                && enclosingClass.map(cls -> implementsActionOfTask(cls, state)).orElse(false);
     }
 
-    private static boolean matchesExecuteSignature(MethodTree tree) {
-        MethodSymbol sym = ASTHelpers.getSymbol(tree);
-        List<Type> paramTypes = sym.getParameters().stream().map(v -> v.type).toList();
-
-        return sym.isPublic()
-                && !sym.isStatic()
-                && sym.getReturnType().toString().equals("void")
-                && sym.getSimpleName().contentEquals("execute")
-                && paramTypes.size() == 1
-                && paramTypes.get(0).toString().equals("org.gradle.api.Task");
-    }
-
-    private static boolean implementsActionOfTask(ClassTree tree, VisitorState state) {
-        if (tree == null) {
+    private static boolean isExecute(MethodSymbol methodSymbol, VisitorState state) {
+        Optional<MethodSymbol> executeMaybe = EXECUTE_SYM.get(state);
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        if (executeMaybe.isEmpty() || actionMaybe.isEmpty()) {
             return false;
         }
-        ClassSymbol classSym = ASTHelpers.getSymbol(tree);
-        ClassSymbol actionSym = ACTION_SYM.get(state);
-        ClassSymbol taskSym = TASK_SYM.get(state);
+        return methodSymbol.overrides(executeMaybe.get(), actionMaybe.get(), state.getTypes(), true);
+    }
+
+    private static boolean implementsActionOfTask(ClassSymbol classSym, VisitorState state) {
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
+        if (actionMaybe.isEmpty() || taskMaybe.isEmpty()) {
+            return false;
+        }
 
         List<Type> interfaces = ((ClassType) classSym.type).interfaces_field;
         return interfaces.stream()
-                .anyMatch(ifaceType -> ifaceType.tsym.equals(actionSym)
+                .anyMatch(ifaceType -> ifaceType.tsym.equals(actionMaybe.get())
                         && ifaceType.getTypeArguments().size() == 1
-                        && ifaceType.getTypeArguments().get(0).tsym.equals(taskSym));
+                        && ifaceType.getTypeArguments().get(0).tsym.equals(taskMaybe.get()));
     }
 
     @Override

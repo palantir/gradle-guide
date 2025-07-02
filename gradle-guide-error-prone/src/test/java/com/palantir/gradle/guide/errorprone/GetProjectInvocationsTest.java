@@ -92,7 +92,7 @@ class GetProjectInvocationsTest {
     @Nested
     class Actions {
         // language=JAVA
-        private static final String badTaskAction =
+        private static final String badActionOfTask =
                 """
             import org.gradle.api.Action;
             import org.gradle.api.Task;
@@ -108,7 +108,7 @@ class GetProjectInvocationsTest {
             """;
 
         // language=JAVA
-        private static final String goodTaskAction =
+        private static final String goodActionOfTask =
                 """
             import org.gradle.api.Action;
             import org.gradle.api.Task;
@@ -129,7 +129,7 @@ class GetProjectInvocationsTest {
             """;
 
         // language=JAVA
-        private static final String action =
+        private static final String actionOfObject =
                 """
             import org.gradle.api.Action;
             import org.gradle.api.Task;
@@ -146,23 +146,47 @@ class GetProjectInvocationsTest {
             }
             """;
 
+        // language=JAVA
+        private static final String myClassWithExecuteMethod =
+                """
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+
+            public abstract class MyClass {
+                public void execute(Task task) {
+                    // This should NOT be flagged, because this is not Action<Task>
+                    String projectName = task.getProject().getName();
+                    System.out.println("Project name: " + projectName);
+                }
+            }
+            """;
+
         @Test
         void getProjectWithinActionOfTaskShouldFail() {
             compilationTestHelper
-                    .addSourceLines("CustomTaskAction.java", badTaskAction)
+                    .addSourceLines("CustomTaskAction.java", badActionOfTask)
                     .doTest();
         }
 
         @Test
         void actionOfTaskShouldPass() {
             compilationTestHelper
-                    .addSourceLines("CustomTaskAction.java", goodTaskAction)
+                    .addSourceLines("CustomTaskAction.java", goodActionOfTask)
                     .doTest();
         }
 
         @Test
         void getProjectWithinActionOfNonTaskShouldPass() {
-            compilationTestHelper.addSourceLines("CustomAction.java", action).doTest();
+            compilationTestHelper
+                    .addSourceLines("CustomAction.java", actionOfObject)
+                    .doTest();
+        }
+
+        @Test
+        void getProjectWithinNonActionShouldPass() {
+            compilationTestHelper
+                    .addSourceLines("MyClass.java", myClassWithExecuteMethod)
+                    .doTest();
         }
     }
 }

@@ -21,22 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
-import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -70,8 +67,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Find methods by name
         MethodSymbol f1 = findMethodByName(graph.nodes(), "f1");
@@ -121,8 +119,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol caller = findMethodByName(graph.nodes(), "caller");
         MethodSymbol method1 = findMethodByName(graph.nodes(), "method1");
@@ -154,8 +153,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol standalone = findMethodByName(graph.nodes(), "standalone");
         assertNotNull(standalone, "standalone method should be in graph");
@@ -178,8 +178,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol recursive = findMethodByName(graph.nodes(), "recursive");
         assertNotNull(recursive, "recursive method should be in graph");
@@ -234,8 +235,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Test chainCaller method
         MethodSymbol chainCaller = findMethodByName(graph.nodes(), "chainCaller");
@@ -314,8 +316,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol complexChain = findMethodByName(graph.nodes(), "complexChain");
         assertNotNull(complexChain, "complexChain method should be in graph");
@@ -356,8 +359,9 @@ class MethodCallGraphTest {
             """;
 
         Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph.buildCallGraph(ast);
-        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = MethodCallGraph.getGraph();
+        MethodCallGraph callGraph = new MethodCallGraph();
+        callGraph.buildCallGraph(ast);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol longChain = findMethodByName(graph.nodes(), "longChain");
         assertNotNull(longChain, "longChain method should be in graph");
@@ -378,7 +382,14 @@ class MethodCallGraphTest {
         assertEquals(7, methodCallCount, "should have exactly 7 direct calls");
     }
 
-    // Helper methods
+    public static MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> peekInternalGraph(MethodCallGraph graph)
+            throws NoSuchFieldException, IllegalAccessException {
+        Class<?> methodCallGraphClass = MethodCallGraph.class;
+        Field callGraphField = methodCallGraphClass.getDeclaredField("callGraph");
+        callGraphField.setAccessible(true);
+        return (MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>>) callGraphField.get(graph);
+    }
+
     private Tree parseJavaCode(String javaCode) throws IOException {
         JavacTool tool = JavacTool.create();
         JavaFileObject sourceFile = new StringJavaFileObject("TestClass.java", javaCode);
@@ -401,21 +412,6 @@ class MethodCallGraphTest {
     private boolean containsMethodNamed(Set<MethodSymbol> methods, String name) {
         return methods.stream()
                 .anyMatch(method -> method.getSimpleName().toString().equals(name));
-    }
-
-    private MethodTree findMethodTreeByName(Tree ast, String name) {
-        Map<String, MethodTree> methodTrees = new HashMap<>();
-        new TreeScanner<Void, Void>() {
-            @Override
-            public Void visitMethod(MethodTree node, Void unused) {
-                MethodSymbol sym = ASTHelpers.getSymbol(node);
-                if (sym != null) {
-                    methodTrees.put(sym.getSimpleName().toString(), node);
-                }
-                return super.visitMethod(node, unused);
-            }
-        }.scan(ast, null);
-        return methodTrees.get(name);
     }
 
     // Helper class for creating in-memory Java source files

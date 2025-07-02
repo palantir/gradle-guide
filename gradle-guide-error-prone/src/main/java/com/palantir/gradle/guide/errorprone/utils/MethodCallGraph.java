@@ -16,10 +16,8 @@
 
 package com.palantir.gradle.guide.errorprone.utils;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.Traverser;
-import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.MethodInvocationTree;
@@ -35,18 +33,19 @@ import java.util.function.Predicate;
 
 /**
  * An incrementally built directed graph of "who calls who".
- * Assume one single compilation unit.
+ * Assume one compilation unit.
  */
 public class MethodCallGraph {
-
-    private static final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
+    private final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
             ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+
+    public MethodCallGraph() {}
 
     /**
      * Builds the call graph incrementally by scanning the provided tree.
      * @param tree The tree to scan for method calls.
      */
-    public static void buildCallGraph(Tree tree) {
+    public void buildCallGraph(Tree tree) {
         new TreeScanner<Void, Optional<MethodSymbol>>() {
             @Override
             public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
@@ -74,48 +73,17 @@ public class MethodCallGraph {
     }
 
     /**
-     * Retrieves the outgoing edges (callees) for a given method.
-     * @param methodTree The method tree to query.
-     * @return A set of MethodSymbol representing methods called by the input method.
-     */
-    public static ImmutableSet<MethodSymbol> getCallees(MethodTree methodTree) {
-        MethodSymbol sym = ASTHelpers.getSymbol(methodTree);
-        if (!callGraph.nodes().contains(sym)) {
-            buildCallGraph(methodTree);
-        }
-        return ImmutableSet.copyOf(callGraph.successors(sym));
-    }
-
-    /**
-     * Retrieves the set of MethodInvocationTree for a specific caller-callee edge.
-     * @param caller The calling method symbol.
-     * @param callee The called method symbol.
-     * @return A set of MethodInvocationTree representing the locations of the calls.
-     */
-    public static ImmutableSet<MethodInvocationTree> getInvocationTrees(MethodSymbol caller, MethodSymbol callee) {
-        return callGraph.edgeValue(caller, callee).map(ImmutableSet::copyOf).orElseGet(ImmutableSet::of);
-    }
-
-    /**
-     * Provides access to the full graph for advanced querying or traversal.
-     * @return An immutable view of the current call graph.
-     */
-    public static ValueGraph<MethodSymbol, Set<MethodInvocationTree>> getGraph() {
-        return callGraph;
-    }
-
-    /**
      * Traverses the call graph starting from the given method, visiting all reachable nodes.
-     * For each neighbor of a node, if the neighbor matches the provided criterion,
-     * processes the edge (Set<MethodInvocationTree>) between the node and the neighbor using the provided action.
+     * For each neighbor of a node, if the neighbor matches the provided visitNeighbourIf,
+     * processes the edge {@code Set<MethodInvocationTree>} between the node and the neighbor using the provided action.
      * Uses depth-first traversal and automatically handles cycle detection.
      * @param start The starting method tree for traversal.
-     * @param criterion A predicate to filter neighbors (e.g., check if neighbor is Task::getProject).
-     * @param edgeAction A BiConsumer to process the edge data (Set<MethodInvocationTree>) for matching neighbors.
+     * @param visitNeighbourIf A predicate to filter neighbors (e.g., check if neighbor is Task::getProject).
+     * @param edgeAction A BiConsumer to process the edge data {@code Set<MethodInvocationTree>} for matching neighbors.
      */
-    public static void scan(
+    public void scan(
             MethodTree start,
-            Predicate<MethodSymbol> criterion,
+            Predicate<MethodSymbol> visitNeighbourIf,
             BiConsumer<MethodSymbol, Set<MethodInvocationTree>> edgeAction) {
         MethodSymbol startSymbol = ASTHelpers.getSymbol(start);
 
@@ -123,11 +91,11 @@ public class MethodCallGraph {
             buildCallGraph(start);
         }
 
-        Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph::successors);
+        Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph);
 
         for (MethodSymbol current : traverser.depthFirstPreOrder(startSymbol)) {
             for (MethodSymbol neighbor : callGraph.successors(current)) {
-                if (criterion.test(neighbor)) {
+                if (visitNeighbourIf.test(neighbor)) {
                     Set<MethodInvocationTree> edgeInvocations =
                             callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
                     edgeAction.accept(neighbor, edgeInvocations);
