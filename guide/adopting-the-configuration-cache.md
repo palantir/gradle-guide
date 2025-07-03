@@ -235,9 +235,6 @@ Counter counter = objectFactory.newInstance(Counter.class, 5);
 
 Do you need the project dir? Inject ProjectLayout. Do you need to run a bash command? Inject ExecOperations. Gradle provides a [list](https://docs.gradle.org/current/userguide/service_injection.html) of things that can be injected. However, that list is incomplete — in reality,  almost anything in Gradle source annotated with [@ServiceScope](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
 
-
-
-
 <!-- PreviousNext:START -->
 <hr>
 <table><tr>
