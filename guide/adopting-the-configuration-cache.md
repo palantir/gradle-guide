@@ -10,7 +10,31 @@
 
 The Gradle Configuration Cache is a powerful new feature. It reduces build latency by caching the task graph from the configuration phase.
 
-Builds run with the Configuration Cache optionally in Gradle 8, by default in Gradle 9, and necessarily by Gradle 10. Furthermore, your build has to meet [strict requirements]([this section of the Gradle User Guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements)) to be compatible. This guide provides practical steps to adopt the Configuration Cache in your Gradle projects.
+Builds run with the Configuration Cache optionally in Gradle 8, by default in Gradle 9, and necessarily by Gradle 10. Furthermore, your build has to meet [strict requirements](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements) to be compatible. This guide provides practical steps to adopt the Configuration Cache.
+
+
+## How does Configuration Caching work?
+
+Gradle builds are split into two phases — the configuration phase creates the task graph, while the execution phase runs it. The configuration phase takes various inputs and produces a complete task graph that defines what work needs to be done and in what order.
+
+Configuration inputs include:
+1. Gradle environment
+   - `GRADLE_USER_HOME`
+   - Gradle Daemon JVM
+2. Init scripts
+3. buildSrc and included build logic build contents (build scripts, sources, and intermediate build outputs)
+4. Build and Settings scripts, including included scripts (apply from: foo.gradle)
+5. Gradle configuration files (Version Catalogs, dependency verification files, dependency lock files, gradle.properties files)
+6. Contents of files read at configuration time
+7. File system state checked at configuration time (file presence, directory contents, etc.)
+8. Custom ValueSource values obtained at configuration time (this also includes built-in providers, like providers.exec and providers.fileContents).
+9. System properties used during the configuration phase
+10. Environment variables used during the configuration phase
+
+When you first run a gradle task, the task graph is stored on disk using an optimized serialization mechanism. Upon a subsequent run of the same task, If none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
+
+The configuration phase typically runs faster than execution since heavy work belongs in the latter, but it must rerun for every single task execution. When developers repeatedly run the same quick tasks or tests, configuration overhead can consume a large portion of total runtime, even though the same task graph is reproduced in each run. Configuration caching solves this by storing and reusing configuration results between runs, eliminating redundant work and delivering significant time savings where they matter: during rapid development cycles with frequent task execution.
+
 
 
 ## Finding Configuration Cache problems
@@ -143,7 +167,7 @@ abstract class ZstdCompressor {
 ### Step 2: Fixing "invocation of `Task.project` at execution time is unsupported"
 
 - To access the project dir, we can use the `ProjectLayout` service
-- We've already made `ZstdCompressor` a Gradle-managed type! We can simply @Inject the service we need.
+- We've already made `ZstdCompressor` a Gradle-managed type! We can simply `@Inject` the service we need.
 
 ```java
 abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
@@ -193,9 +217,15 @@ abstract class ZstdCompressor {
 > [!TIP]
 > If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
 
-## Two principles behind writing Configuration Cache friendly Gradle
+## Two strategies to write Configuration Cache friendly Gradle
 
-To summarize the two principles we used to solve Configuration Cache issues:
+To summarize the two strategies we used to solve Configuration Cache issues:
+
+### You can inject services into Gradle-managed types
+
+Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
+
+
 
 ### You can make any class into a Gradle-managed type
 
@@ -309,11 +339,7 @@ abstract class UploadCompanyInformation extends DefaultTask {
 }
 ```
 
-This way, you "propagate" the reach of the Gradle managed type system, removing boilerplate and making Configuration Cache adoption easy. 
-
-### You can inject services into Gradle-managed types
-
-Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
+This way, you "propagate" the reach of the Gradle managed type system, removing boilerplate and making Configuration Cache adoption easy.
 
 <!-- PreviousNext:START -->
 <hr>
