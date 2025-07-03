@@ -43,8 +43,9 @@ import java.util.Optional;
         summary =
                 """
         Don't call `getProject()` in task actions. Instead, your tasks should take in the "smallest" type
-        required for the task's functionality. For example, instead of taking in `Project` to later do
-        `project.version`, you should declare the project version as a `Property<String>`.
+        required for the task's functionality. For example, instead getProject().version, you should declare the
+        project version as an `@Input public abstract Property<String>`.
+
         Doing so improves performance in two ways:
         1. It makes your tasks compatible with the configuration cache
         2. It increases task parallelism. When two tasks, such as printProjectName and printProjectVersion, both
@@ -52,7 +53,10 @@ import java.util.Optional;
         However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
         the tasks become independent and can execute in parallel.
         """)
-public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
+public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
+        implements BugChecker.MethodTreeMatcher {
+    // Optional.empty() in projects without gradle on the classpath
+    // In that case, we should `return Description.NO_MATCH`
     private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
             s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Action")));
     private static final Supplier<Optional<ClassSymbol>> TASK_SYM =

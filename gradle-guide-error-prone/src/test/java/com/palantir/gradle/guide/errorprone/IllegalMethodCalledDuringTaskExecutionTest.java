@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("MisformattedTestData")
-class GetProjectInvocationsTest {
+class IllegalMethodCalledDuringTaskExecutionTest {
     private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(GetProjectInvocations.class, getClass());
+            CompilationTestHelper.newInstance(IllegalMethodCalledDuringTaskExecution.class, getClass());
 
     /**
      * Tests for {@code @TaskAction}.
@@ -32,7 +32,7 @@ class GetProjectInvocationsTest {
     @Nested
     class Tasks {
         @Test
-        void getProjectWithinTaskActionsShouldFail() {
+        void getProject_within_TaskAction_should_fail() {
             test(
                     """
                 import org.gradle.api.DefaultTask;
@@ -56,7 +56,7 @@ class GetProjectInvocationsTest {
         }
 
         @Test
-        void getProjectWithoutTaskActionsShouldPass() {
+        void getProject_outside_of_TaskAction_should_pass() {
             test(
                     """
             import org.gradle.api.DefaultTask;
@@ -87,7 +87,7 @@ class GetProjectInvocationsTest {
     @Nested
     class Actions {
         @Test
-        void getProjectWithinActionOfTaskShouldFail() {
+        void getProject_within_Action_of_Task_should_fail() {
             test(
                     """
             import org.gradle.api.Action;
@@ -105,7 +105,7 @@ class GetProjectInvocationsTest {
         }
 
         @Test
-        void actionOfTaskShouldPass() {
+        void Action_of_Task_should_pass() {
             test(
                     """
             import org.gradle.api.Action;
@@ -128,7 +128,7 @@ class GetProjectInvocationsTest {
         }
 
         @Test
-        void getProjectWithinActionOfNonTaskShouldPass() {
+        void getProject_within_Action_of_non_task_should_pass() {
             test(
                     """
             import org.gradle.api.Action;
