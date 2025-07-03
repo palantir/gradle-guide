@@ -28,7 +28,7 @@ The problems typically fall into three categories:
 2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the configuration cache**
 3. **invocation of `Task.project` at execution time is unsupported**
 
-The first error occurs when you start external processes without using `ExecOperations`. Gradle wants to know about external processes, so it can do up-to-date checks.
+The first error occurs when you start external processes without using `ExecOperations`. Gradle needs to be aware of all external processes so it can determine if any changes require the configuration cache to be re-run.
 
 The second and third errors occur because Gradle tasks shouldn't take mutable types as input — Gradle, Settings, Project, SourceSet, or Configuration. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
 

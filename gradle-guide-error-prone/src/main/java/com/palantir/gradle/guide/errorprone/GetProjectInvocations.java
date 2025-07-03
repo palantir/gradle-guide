@@ -42,13 +42,15 @@ import java.util.Optional;
         severity = SeverityLevel.ERROR,
         summary =
                 """
-        Don't call `getProject()` in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
-        `Project` should not be passed into tasks as inputs. Instead, your tasks should take in the "smallest" type
+        Don't call `getProject()` in task actions. Instead, your tasks should take in the "smallest" type
         required for the task's functionality. For example, instead of taking in `Project` to later do
         `project.version`, you should declare the project version as a `Property<String>`.
         Doing so improves performance in two ways:
         1. It makes your tasks compatible with the configuration cache
-        2. It prevents tasks from being rendered out-of-date by a mutation unrelated to the task, e.g. to `project.name`
+        2. It increases task parallelism. When two tasks, such as printProjectName and printProjectVersion, both
+        require the same Project object as input, they cannot run in parallel due to prevent concurrent access.
+        However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
+        the tasks become independent and can execute in parallel.
         """)
 public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
     private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
@@ -132,7 +134,6 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoHeadingLink(
-                "diagnosing-build-performance.md", "Unrelated tasks not running in parallel within the same project");
+        return new MoreInfoHeadingLink("adopting-the-configuration-cache.md", "Solving Configuration Cache problems");
     }
 }

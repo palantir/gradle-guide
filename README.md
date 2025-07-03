@@ -61,7 +61,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 8. [Adopting the Configuration Cache](guide/adopting-the-configuration-cache.md)
     1. [Finding Configuration Cache problems](guide/adopting-the-configuration-cache.md#finding-configuration-cache-problems)
     2. [Solving Configuration Cache problems](guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems)
-    3. [Two key principles behind writing Configuration Cache friendly Gradle](guide/adopting-the-configuration-cache.md#two-key-principles-behind-writing-configuration-cache-friendly-gradle)
+    3. [Two principles behind writing Configuration Cache friendly Gradle](guide/adopting-the-configuration-cache.md#two-principles-behind-writing-configuration-cache-friendly-gradle)
 9. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
     1. [Expectations of performance](guide/diagnosing-build-performance.md#expectations-of-performance)
     2. [Finding a build scan](guide/diagnosing-build-performance.md#finding-a-build-scan)
