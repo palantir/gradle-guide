@@ -1,6 +1,6 @@
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td>Previous: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
@@ -474,7 +474,7 @@ org.junit.platform:* = 1.10.2
 <!-- PreviousNext:START -->
 <hr>
 <table><tr>
-  <td>Previous: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td>Previous: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
 </tr></table>
 <!-- PreviousNext:END -->

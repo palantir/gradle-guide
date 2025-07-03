@@ -23,37 +23,25 @@ import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
-import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
+import java.util.Optional;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = GetProjectInvocations.SUMMARY)
-public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
-    private static final Supplier<ClassSymbol> ACTION_SYM =
-            VisitorState.memoize(s -> (ClassSymbol) s.getSymbolFromString("org.gradle.api.Action"));
-    private static final Supplier<ClassSymbol> TASK_SYM =
-            VisitorState.memoize(s -> (ClassSymbol) s.getSymbolFromString("org.gradle.api.Task"));
-
-    private static final Matcher<ExpressionTree> TASK_GET_PROJECT_METHOD = MethodMatchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.Task")
-            .named("getProject");
-
-    public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
-
-    public static final String SUMMARY =
-            """
+@BugPattern(
+        severity = SeverityLevel.ERROR,
+        summary =
+                """
         Don't call `getProject()` in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
         `Project` should not be passed into tasks as inputs. Instead, your tasks should take in the "smallest" type
         required for the task's functionality. For example, instead of taking in `Project` to later do
@@ -61,69 +49,85 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
         Doing so improves performance in two ways:
         1. It makes your tasks compatible with the configuration cache
         2. It prevents tasks from being rendered out-of-date by a mutation unrelated to the task, e.g. to `project.name`
-        """;
+        """)
+public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
+    private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
+            s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Action")));
+    private static final Supplier<Optional<ClassSymbol>> TASK_SYM =
+            VisitorState.memoize(s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Task")));
+
+    @SuppressWarnings("ASTHelpersSuggestions")
+    private static final Supplier<Optional<MethodSymbol>> EXECUTE_SYM = state -> {
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        return actionMaybe.flatMap(action -> action.getEnclosedElements().stream()
+                .filter(enclosed -> enclosed.getSimpleName().contentEquals("execute"))
+                .filter(execute -> execute instanceof MethodSymbol)
+                .map(execute -> (MethodSymbol) execute)
+                .findAny());
+    };
+
+    private static final Matcher<ExpressionTree> TASK_GET_PROJECT_METHOD = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Task")
+            .named("getProject");
+
+    public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
 
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            reportAllViolations(tree.getBody(), state, TASK_GET_PROJECT_METHOD, VIOLATION_MESSAGE);
+            reportAllViolations(state, TASK_GET_PROJECT_METHOD, VIOLATION_MESSAGE);
         }
 
         return Description.NO_MATCH;
     }
 
     private static boolean isTaskAction(MethodTree tree, VisitorState state) {
-        return tree.getModifiers().getAnnotations().stream().anyMatch(annotation -> {
-            String source = state.getSourceForNode(annotation.getAnnotationType());
-            return source.equals("TaskAction");
-        });
+        return Matchers.hasAnnotation("org.gradle.api.tasks.TaskAction").matches(tree, state);
     }
 
     // Returns true if `tree` is an override of `public void execute(Task)` from `Action<Task>`
     private static boolean overridesExecute(MethodTree tree, VisitorState state) {
-        return matchesExecuteSignature(tree)
-                && implementsActionOfTask(ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class), state);
+        MethodSymbol methodSymbol = ASTHelpers.getSymbol(tree);
+        Optional<ClassSymbol> enclosingClass = Optional.ofNullable(ASTHelpers.enclosingClass(methodSymbol));
+        return isExecute(methodSymbol, state)
+                && enclosingClass.map(cls -> implementsActionOfTask(cls, state)).orElse(false);
     }
 
-    private static boolean matchesExecuteSignature(MethodTree tree) {
-        MethodSymbol sym = ASTHelpers.getSymbol(tree);
-        List<Type> paramTypes = sym.getParameters().stream().map(v -> v.type).toList();
-
-        return sym.isPublic()
-                && !sym.isStatic()
-                && sym.getReturnType().toString().equals("void")
-                && sym.getSimpleName().contentEquals("execute")
-                && paramTypes.size() == 1
-                && paramTypes.get(0).toString().equals("org.gradle.api.Task");
-    }
-
-    private static boolean implementsActionOfTask(ClassTree tree, VisitorState state) {
-        if (tree == null) {
+    private static boolean isExecute(MethodSymbol methodSymbol, VisitorState state) {
+        Optional<MethodSymbol> executeMaybe = EXECUTE_SYM.get(state);
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        if (executeMaybe.isEmpty() || actionMaybe.isEmpty()) {
             return false;
         }
-        ClassSymbol classSym = ASTHelpers.getSymbol(tree);
-        ClassSymbol actionSym = ACTION_SYM.get(state);
-        ClassSymbol taskSym = TASK_SYM.get(state);
+        return methodSymbol.overrides(executeMaybe.get(), actionMaybe.get(), state.getTypes(), true);
+    }
+
+    private static boolean implementsActionOfTask(ClassSymbol classSym, VisitorState state) {
+        Optional<ClassSymbol> actionMaybe = ACTION_SYM.get(state);
+        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
+        if (actionMaybe.isEmpty() || taskMaybe.isEmpty()) {
+            return false;
+        }
 
         List<Type> interfaces = ((ClassType) classSym.type).interfaces_field;
         return interfaces.stream()
-                .anyMatch(ifaceType -> ifaceType.tsym.equals(actionSym)
+                .anyMatch(ifaceType -> ifaceType.tsym.equals(actionMaybe.get())
                         && ifaceType.getTypeArguments().size() == 1
-                        && ifaceType.getTypeArguments().get(0).tsym.equals(taskSym));
+                        && ifaceType.getTypeArguments().get(0).tsym.equals(taskMaybe.get()));
     }
 
     private void reportAllViolations(
-            Tree tree, VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
-        new TreeScanner<Boolean, Void>() {
+            VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
+        new SuppressibleTreePathScanner<Boolean, Void>(state) {
             @Override
             public Boolean visitMethodInvocation(MethodInvocationTree node, Void unused) {
                 if (violationMatcher.matches(node, state)) {
                     state.reportMatch(
                             buildDescription(node).setMessage(violationMessage).build());
                 }
-                return super.visitMethodInvocation(node, unused);
+                return super.visitMethodInvocation(node, null);
             }
-        }.scan(tree, null);
+        }.scan(state.getPath(), null);
     }
 
     @Override
