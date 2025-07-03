@@ -36,6 +36,7 @@ import java.util.function.Predicate;
  * Assume one compilation unit.
  */
 public class MethodCallGraph {
+    // TODO: maybe make this a weak map
     private final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
             ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
