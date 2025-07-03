@@ -8,9 +8,9 @@
 
 # Adopting the Configuration Cache
 
-The Gradle Configuration Cache is a new feature which aims to decrease build latency by caching the outputs of the configuration phase, i.e. the task graph. 
+The Gradle Configuration Cache is a powerful new feature. It reduces build latency by caching the task graph from the configuration phase.
 
-Builds run with the Configuration Cache optionally in Gradle 8, by default in Gradle 9, and necessarily by Gradle 10. Furthermore, your Gradle build has to fulfill [strict requirements]([this section of the Gradle User Guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements)) to be Configuration Cachable. This section aims to be a practical guide for adopting the Configuration Cache in your Gradle projects.
+Builds run with the Configuration Cache optionally in Gradle 8, by default in Gradle 9, and necessarily by Gradle 10. Furthermore, your build has to meet [strict requirements]([this section of the Gradle User Guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements)) to be compatible. This guide provides practical steps to adopt the Configuration Cache in your Gradle projects.
 
 
 ## Finding Configuration Cache problems
@@ -18,27 +18,33 @@ Builds run with the Configuration Cache optionally in Gradle 8, by default in Gr
 To find Configuration Cache problems:
 
 1. Run `./gradlew build --configuration-cache`
-2. Find the configuration cache problems in the output. If there are no problems, congratulations! Your build is Configuration Cache compatible.
-3. If not, fix the problems. 
-4. Run `./gradlew build --configuration-cache` again. In our experience, this uncovers more problems that weren't there in (1). 
+2. Check the output for any problems. If none appear, great! Your build is compatible.
+3. If not, fix the problems.
+4. Run `./gradlew build --configuration-cache` again. In our experience, this reveals additional issues not seen in the first run.
 
-The problems you find in step (2) are usually one of two kinds:
+The problems typically fall into three categories:
 
 1. **external process started `/usr/bin/git --version`**
 2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the configuration cache**
+3. **invocation of `Task.project` at execution time is unsupported**
 
-The first error occurs when you start external processes without using `ExecOperations`. Gradle wants to know about external processes
+The first error occurs when you start external processes without using `ExecOperations`. Gradle wants to know about external processes, so it can do up-to-date checks.
 
-The second error occurs when you pass large, mutable Gradle types into tasks — Gradle, Settings, Project, SourceSet, Configuration. To solve this, you can either explicitly declare your inputs in tasks (take in Property\<String\> for project version, instead of accessing project.version within a task), or you can inject a service which contains the information/operation you need.
+The second and third errors occur because Gradle tasks shouldn't take mutable types as input — Gradle, Settings, Project, SourceSet, or Configuration. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
+
+To solve the second and third errors, you can
+- Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of accessing `project.version`
+- [Inject a service](https://docs.gradle.org/current/userguide/service_injection.html) which provides the information/operation you need
 
 
 ## Solving Configuration Cache problems
 
-Let's look at an example of 
+Let’s walk through fixing a task incompatible with the Configuration Cache.
+
 
 ### Before:
 
-- `ZstdCompressTask` is already a gradle-managed type
+- `ZstdCompressTask` is already a [Gradle managed type](managed-types-and-properties.md)
 - `ZstdCompressor` is a POJO.
 - `ZstdCompressor`  starts an external process, causing the configuration cache to fail: **external process started**
 - Furthermore, `ZstdCompressTask` is calling `getProject()` at build time, causing another configuration cache failure: **cannot serialze object of type `org.gradle.api.internal.project.DefaultProject`**  
@@ -134,7 +140,7 @@ abstract class ZstdCompressor {
 ```
 
 
-### Step 2: Fixing the use of `Project` 
+### Step 2: Fixing "invocation of `Task.project` at execution time is unsupported"
 
 - To access the project dir, we can use the `ProjectLayout` service
 - We've already made `ZstdCompressor` a Gradle-managed type! We can simply @Inject the service we need.
@@ -185,55 +191,129 @@ abstract class ZstdCompressor {
 
 
 > [!TIP]
-> If you have huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. Firstly, solve all configuration phase issues, as incremental adoption only works for the execution phase.. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Then, as you make more and more tasks Configuration-Cache friendly, you can add them to the [allow list](https://github.com/palantir/gradle-incremental-configuration-cache?tab=readme-ov-file#motivation).  
+> If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
 
-## Two key principles behind writing Configuration Cache friendly Gradle
+## Two principles behind writing Configuration Cache friendly Gradle
 
 To summarize the two principles we used to solve Configuration Cache issues:
 
-### You can make almost anything into a Gradle-managed type
+### You can make any class into a Gradle-managed type
 
-A standard class
+A standard class...
 
 ```java
-class Counter {
-    private int count;
+class Employee {
+    private String name;
 
-    public Counter(int init) {
-        this.count = init;
+    public Employee(String name) {
+        this.name = name;
     }
 }
 ```
 
-instantiated like so
+...instantiated like so...
 
 ```java
-Counter counter = new Counter(5);
+Employee employee = new Employee("Kelvin");
 ```
 
-can be turned into a Gradle-managed type by making it abstract, and adding `@Inject` to the constructor
+...can be turned into a Gradle-managed type by making it abstract, and adding `@Inject` to the constructor.
 
 ```java
-abstract class Counter {
-    private int count;
+abstract class Employee {
+    private String name;
 
     @Inject
-    public Counter(int init) {
-        this.count = init;
+    public Employee(String name) {
+        this.name = name;
     }
 }
 ```
 
-Now, we can instantiate it with `ObjectFactory`
+Now, we can instantiate it with `ObjectFactory`.
 
 ```java
-Counter counter = objectFactory.newInstance(Counter.class, 5);
+Employee employee = objectFactory.newInstance(Employee.class, "Kelvin");
 ```
 
+Hold on, what if the class using `Employee` doesn't have access to an `ObjectFactory`? 
 
-### You can inject things into Gradle-managed types
+```java
+class Team {
+    private String name;
+    private ArrayList<Employee> employees = new ArrayList<>();
+    
+    Team(String name) {
+        this.name = name;
+    }
+    
+    public addEmployee() {
+        Employee employee = new Employee("Kelvin");
+        employees.add(employee);
+    }
+}
+```
 
-Do you need the project dir? Inject ProjectLayout. Do you need to run a bash command? Inject ExecOperations. Gradle provides a [list](https://docs.gradle.org/current/userguide/service_injection.html) of things that can be injected. However, that list is incomplete — in reality,  almost anything in Gradle source annotated with [@ServiceScope](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
+In that case, you can turn *it* a Gradle managed type as well...
+
+```java
+abstract class Team {
+    private ArrayList<Employee> employees = new ArrayList<>();
+
+    @Inject
+    protected abstract ObjectFactory getObjectFactory();
+
+    public addEmployee() {
+        Employee employee = getObjectFactory().newInstance(Employee.class, "Kelvin");
+        employees.add(employee);
+    }
+}
+```
+
+...so on and so forth...
+
+```java
+abstract class Startup {
+    private int valuation;
+
+    @Nested
+    public abstract Team getTeam();
+ 
+    public Startup(int valuation) {
+        this.valuation = valuation; 
+    }
+}
+
+```
+
+> [!INFO]
+> `@Nested` is an alternative to `ObjectFactory::newInstance` if your class has a nullary constructor, 
+
+
+
+...until you reach the `Task`/`Project`/`Extension` that uses our class.
+
+```java
+abstract class UploadCompanyInformation extends DefaultTask {
+    @Input
+    protected abstract Property<URI> getUploadUri();
+
+    @Inject
+    protected abstract ObjectFactory getObjectFactory();
+
+    @TaskAction
+    public void compress() {
+        Startup startup = getObjectFactory().newInstance(Startup.class, 1000000000000000);
+        UploadUtils.upload(startup, getUploadUri());
+    }
+}
+```
+
+This way, you "propagate" the reach of the Gradle managed type system, removing boilerplate and making Configuration Cache adoption easy. 
+
+### You can inject services into Gradle-managed types
+
+Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
 
 <!-- PreviousNext:START -->
 <hr>
