@@ -118,9 +118,9 @@ class ZstdCompressor {
 ### Step 1: Fixing "external process started"
 
 - To safely do the external call, we need to use `ExecOperations` in `ZstdCompressor`
-- To use `ExecOperations`, we can first make `ZstdCompressor` a Gradle-managed type, then inject `ExecOperations`
-- To make `ZstdCompressor` a Gradle-managed type, we make it abstract. It now needs to be instantiated with `ObjectFactory::newInstance`
-- To get an `ObjectFactory`, we inject it into `ZstdCompressTask`, which is conveniently already a Gradle-managed type
+- To use `ExecOperations`, we can first make `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md), then inject `ExecOperations`
+- To make `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md), we make it abstract. It now needs to be instantiated with `ObjectFactory::newInstance`
+- To get an `ObjectFactory`, we inject it into `ZstdCompressTask`, which is conveniently already a [Gradle-managed type](managed-types-and-properties.md)
 
 ```java
 abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
@@ -167,7 +167,7 @@ abstract class ZstdCompressor {
 ### Step 2: Fixing "invocation of `Task.project` at execution time is unsupported"
 
 - To access the project dir, we can use the `ProjectLayout` service
-- We've already made `ZstdCompressor` a Gradle-managed type! We can simply `@Inject` the service we need.
+- We've already made `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md)! We can simply `@Inject` the service we need.
 
 ```java
 abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
