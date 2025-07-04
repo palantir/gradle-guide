@@ -21,6 +21,7 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
@@ -76,12 +77,16 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Task")
             .named("getProject");
 
+    private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER_METHOD = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getLogger");
+
     public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
 
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            reportAllViolations(state, TASK_GET_PROJECT_METHOD, VIOLATION_MESSAGE);
+            reportAllViolations(tree, state);
         }
 
         return Description.NO_MATCH;
@@ -122,18 +127,41 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                         && ifaceType.getTypeArguments().get(0).tsym.equals(taskMaybe.get()));
     }
 
-    private void reportAllViolations(
-            VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
-        new SuppressibleTreePathScanner<Boolean, Void>(state) {
+    /**
+     *  {@code MethodTree _method} expresses the invariant that this method should only be called from a MethodTree
+     */
+    private void reportAllViolations(MethodTree _method, VisitorState state) {
+        new SuppressibleTreePathScanner<Boolean, MethodInvocationTree>(state) {
             @Override
-            public Boolean visitMethodInvocation(MethodInvocationTree node, Void unused) {
-                if (violationMatcher.matches(node, state)) {
-                    state.reportMatch(
-                            buildDescription(node).setMessage(violationMessage).build());
+            public Boolean visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree chained) {
+                if (TASK_GET_PROJECT_METHOD.matches(node, state)) {
+                    state.reportMatch(buildDescription(node)
+                            .setMessage(VIOLATION_MESSAGE)
+                            .addFix(suggestTrivialFix(node, chained, state))
+                            .build());
                 }
-                return super.visitMethodInvocation(node, null);
+                return super.visitMethodInvocation(node, node);
             }
         }.scan(state.getPath(), null);
+    }
+
+    /**
+     * Provides trivial fixes for getProject invocations
+     * e.g. Task::getProject::getLogger -> Task::getLogger
+     */
+    private static SuggestedFix suggestTrivialFix(
+            MethodInvocationTree getProject, MethodInvocationTree chainedCall, VisitorState state) {
+        if (PROJECT_GET_LOGGER_METHOD.matches(chainedCall, state)) {
+            SuggestedFix.Builder fix = SuggestedFix.builder();
+            Optional<String> receiverSource = Optional.ofNullable(ASTHelpers.getReceiver(getProject))
+                    .flatMap(receiverTree -> Optional.ofNullable(state.getSourceForNode(receiverTree)));
+
+            String simplifiedCall =
+                    receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
+            return fix.replace(chainedCall, simplifiedCall).build();
+        }
+
+        return SuggestedFix.emptyFix();
     }
 
     @Override

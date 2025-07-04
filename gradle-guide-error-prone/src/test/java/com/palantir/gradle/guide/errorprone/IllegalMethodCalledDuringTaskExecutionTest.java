@@ -17,6 +17,7 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
+import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,38 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectPath = getProject().getPath();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void getProject_getLogger_should_fix() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        Logger logger = getProject().getLogger();
+                        logger.info("I am a happy squirrel");
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        Logger logger = getLogger();
+                        logger.info("I am a happy squirrel");
                     }
                 }
             """);
@@ -142,9 +175,50 @@ class IllegalMethodCalledDuringTaskExecutionTest {
             }
             """);
         }
+
+        @Test
+        void getProject_getLogger_should_fix() {
+            test_fix(
+                    "CustomTaskAction.java",
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTaskAction implements Action<Task> {
+                    @Override
+                    public void execute(Task task) {
+                        Logger logger = task.getProject().getLogger();
+                        logger.info("I am a happy squirrel");
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTaskAction implements Action<Task> {
+                    @Override
+                    public void execute(Task task) {
+                        Logger logger = task.getLogger();
+                        logger.info("I am a happy squirrel");
+                    }
+                }
+            """);
+        }
     }
 
     private void test(@Language("Java") String source) {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
+    }
+
+    private void test_fix(String filename, @Language("Java") String before, @Language("Java") String after) {
+        RefactoringValidator.of(IllegalMethodCalledDuringTaskExecution.class, getClass())
+                .addInputLines(filename, before)
+                .addOutputLines(filename, after)
+                .doTest();
     }
 }
