@@ -270,7 +270,6 @@ Hold on, what if the class using `Employee` doesn't have access to an `ObjectFac
 
 ```java
 class Team {
-    private String name;
     private ArrayList<Employee> employees = new ArrayList<>();
 
     public addEmployee() {
