@@ -298,28 +298,35 @@ abstract class Team {
 ...so on and so forth...
 
 ```java
-abstract class Startup {
-    private int valuation;
+abstract class Deployment {
+    private String customerName;
 
     @Nested
     public abstract Team getTeam();
  
-    public Startup(int valuation) {
-        this.valuation = valuation; 
+    @Inject
+    public Deployment(String customerName) {
+        this.customerName = customerName; 
     }
 }
 
 ```
 
-> [!INFO]
-> `@Nested` is an alternative to `ObjectFactory::newInstance` if your class has a nullary constructor, 
+> [!TIP]
+> `@Nested` is an alternative to `ObjectFactory::newInstance` for classes with nullary constructors.
+> It does the same thing as the following
+> ```java
+> @Inject
+> protected abstract ObjectFactory getObjectFactory();
+> public Team team = getObjectFactory().newInstance(Team.class);
+> ```
 
 
 
 ...until you reach the `Task`/`Project`/`Extension` that uses our class.
 
 ```java
-abstract class UploadCompanyInformation extends DefaultTask {
+abstract class UploadDeploymentInformation extends DefaultTask {
     @Input
     protected abstract Property<URI> getUploadUri();
 
@@ -328,7 +335,7 @@ abstract class UploadCompanyInformation extends DefaultTask {
 
     @TaskAction
     public void compress() {
-        Startup startup = getObjectFactory().newInstance(Startup.class, 1000000000000000);
+        Deployment startup = getObjectFactory().newInstance(Startup.class, 1000000000000000);
         UploadUtils.upload(startup, getUploadUri());
     }
 }
