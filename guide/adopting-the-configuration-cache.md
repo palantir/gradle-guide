@@ -57,7 +57,7 @@ The first error occurs when you start external processes without using `ExecOper
 The second and third errors occur because Gradle tasks shouldn't take mutable types as input — Gradle, Settings, Project, SourceSet, or Configuration. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
 
 To solve the second and third errors, you can
-- Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of accessing `project.version`
+- Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of taking in `Project` and accessing `project.version`
 - [Inject a service](https://docs.gradle.org/current/userguide/service_injection.html) which provides the information/operation you need
 
 
