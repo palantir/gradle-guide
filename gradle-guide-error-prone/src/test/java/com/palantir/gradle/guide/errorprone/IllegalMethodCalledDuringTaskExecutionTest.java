@@ -105,7 +105,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void Action_of_Task_should_pass() {
+        void action_of_Task_should_pass() {
             test(
                     """
             import org.gradle.api.Action;
