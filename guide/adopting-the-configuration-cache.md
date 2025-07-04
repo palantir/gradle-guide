@@ -272,11 +272,7 @@ Hold on, what if the class using `Employee` doesn't have access to an `ObjectFac
 class Team {
     private String name;
     private ArrayList<Employee> employees = new ArrayList<>();
-    
-    Team(String name) {
-        this.name = name;
-    }
-    
+
     public addEmployee() {
         Employee employee = new Employee("Kelvin");
         employees.add(employee);
