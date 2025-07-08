@@ -17,7 +17,8 @@ Builds run with the Configuration Cache optionally in Gradle 8, by default in Gr
 
 Gradle builds are split into two phases — the configuration phase creates the task graph, while the execution phase runs it. The configuration phase takes various inputs and produces a complete task graph that defines what work needs to be done and in what order.
 
-Configuration inputs include:
+### Configuration inputs
+
 1. Gradle environment
    - `GRADLE_USER_HOME`
    - Gradle Daemon JVM
@@ -30,6 +31,70 @@ Configuration inputs include:
 8. Custom ValueSource values obtained at configuration time (this also includes built-in providers, like providers.exec and providers.fileContents).
 9. System properties used during the configuration phase
 10. Environment variables used during the configuration phase
+
+
+### Configuration outputs
+The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph), describing the target task and it's dependencies. Different tasks have different dependencies, and thus produce different task graphs. However, the target is always at the root of the DAG. Here are some of the task graphs of this repository:  
+
+#### Task graph of `./gradlew check`
+```
+:check                                                    (org.gradle.api.DefaultTask)
++--- :checkstyleMain                                      (org.gradle.api.plugins.quality.Checkstyle)
+|    +--- ...
++--- :checkstyleTest                                      (org.gradle.api.plugins.quality.Checkstyle)
+|    +--- ...
++--- :spotlessCheck                                       (org.gradle.api.DefaultTask)
+|    `--- ...
++--- :test                                                (org.gradle.api.tasks.testing.Test)
+|    +--- :classes                                        (org.gradle.api.DefaultTask)
+|    |    +--- :compileJava                               (org.gradle.api.tasks.compile.JavaCompile)
+|    |    `--- :processResources                          (org.gradle.language.jvm.tasks.ProcessResources)
+|    +--- :compileJava                                    (org.gradle.api.tasks.compile.JavaCompile)
+|    +--- :compileTestJava                                (org.gradle.api.tasks.compile.JavaCompile)
+|    |    +--- :classes                                   (org.gradle.api.DefaultTask)
+|    |    |    +--- :compileJava                          (org.gradle.api.tasks.compile.JavaCompile)
+|    |    |    `--- :processResources                     (org.gradle.language.jvm.tasks.ProcessResources)
+|    |    `--- :compileJava                               (org.gradle.api.tasks.compile.JavaCompile)
+|    `--- :testClasses                                    (org.gradle.api.DefaultTask)
+|         +--- :compileTestJava                           (org.gradle.api.tasks.compile.JavaCompile)
+|         |    +--- :classes                              (org.gradle.api.DefaultTask)
+|         |    |    +--- :compileJava                     (org.gradle.api.tasks.compile.JavaCompile)
+|         |    |    `--- :processResources                (org.gradle.language.jvm.tasks.ProcessResources)
+|         |    `--- :compileJava                          (org.gradle.api.tasks.compile.JavaCompile)
+|         `--- :processTestResources                      (org.gradle.language.jvm.tasks.ProcessResources)
+...
+```
+
+#### Task graph of `./gradlew assemble`
+```
+:assemble                        (org.gradle.api.DefaultTask)
+`--- :jar                        (org.gradle.api.tasks.bundling.Jar)
+     +--- :classes               (org.gradle.api.DefaultTask)
+     |    +--- :compileJava      (org.gradle.api.tasks.compile.JavaCompile)
+     |    `--- :processResources (org.gradle.language.jvm.tasks.ProcessResources)
+     `--- :compileJava           (org.gradle.api.tasks.compile.JavaCompile)
+```
+
+#### Task graph of `./gradlew build`
+```
+:build                                                         (org.gradle.api.DefaultTask)
++--- :assemble                                                 (org.gradle.api.DefaultTask)
+|    `--- :jar                                                 (org.gradle.api.tasks.bundling.Jar)
+|         +--- :classes                                        (org.gradle.api.DefaultTask)
+|         |    +--- :compileJava                               (org.gradle.api.tasks.compile.JavaCompile)
+|         |    `--- :processResources                          (org.gradle.language.jvm.tasks.ProcessResources)
+|         `--- :compileJava                                    (org.gradle.api.tasks.compile.JavaCompile)
+`--- :check                                                    (org.gradle.api.DefaultTask)
+   +--- :checkstyleMain                                      (org.gradle.api.plugins.quality.Checkstyle)
+   |    +--- ...
+   +--- :checkstyleTest                                      (org.gradle.api.plugins.quality.Checkstyle)
+   |    +--- ...
+   +--- :spotlessCheck                                       (org.gradle.api.DefaultTask)
+   |    `--- ...
+   +--- :test                                                (org.gradle.api.tasks.testing.Test)
+   |    `--- ...
+   ...
+```
 
 When you first run a gradle task, the task graph is serialized and stored on disk. Upon a subsequent run of the same task, If none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
 
@@ -52,7 +117,9 @@ The problems typically fall into three categories:
 2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the configuration cache**
 3. **invocation of `Task.project` at execution time is unsupported**
 
-The first error occurs when you start external processes without using `ExecOperations`. Gradle needs to be aware of all external processes so it can determine if any changes require the configuration cache to be re-run.
+The first error occurs when you start external processes during the configuration phase. Generally, , it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE. 
+
+without using `ExecOperations`. Gradle needs to be aware of all external processes so it can determine if any changes require the configuration cache to be re-run.
 
 The second and third errors occur because Gradle tasks shouldn't take mutable types as input — Gradle, Settings, Project, SourceSet, or Configuration. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
 
@@ -63,159 +130,255 @@ To solve the second and third errors, you can
 
 ## Solving Configuration Cache problems
 
-Let’s walk through fixing a task incompatible with the Configuration Cache.
+Let’s walk through making a task compatible with the Configuration Cache.
+
+> [!TIP]
+> If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
 
 
 ### Before:
 
-- `ZstdCompressTask` is already a [Gradle managed type](managed-types-and-properties.md)
-- `ZstdCompressor` is a POJO.
-- `ZstdCompressor`  starts an external process, causing the configuration cache to fail: **external process started**
-- Furthermore, `ZstdCompressTask` is calling `getProject()` at build time, causing another configuration cache failure: **cannot serialze object of type `org.gradle.api.internal.project.DefaultProject`**  
+- `CompanyReportPlugin` and `GenerateReportTask` are already [Gradle managed types](managed-types-and-properties.md)
+- `ReportGenerator` is a plain old Java object.
+- `CompanyReportPlugin::apply` starts an external process in the configuration phase, causing the configuration cache to fail
+- Furthermore, `GenerateReportTask` is calling `getProject()` at build time, causing another configuration cache failure: **invocation of `Task.project` at execution time is unsupported**
 
 ```java
-abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
-    @Input
-    protected abstract Property<Path> getInputFile();
+abstract class CompanyReportPlugin implements Plugin<Project> {
+   @Override
+   public final void apply(Project project) {
+      String gitTag = getLatestGitTag(project);
+      if (gitTag.equals("develop")) {
+         project.getTasks().register("generateReport", GenerateReportTask.class);
+      }
+   }
 
-    @Input
-    protected abstract Property<Path> getOutputFile();
-
-    @TaskAction
-    public void compress() {
-        ZstdCompressor compressor = new ZstdCompressor(5);
-        compressor.compress(getProject(), getInputFile().get(), getOutputFile().get());
-    }
+   private static String getLatestGitTag(Project project) {
+      try {
+         Process process = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
+                 .directory(project.getProjectDir())
+                 .start();
+         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String tag = reader.readLine();
+            process.waitFor();
+            return tag.strip();
+         }
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+   }
 }
 
-class ZstdCompressor {
-    private int compressionLevel;
+abstract class GenerateReportTask extends DefaultTask {
+   @TaskAction
+   public void upload() {
+      SassyReporter generator = new ReportGenerator(1000);
+      generator.generate(getProject(), Path.of("profits-file"), Path.of("report"));
+   }
+}
 
-    public ZstdCompressor(int compressionLevel) {
-        this.compressionLevel = compressionLevel;
-    }
+class ReportGenerator {
+   private final int minProfit;
 
-    public void compress(Project project, Path inputFileRelative, Path outputFileRelative) {
-        Path projectDir = project.getProjectDir().toPath();
-        Path inputPath = projectDir.resolve(inputFileRelative);
-        Path outputPath = projectDir.resolve(outputFileRelative);
+   public ReportGenerator(int minProfit) {
+      this.minProfit = minProfit;
+   }
 
-        try {
-            ProcessBuilder pb = new ProcessBuilder(
-                    "zstd", "-" + compressionLevel, inputPath.toString(), "-o", outputPath.toString());
-            Process process = pb.start();
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("zstd compression failed with exit code: " + exitCode);
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failed to execute zstd compression", e);
-        }
-    }
+   public void generate(Project project, Path dataFileRelative, Path reportFileRelative) {
+      Path projectDir = project.getProjectDir().toPath();
+      try {
+         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
+         String report = profits >= minProfit
+                 ? String.format("The company generated $ %d in profits", profits)
+                 : "The company is not doing well";
+         Files.writeString(reportFileRelative, report);
+      } catch (IOException | NumberFormatException e) {
+         throw new RuntimeException(e);
+      }
+   }
 }
 ```
 
 ### Step 1: Fixing "external process started"
 
-- To safely do the external call, we need to use `ExecOperations` in `ZstdCompressor`
-- To use `ExecOperations`, we can first make `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md), then inject `ExecOperations`
-- To make `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md), we make it abstract. It now needs to be instantiated with `ObjectFactory::newInstance`
-- To get an `ObjectFactory`, we inject it into `ZstdCompressTask`, which is conveniently already a [Gradle-managed type](managed-types-and-properties.md)
+- To safely do an external call during the configuration phase, we can use the `ExecOperations` service.
+- To use `ExecOperations`, we can inject it into `CompanyReportPlugin`. 
 
 ```java
-abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
-    @Input
-    protected abstract Property<Path> getInputFile();
+abstract class CompanyReportPlugin implements Plugin<Project> {
+   @Inject
+   protected abstract ExecOperations getExecOperations();
 
-    @Input
-    protected abstract Property<Path> getOutputFile();
+   @Override
+   public final void apply(Project project) {
+      String gitTag = getLatestGitTag(project);
+      if (gitTag.equals("develop")) {
+         project.getTasks().register("generateCompanyReport", GenerateReportTask.class);
+      }
+   }
 
-    @Inject
-    protected abstract ObjectFactory getObjectFactory();
-
-    @TaskAction
-    public void compress() {
-        ZstdCompressor compressor = getObjectFactory().newInstance(ZstdCompressor.class, 0);
-        compressor.compress(getProject(), getInputFile().get(), getOutputFile().get());
-    }
-}
-
-abstract class ZstdCompressor {
-    @Inject
-    protected abstract ExecOperations getExecOperations();
-
-    private int compressionLevel;
-
-    @Inject
-    public ZstdCompressor(int compressionLevel) {
-        this.compressionLevel = compressionLevel;
-    }
-
-    public void compress(Project project, Path inputFileRelative, Path outputFileRelative) {
-        Path projectDir = project.getProjectDir().toPath();
-        Path inputPath = projectDir.resolve(inputFileRelative);
-        Path outputPath = projectDir.resolve(outputFileRelative);
-
-        getExecOperations().exec(execSpec -> {
-            execSpec.commandLine("zstd", "-" + compressionLevel, inputPath.toString(), "-o", outputPath.toString());
-        });
-    }
+   private String getLatestGitTag(Project project) {
+      try {
+         OutputStream output = new ByteArrayOutputStream();
+         getExecOperations().exec(execSpec -> {
+            execSpec.workingDir(project.getProjectDir());
+            execSpec.setCommandLine("git", "describe", "--tags", "--abbrev=0");
+            execSpec.setStandardOutput(output);
+         });
+         return output.toString().strip();
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+   }
 }
 ```
 
+### Step 2: Fixing **invocation of `Task.project` at execution time is unsupported**
 
-### Step 2: Fixing "invocation of `Task.project` at execution time is unsupported"
-
-- To access the project dir, we can use the `ProjectLayout` service
-- We've already made `ZstdCompressor` a [Gradle-managed type](managed-types-and-properties.md)! We can simply `@Inject` the service we need.
+- To get the project dir, we can use the `ProjectLayout` service.
+- To use `ProjectLayout` in , we can inject it into a gradle-managed type — either `CompanyReportPlugin` or `GenerateReportTask`.
+- Let's inject `ProjectLayout` in `GenerateReportTask`, then pass it into the `ReportGenerator`. 
 
 ```java
-abstract class ZstdCompressTask extends org.gradle.api.DefaultTask {
-    @Input
-    protected abstract Property<Path> getInputFile();
+abstract class GenerateReportTask extends DefaultTask {
+   @Inject
+   protected abstract ProjectLayout getProjectLayout();
 
-    @Input
-    protected abstract Property<Path> getOutputFile();
-
-    @Inject
-    protected abstract ObjectFactory getObjectFactory();
-
-    @TaskAction
-    public void compress() {
-        ZstdCompressor compressor = getObjectFactory().newInstance(ZstdCompressor.class, 0);
-        compressor.compress(getInputFile().get(), getOutputFile().get());
-    }
+   @TaskAction
+   public void upload() {
+      ReportGenerator generator = new ReportGenerator(1000000000);
+      generator.generate(getProjectLayout(), Path.of("profits-file"), Path.of("report"));
+   }
 }
 
-abstract class ZstdCompressor {
-    @Inject
-    protected abstract ExecOperations getExecOperations();
 
-    @Inject
-    protected abstract ProjectLayout getProjectLayout();
+class ReportGenerator {
+   private final int minProfit;
 
-    private int compressionLevel;
+   public ReportGenerator(int minProfit) {
+      this.minProfit = minProfit;
+   }
 
-    @Inject
-    public ZstdCompressor(int compressionLevel) {
-        this.compressionLevel = compressionLevel;
-    }
-
-    public void compress(Path inputFileRelative, Path outputFileRelative) {
-        Path projectDir = getProjectLayout().getProjectDirectory().getAsFile().toPath();
-        Path inputPath = projectDir.resolve(inputFileRelative);
-        Path outputPath = projectDir.resolve(outputFileRelative);
-
-        getExecOperations().exec(execSpec -> {
-            execSpec.commandLine("zstd", "-" + compressionLevel, inputPath.toString(), "-o", outputPath.toString());
-        });
-    }
+   public void generate(ProjectLayout layout, Path dataFileRelative, Path reportFileRelative) {
+      Path projectDir = layout.getProjectDirectory().getAsFile().toPath();
+      try {
+         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
+         String report = profits >= minProfit
+                 ? String.format("The company generated $ %d in profits", profits)
+                 : "The company is not doing well";
+         Files.writeString(reportFileRelative, report);
+      } catch (IOException | NumberFormatException e) {
+         throw new RuntimeException(e);
+      }
+   }
 }
 ```
 
+### Step 3: Making it clean by using Gradle-managed types
 
-> [!TIP]
-> If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
+- The plugin now works with the Configuration Cache. However, we can make it cleaner.
+- Instead of passing services down the class hierarchy, we can make `ReportGenerator` a Gradle-managed type, and inject directly.
+- To make `ReportGenerator` a Gradle-managed type, let's make it abstract, and `@Inject` the constructor. Now, we need to instantiate it with `ObjectFactory::newInstance`
+- Now, `ReportGenerator` can inject the services it needs, rather than passing them as parameters.
+
+```java
+abstract class GenerateReportTask extends DefaultTask {
+   @Inject
+   protected abstract ObjectFactory getObjectFactory();
+
+   @TaskAction
+   public void upload() {
+      ReportGenerator generator = getObjectFactory().newInstance(ReportGenerator.class, 1000000000);
+      generator.generate(Path.of("profits-file"), Path.of("report"));
+   }
+}
+
+abstract class ReportGenerator {
+   private final int minProfit;
+
+   @Inject
+   protected abstract ProjectLayout getProjectLayout();
+
+   @Inject
+   public ReportGenerator(int minProfit) {
+      this.minProfit = minProfit;
+   }
+
+   public void generate(Path dataFileRelative, Path reportFileRelative) {
+      Path projectDir = getProjectLayout().getProjectDirectory().getAsFile().toPath();
+      try {
+         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
+         String report = profits >= minProfit
+                 ? String.format("The company generated $ %d in profits", profits)
+                 : "The company is not doing well";
+         Files.writeString(reportFileRelative, report);
+      } catch (IOException | NumberFormatException e) {
+         throw new RuntimeException(e);
+      }
+   }
+}
+```
+
+> [!NOTE]
+> The choice between passing down services into utility classes, versus turning utility classes into Gradle-managed types, is a stylistic one. As a utility class adopts more and more services, it makes sense to turn it into a Gradle-managed to simplify its method signatures. 
+
+### Bonus: Thinking about the design of your tasks
+
+- When refactoring, it's easy to do a 1:1 conversion from an old to a new API. However, it's worthwhile to think about what the task is doing, and whether it is using Gradle's task model correctly. 
+- Heavy work (e.g. external processes) should be done in tasks, within the execution phase (i.e. within `@TaskAction`s)
+
+```java
+abstract class CompanyReportPlugin implements Plugin<Project> {
+    @Override
+    public final void apply(Project project) {
+        project.getTasks().register("generateCompanyReport", GenerateReportTask.class, task -> {
+        });
+    }
+}
+
+abstract class GenerateReportTask extends DefaultTask {
+   @TaskAction
+   public void upload() {
+      boolean shouldGenerateReport = getLatestGitTag().equals("develop");
+      if (shouldGenerateReport) {
+         ReportGenerator generator = new ReportGenerator(1000000000);
+         generator.generate(Path.of("profits-file"), Path.of("report"));
+      }
+   }
+
+   private String getLatestGitTag() {
+      try {
+         Process process = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
+                 .directory(getProject().getProjectDir())
+                 .start();
+         process.waitFor();
+         return process.getInputStream().toString().strip();
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+   }
+}
+
+class ReportGenerator {
+   private final int minProfit;
+
+   public ReportGenerator(int minProfit) {
+      this.minProfit = minProfit;
+   }
+
+   public void generate(Path dataFileAbsolute, Path reportFileAbsolute) {
+      try {
+         int profits = Integer.parseInt(Files.readString(dataFileAbsolute));
+         String report = profits >= minProfit
+                 ? String.format("The company generated $ %d in profits", profits)
+                 : "The company is not doing well";
+         Files.writeString(reportFileAbsolute, report);
+      } catch (IOException | NumberFormatException e) {
+         throw new RuntimeException(e);
+      }
+   }
+}
+```
 
 ## Two strategies to write Configuration Cache friendly Gradle
 
@@ -335,8 +498,8 @@ abstract class UploadDeploymentInformation extends DefaultTask {
 
     @TaskAction
     public void compress() {
-        Deployment startup = getObjectFactory().newInstance(Startup.class, 1000000000000000);
-        UploadUtils.upload(startup, getUploadUri());
+        Deployment deployment = getObjectFactory().newInstance(Deployment.class, "The Shire");
+        UploadUtils.upload(startup, getUploadUri().get());
     }
 }
 ```
