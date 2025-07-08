@@ -200,9 +200,10 @@ abstract class MyPlugin implements Plugin<Project> {
 }
 ```
 
-### Fixing **invocation of `Task.project` at execution time is unsupported**
+### Fixing "invocation of `Task.project` at execution time is unsupported"
 
 #### Before
+- `MyTask` is already a [Gradle managed type](managed-types-and-properties.md)
 - `MyTask` is calling `getProject()` at build time, causing the configuration cache to fail: **invocation of `Task.project` at execution time is unsupported**
 
 ```java
@@ -224,7 +225,7 @@ abstract class MyTask extends DefaultTask {
 #### After
 - To get the project dir, we can use the `ProjectLayout` service.
 - To do file system operations like delete, we can use the `FileSystemOperations` service
-
+- We can inject these services into `MyTask`
 
 ```java
 abstract class MyTask extends DefaultTask {
@@ -255,7 +256,6 @@ To summarize the two strategies we used to solve Configuration Cache issues:
 ### You can inject services into Gradle-managed types
 
 Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
-
 
 
 ### You can make any class into a Gradle-managed type
