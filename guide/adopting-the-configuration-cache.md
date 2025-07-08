@@ -117,11 +117,9 @@ The problems typically fall into three categories:
 2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the configuration cache**
 3. **invocation of `Task.project` at execution time is unsupported**
 
-The first error occurs when you start external processes during the configuration phase. Generally, , it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE. 
+The first error occurs when you start external processes during the configuration phase. Generally, it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE. 
 
-without using `ExecOperations`. Gradle needs to be aware of all external processes so it can determine if any changes require the configuration cache to be re-run.
-
-The second and third errors occur because Gradle tasks shouldn't take mutable types as input — Gradle, Settings, Project, SourceSet, or Configuration. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
+The second and third errors occur because Gradle tasks shouldn't take mutable types as input — `Gradle`, `Settings`, `Project`, `SourceSet`, or `Configuration`. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
 
 To solve the second and third errors, you can
 - Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of taking in `Project` and accessing `project.version`
@@ -130,26 +128,24 @@ To solve the second and third errors, you can
 
 ## Solving Configuration Cache problems
 
-Let’s walk through making a task compatible with the Configuration Cache.
+Let’s walk through some examples of fixing Configuration Cache problems
 
 > [!TIP]
 > If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
 
+### Fixing "external process started"
 
-### Before:
-
-- `CompanyReportPlugin` and `GenerateReportTask` are already [Gradle managed types](managed-types-and-properties.md)
-- `ReportGenerator` is a plain old Java object.
-- `CompanyReportPlugin::apply` starts an external process in the configuration phase, causing the configuration cache to fail
-- Furthermore, `GenerateReportTask` is calling `getProject()` at build time, causing another configuration cache failure: **invocation of `Task.project` at execution time is unsupported**
+#### Before: 
+- `MyPlugin` is already a [Gradle managed type](managed-types-and-properties.md)
+- `MyPlugin::apply` starts an external process in the configuration phase, causing the configuration cache to fail
 
 ```java
-abstract class CompanyReportPlugin implements Plugin<Project> {
+abstract class MyPlugin implements Plugin<Project> {
    @Override
    public final void apply(Project project) {
       String gitTag = getLatestGitTag(project);
       if (gitTag.equals("develop")) {
-         project.getTasks().register("generateReport", GenerateReportTask.class);
+         // Do something...
       }
    }
 
@@ -168,44 +164,15 @@ abstract class CompanyReportPlugin implements Plugin<Project> {
       }
    }
 }
-
-abstract class GenerateReportTask extends DefaultTask {
-   @TaskAction
-   public void upload() {
-      SassyReporter generator = new ReportGenerator(1000);
-      generator.generate(getProject(), Path.of("profits-file"), Path.of("report"));
-   }
-}
-
-class ReportGenerator {
-   private final int minProfit;
-
-   public ReportGenerator(int minProfit) {
-      this.minProfit = minProfit;
-   }
-
-   public void generate(Project project, Path dataFileRelative, Path reportFileRelative) {
-      Path projectDir = project.getProjectDir().toPath();
-      try {
-         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
-         String report = profits >= minProfit
-                 ? String.format("The company generated $ %d in profits", profits)
-                 : "The company is not doing well";
-         Files.writeString(reportFileRelative, report);
-      } catch (IOException | NumberFormatException e) {
-         throw new RuntimeException(e);
-      }
-   }
-}
 ```
 
-### Step 1: Fixing "external process started"
+#### After
 
 - To safely do an external call during the configuration phase, we can use the `ExecOperations` service.
-- To use `ExecOperations`, we can inject it into `CompanyReportPlugin`. 
+- To use `ExecOperations`, we can inject it into `MyPlugin`. 
 
 ```java
-abstract class CompanyReportPlugin implements Plugin<Project> {
+abstract class MyPlugin implements Plugin<Project> {
    @Inject
    protected abstract ExecOperations getExecOperations();
 
@@ -213,7 +180,7 @@ abstract class CompanyReportPlugin implements Plugin<Project> {
    public final void apply(Project project) {
       String gitTag = getLatestGitTag(project);
       if (gitTag.equals("develop")) {
-         project.getTasks().register("generateCompanyReport", GenerateReportTask.class);
+         // Do something...
       }
    }
 
@@ -233,152 +200,53 @@ abstract class CompanyReportPlugin implements Plugin<Project> {
 }
 ```
 
-### Step 2: Fixing **invocation of `Task.project` at execution time is unsupported**
+### Fixing **invocation of `Task.project` at execution time is unsupported**
 
+#### Before
+- `MyTask` is calling `getProject()` at build time, causing the configuration cache to fail: **invocation of `Task.project` at execution time is unsupported**
+
+```java
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
+
+   @TaskAction
+   public void delete() {
+      boolean deleted = getProject().delete(getMyFiles().getFiles());
+      // Do something with `deleted`...
+      Path projectDir = getProject().getProjectDir().toPath();
+      // Do something with `projectDir`...
+   }
+}
+
+```
+
+#### After
 - To get the project dir, we can use the `ProjectLayout` service.
-- To use `ProjectLayout` in , we can inject it into a gradle-managed type — either `CompanyReportPlugin` or `GenerateReportTask`.
-- Let's inject `ProjectLayout` in `GenerateReportTask`, then pass it into the `ReportGenerator`. 
+- To do file system operations like delete, we can use the `FileSystemOperations` service
+
 
 ```java
-abstract class GenerateReportTask extends DefaultTask {
-   @Inject
-   protected abstract ProjectLayout getProjectLayout();
-
-   @TaskAction
-   public void upload() {
-      ReportGenerator generator = new ReportGenerator(1000);
-      generator.generate(getProjectLayout(), Path.of("profits-file"), Path.of("report"));
-   }
-}
-
-
-class ReportGenerator {
-   private final int minProfit;
-
-   public ReportGenerator(int minProfit) {
-      this.minProfit = minProfit;
-   }
-
-   public void generate(ProjectLayout layout, Path dataFileRelative, Path reportFileRelative) {
-      Path projectDir = layout.getProjectDirectory().getAsFile().toPath();
-      try {
-         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
-         String report = profits >= minProfit
-                 ? String.format("The company generated $ %d in profits", profits)
-                 : "The company is not doing well";
-         Files.writeString(reportFileRelative, report);
-      } catch (IOException | NumberFormatException e) {
-         throw new RuntimeException(e);
-      }
-   }
-}
-```
-
-### Step 3: Making it clean by using Gradle-managed types
-
-- The plugin now works with the Configuration Cache. However, we can make it cleaner.
-- Instead of passing services down the class hierarchy, we can make `ReportGenerator` a Gradle-managed type, and inject directly.
-- To make `ReportGenerator` a Gradle-managed type, let's make it abstract, and `@Inject` the constructor. Now, we need to instantiate it with `ObjectFactory::newInstance`
-- Now, `ReportGenerator` can inject the services it needs, rather than passing them as parameters.
-
-```java
-abstract class GenerateReportTask extends DefaultTask {
-   @Inject
-   protected abstract ObjectFactory getObjectFactory();
-
-   @TaskAction
-   public void upload() {
-      ReportGenerator generator = getObjectFactory().newInstance(ReportGenerator.class, 1000);
-      generator.generate(Path.of("profits-file"), Path.of("report"));
-   }
-}
-
-abstract class ReportGenerator {
-   private final int minProfit;
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
 
    @Inject
    protected abstract ProjectLayout getProjectLayout();
 
    @Inject
-   public ReportGenerator(int minProfit) {
-      this.minProfit = minProfit;
-   }
+   protected abstract FileSystemOperations getFileSystemOperations();
 
-   public void generate(Path dataFileRelative, Path reportFileRelative) {
+   @TaskAction
+   public void delete() {
+      WorkResult result = getFileSystemOperations().delete(spec -> spec.delete(getMyFiles().getFiles()));
+      // Do something with `result`...
       Path projectDir = getProjectLayout().getProjectDirectory().getAsFile().toPath();
-      try {
-         Integer profits = Integer.valueOf(Files.readString(projectDir.resolve(dataFileRelative)));
-         String report = profits >= minProfit
-                 ? String.format("The company generated $ %d in profits", profits)
-                 : "The company is not doing well";
-         Files.writeString(reportFileRelative, report);
-      } catch (IOException | NumberFormatException e) {
-         throw new RuntimeException(e);
-      }
+      // Do something with `projectDir`...
    }
 }
 ```
 
-> [!NOTE]
-> The choice between passing down services into utility classes, versus turning utility classes into Gradle-managed types, is a stylistic one. As a utility class adopts more and more services, it makes sense to turn it into a Gradle-managed to simplify its method signatures. 
-
-### Bonus: Thinking about the design of your tasks
-
-- When refactoring, it's easy to do a 1:1 conversion from an old to a new API. However, it's worthwhile to think about what the task is doing, and whether it is using Gradle's task model correctly. 
-- Heavy work (e.g. external processes) should be done in tasks, within the execution phase (i.e. within `@TaskAction`s)
-
-```java
-abstract class CompanyReportPlugin implements Plugin<Project> {
-    @Override
-    public final void apply(Project project) {
-        project.getTasks().register("generateCompanyReport", GenerateReportTask.class, task -> {
-        });
-    }
-}
-
-abstract class GenerateReportTask extends DefaultTask {
-   @TaskAction
-   public void upload() {
-      boolean shouldGenerateReport = getLatestGitTag().equals("develop");
-      if (shouldGenerateReport) {
-         ReportGenerator generator = new ReportGenerator(1000);
-         generator.generate(Path.of("profits-file"), Path.of("report"));
-      }
-   }
-
-   private String getLatestGitTag() {
-      try {
-         Process process = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
-                 .directory(getProject().getProjectDir())
-                 .start();
-         process.waitFor();
-         return process.getInputStream().toString().strip();
-      } catch (Exception e) {
-         throw new RuntimeException(e);
-      }
-   }
-}
-
-class ReportGenerator {
-   private final int minProfit;
-
-   public ReportGenerator(int minProfit) {
-      this.minProfit = minProfit;
-   }
-
-   public void generate(Path dataFileAbsolute, Path reportFileAbsolute) {
-      try {
-         int profits = Integer.parseInt(Files.readString(dataFileAbsolute));
-         String report = profits >= minProfit
-                 ? String.format("The company generated $ %d in profits", profits)
-                 : "The company is not doing well";
-         Files.writeString(reportFileAbsolute, report);
-      } catch (IOException | NumberFormatException e) {
-         throw new RuntimeException(e);
-      }
-   }
-}
-```
 
 ## Two strategies to write Configuration Cache friendly Gradle
 

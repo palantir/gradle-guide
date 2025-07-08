@@ -45,11 +45,9 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     final void action() {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectName = getProject().getName();
-                        System.out.println("Project name: " + projectName);
 
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectPath = getProject().getPath();
-                        System.out.println("Project path: " + projectPath);
                     }
                 }
             """);
@@ -98,7 +96,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 public void execute(Task task) {
                     // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                     String projectName = task.getProject().getName();
-                    System.out.println("Project name: " + projectName);
                 }
             }
             """);
@@ -140,7 +137,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     if (obj instanceof Task) {
                         // This should NOT be flagged, because this is not Action<Task>
                         String projectName = ((Task) obj).getProject().getName();
-                        System.out.println("Project name: " + projectName);
                     }
                 }
             }
