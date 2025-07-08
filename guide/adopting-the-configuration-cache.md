@@ -246,7 +246,7 @@ abstract class GenerateReportTask extends DefaultTask {
 
    @TaskAction
    public void upload() {
-      ReportGenerator generator = new ReportGenerator(1000000000);
+      ReportGenerator generator = new ReportGenerator(1000);
       generator.generate(getProjectLayout(), Path.of("profits-file"), Path.of("report"));
    }
 }
@@ -288,7 +288,7 @@ abstract class GenerateReportTask extends DefaultTask {
 
    @TaskAction
    public void upload() {
-      ReportGenerator generator = getObjectFactory().newInstance(ReportGenerator.class, 1000000000);
+      ReportGenerator generator = getObjectFactory().newInstance(ReportGenerator.class, 1000);
       generator.generate(Path.of("profits-file"), Path.of("report"));
    }
 }
@@ -341,7 +341,7 @@ abstract class GenerateReportTask extends DefaultTask {
    public void upload() {
       boolean shouldGenerateReport = getLatestGitTag().equals("develop");
       if (shouldGenerateReport) {
-         ReportGenerator generator = new ReportGenerator(1000000000);
+         ReportGenerator generator = new ReportGenerator(1000);
          generator.generate(Path.of("profits-file"), Path.of("report"));
       }
    }
