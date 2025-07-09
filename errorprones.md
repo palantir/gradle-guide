@@ -69,7 +69,7 @@ Do not declare Properties, FileCollections and other Gradle managed types as fie
 <td>
 
 Don't call `getProject()` in task actions. Instead, your tasks should take in the "smallest" type
-required for the task's functionality. For example, instead getProject().version, you should declare the
+required for the task's functionality. For example, instead getProject().version(), you should declare the
 project version as an `@Input public abstract Property<String>`.
 
 Doing so improves performance in two ways:
