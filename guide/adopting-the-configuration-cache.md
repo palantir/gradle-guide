@@ -23,18 +23,18 @@ Gradle builds are split into two phases — the configuration phase creates the 
    - `GRADLE_USER_HOME`
    - Gradle Daemon JVM
 2. Init scripts
-3. buildSrc and included build logic build contents (build scripts, sources, and intermediate build outputs)
-4. Build and Settings scripts, including included scripts (apply from: foo.gradle)
-5. Gradle configuration files (Version Catalogs, dependency verification files, dependency lock files, gradle.properties files)
+3. `buildSrc` and included build logic build contents (build scripts, sources, and intermediate build outputs)
+4. Build and Settings scripts, including included scripts (`apply from: 'foo.gradle'`)
+5. Gradle configuration files (Version Catalogs, dependency verification files, dependency lock files, `gradle.properties` files)
 6. Contents of files read at configuration time
 7. File system state checked at configuration time (file presence, directory contents, etc.)
-8. Custom ValueSource values obtained at configuration time (this also includes built-in providers, like providers.exec and providers.fileContents).
+8. Custom `ValueSource` values obtained at configuration time (this also includes built-in providers, like `ProviderFactory#exec` and `ProviderFactory#fileContents`).
 9. System properties used during the configuration phase
 10. Environment variables used during the configuration phase
 
 
 ### Configuration outputs
-The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph), describing the target task and it's dependencies. Different tasks have different dependencies, and thus produce different task graphs. However, the target is always at the root of the DAG. Here are some of the task graphs of this repository:  
+The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph), describing the target task and its dependencies. Different tasks have different dependencies, and thus produce different task graphs. However, the target is always at the root of the DAG. Here are some of the task graphs of this repository:  
 
 #### Task graph of `./gradlew check`
 ```
@@ -96,9 +96,9 @@ The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Dir
    ...
 ```
 
-When you first run a gradle task, the task graph is serialized and stored on disk. Upon a subsequent run of the same task, If none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
+When you first run a Gradle task, the task graph is serialized and stored on disk. Upon a subsequent run of the same task, if none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
 
-The configuration phase typically runs faster than execution since heavy work belongs in the latter. However, without the cache, configuration phase is rerun with every single Gradle run. If you run a unit test multiple times, configuration is repeated, reproducing the same task graph every time. When the task itself is light, configuration can take up a large fraction of the latency. Configuration caching solves this by storing and reusing configuration results between runs, eliminating redundant work and speeding up iteration cycles.
+The configuration phase typically runs faster than execution since heavy work belongs in the latter. However, without the cache, configuration phase is rerun with every Gradle run. If you run a unit test multiple times, configuration is repeated, reproducing the same task graph every time. When the task itself is light, configuration can take up a large fraction of the latency. Configuration caching solves this by storing and reusing configuration results between runs, eliminating redundant work and speeding up iteration cycles.
 
 
 
@@ -114,7 +114,7 @@ To find Configuration Cache problems:
 The problems typically fall into three categories:
 
 1. **external process started `/usr/bin/git --version`**
-2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the configuration cache**
+2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the Configuration Cache**
 3. **invocation of `Task.project` at execution time is unsupported**
 
 The first error occurs when you start external processes during the configuration phase. Generally, it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE. 
@@ -133,11 +133,11 @@ Let’s walk through some examples of fixing Configuration Cache problems
 > [!TIP]
 > If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
 
-### Fixing "external process started"
+### Example 1: Fixing "external process started"
 
 #### Before: 
 - `MyPlugin` is already a [Gradle managed type](managed-types-and-properties.md)
-- `MyPlugin::apply` starts an external process in the configuration phase, causing the configuration cache to fail
+- `MyPlugin::apply` starts an external process in the configuration phase, causing the Configuration Cache to fail
 
 ```java
 abstract class MyPlugin implements Plugin<Project> {
@@ -171,6 +171,11 @@ abstract class MyPlugin implements Plugin<Project> {
 - To safely do an external call during the configuration phase, we can use the `ExecOperations` service.
 - To use `ExecOperations`, we can inject it into `MyPlugin`. 
 
+> [!NOTE]
+> To inject a service, make a protected/public abstract getter method returning that service. It has to be prefixed with `get-` for Gradle's injection to work properly!.
+> 
+> An alternative to `@Inject`-ing an abstract getter is to [use a field with constructor injection](https://docs.gradle.org/current/userguide/service_injection.html#filesystemoperations). 
+
 ```java
 abstract class MyPlugin implements Plugin<Project> {
    @Inject
@@ -200,11 +205,11 @@ abstract class MyPlugin implements Plugin<Project> {
 }
 ```
 
-### Fixing "invocation of `Task.project` at execution time is unsupported"
+### Example 2: Fixing "invocation of `Task.project` at execution time is unsupported"
 
 #### Before
 - `MyTask` is already a [Gradle managed type](managed-types-and-properties.md)
-- `MyTask` is calling `getProject()` at build time, causing the configuration cache to fail: **invocation of `Task.project` at execution time is unsupported**
+- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail: **invocation of `Task.project` at execution time is unsupported**
 
 ```java
 abstract class MyTask extends DefaultTask {
@@ -223,7 +228,7 @@ abstract class MyTask extends DefaultTask {
 ```
 
 #### After
-- To get the project dir, we can use the `ProjectLayout` service.
+- To get the project directory, we can use the `ProjectLayout` service.
 - To do file system operations like delete, we can use the `FileSystemOperations` service
 - We can inject these services into `MyTask`
 
@@ -248,6 +253,228 @@ abstract class MyTask extends DefaultTask {
 }
 ```
 
+### Example 3: Fixing multiple problems
+
+Let's look at a more complicated example involving plain java classes being used by a Task.
+
+#### Before
+- `MyTask` is already a [Gradle managed type](managed-types-and-properties.md)
+- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail: **invocation of `Task.project` at execution time is unsupported**
+- `Project` is being passed down to `Intermediate`, which uses two helpers `HelperA` and `HelperB`
+
+```java
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
+
+   @TaskAction
+   public void action() {
+      Intermediate intermediate = new Intermediate();
+      intermediate.doSomething(getProject());
+   }
+}
+
+class Intermediate {
+   public void doSomething(Project project) {
+      HelperA helperA = new HelperA();
+      helperA.doSomething(project);
+
+      HelperB helperB = new HelperB();
+      helperB.doSomething(project);
+   }
+}
+
+class HelperA {
+    public void doSomething(Project project) {
+       WorkResult result = project.copy(...);
+       // Do stuff with `result`... 
+    }
+}
+
+class HelperB {
+   public void doSomething(Project project) {
+       Path projectDir = project.getProjectDir().toPath();
+       // Do stuff with projectDir...
+   }
+}
+```
+
+#### After
+- Instead of `project.copy(...)`, we can use `FileSystemOperations`
+- Instead of `project.getProjectDir()`, we can use `ProjectLayout`
+- We can `@Inject` these services into `MyTask`, because `MyTask` is a Gradle managed type
+- Then, we can pass these services down the call chain
+
+```java
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
+   
+   @Inject
+   protected abstract FileSystemOperations getFileSystemOperations();
+   
+   @Inject
+   protected abstract ProjectLayout getProjectLayout();
+
+   @TaskAction
+   public void action() {
+      Intermediate intermediate = new Intermediate(getFileSystemOperations(), getProjectLayout());
+      intermediate.doSomething();
+   }
+}
+
+class Intermediate {
+   private FileSystemOperations fileSystemOperations;
+   private ProjectLayout projectLayout;
+   
+   Intermediate(FileSystemOperations fileSystemOperations, ProjectLayout projectLayout) {
+      this.fileSystemOperations = fileSystemOperations;
+      this.projectLayout = projectLayout;
+   }
+   
+   public void doSomething() {
+      HelperA helperA = new HelperA();
+      helperA.doSomething();
+
+      HelperB helperB = new HelperB();
+      helperB.doSomething();
+   }
+}
+
+class HelperA {
+   private FileSystemOperations fileSystemOperations;
+   
+   HelperA(FileSystemOperations fileSystemOperations) {
+       this.fileSystemOperations = fileSystemOperations;
+   }
+
+   public void doSomething() {
+      WorkResult result = fileSystemOperations.copy(...);
+      // Do stuff with `result`... 
+   }
+}
+
+class HelperB {
+   private ProjectLayout projectLayout;
+   
+   HelperB(ProjectLayout projectLayout) {
+      this.projectLayout = projectLayout;
+   }
+   
+   public void doSomething() {
+      Path projectDir = projectLayout.getProjectDirectory().getAsFile().toPath();
+      // Do stuff with projectDir...
+   }
+}
+```
+
+#### We can do better!
+- Instead of passing services down the call chain (which can bloat constructors), we can inject services into classes directly!
+- To inject a service into `HelperA`, we have to make it a Gradle-managed type by making it `abstract`. Ditto for `HelperB`
+- Now that `HelperA` is an abstract Gradle-managed type, we need to use `ObjectFactory::newInstance` to instantiate it.
+- To get `ObjectFactory` in `Intermediate`, we have to inject it.
+- For injection to work in `Intermediate`, we also have to make it a Gradle-managed type.  
+
+```java
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
+   
+   @Inject
+   protected abstract ObjectFactory getObjectFactory();
+
+   @TaskAction
+   public void action() {
+      Intermediate intermediate = getObjectFactory().newInstance(Intermediate.class);
+      intermediate.doSomething();
+   }
+}
+
+abstract class Intermediate {
+   @Inject
+   protected abstract ObjectFactory getObjectFactory();
+   
+   public void doSomething() {
+      HelperA helperA = getObjectFactory().newInstance(HelperA.class);
+      helperA.doSomething();
+
+      HelperB helperB = getObjectFactory().newInstance(HelperA.class);
+      helperB.doSomething();
+   }
+}
+
+abstract class HelperA {
+   @Inject
+   protected abstract FileSystemOperations getFileSystemOperations();
+
+   public void doSomething() {
+      WorkResult result = getFileSystemOperations().copy(...);
+      // Do stuff with `result`... 
+   }
+}
+
+abstract class HelperB { 
+   @Inject 
+   protected abstract ProjectLayout getProjectLayout();
+
+   public void doSomething() {
+      Path projectDir = getProjectLayout().getProjectDirectory().getAsFile().toPath();
+      // Do stuff with projectDir...
+   }
+}
+```
+
+#### And better!
+- Since `HelperA` doesn't have a constructor with arguments, we can use Gradle's `@Nested` magic in place of `ObjectFactory::newInstance`. Ditto for `HelperB`
+
+```java
+abstract class MyTask extends DefaultTask {
+   @InputFile
+   protected abstract FileProperty getMyFiles();
+
+   @Nested
+   protected abstract Intermediate getIntermediate();
+
+   @TaskAction
+   public void action() {
+      getIntermediate().doSomething();
+   }
+}
+
+abstract class Intermediate {
+   @Nested
+   protected abstract HelperA getHelperA();
+   
+   @Nested
+   protected abstract HelperB getHelperB();
+
+   public void doSomething() {
+      getHelperA().doSomething();
+      getHelperB().doSomething();
+   }
+}
+
+abstract class HelperA {
+   @Inject
+   protected abstract FileSystemOperations getFileSystemOperations();
+
+   public void doSomething() {
+      WorkResult result = getFileSystemOperations().copy(...);
+      // Do stuff with `result`... 
+   }
+}
+
+abstract class HelperB {
+   @Inject
+   protected abstract ProjectLayout getProjectLayout();
+
+   public void doSomething() {
+      Path projectDir = getProjectLayout().getProjectDirectory().getAsFile().toPath();
+      // Do stuff with projectDir...
+   }
+}
+```
+
 
 ## Two strategies to write Configuration Cache friendly Gradle
 
@@ -255,7 +482,7 @@ To summarize the two strategies we used to solve Configuration Cache issues:
 
 ### You can inject services into Gradle-managed types
 
-Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
+Do you need the project directory? Inject [`ProjectLayout`](https://docs.gradle.org/current/javadoc/org/gradle/api/file/ProjectLayout.html). Do you need to run a bash command at configuration time? Inject [`ExecOperations`](https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html). Gradle offers a [list](https://docs.gradle.org/current/userguide/service_injection.html) of injectable services which will cover 99% of your use cases. However, that list is incomplete — in reality,  almost [anything in Gradle source](https://github.com/search?q=repo%3Agradle%2Fgradle%20%40ServiceScope&type=code) annotated with [`@ServiceScope`](https://github.com/gradle/gradle/blob/196bb409d47f5b6e39d62edd39be939f7606a5cc/platforms/core-runtime/stdlib-java-extensions/src/main/java/org/gradle/internal/service/scopes/ServiceScope.java#L43) can be injected into a Gradle managed type.
 
 
 ### You can make any class into a Gradle-managed type
@@ -342,16 +569,6 @@ abstract class Deployment {
 }
 
 ```
-
-> [!TIP]
-> `@Nested` is an alternative to `ObjectFactory::newInstance` for classes with nullary constructors.
-> It does the same thing as the following
-> ```java
-> @Inject
-> protected abstract ObjectFactory getObjectFactory();
-> public Team team = getObjectFactory().newInstance(Team.class);
-> ```
-
 
 
 ...until you reach the `Task`/`Project`/`Extension` that uses our class.
