@@ -174,7 +174,7 @@ abstract class MyPlugin implements Plugin<Project> {
 > [!NOTE]
 > To inject a service, make a protected/public abstract getter method returning that service. It has to be prefixed with `get-` for Gradle's injection to work properly!.
 > 
-> An alternative to `@Inject`-ing an abstract getter is to [use a field with constructor injection](https://docs.gradle.org/current/userguide/service_injection.html#filesystemoperations). 
+> An alternative to `@Inject`-ing an abstract getter is to use a field with constructor injection (see [this code snippet](https://docs.gradle.org/current/userguide/service_injection.html#filesystemoperations)) 
 
 ```java
 abstract class MyPlugin implements Plugin<Project> {
