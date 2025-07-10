@@ -60,6 +60,32 @@ Do not declare Properties, FileCollections and other Gradle managed types as fie
 <tr>
 <td>
 
+<a id="IllegalMethodCalledDuringTaskExecution" href="guide/adopting-the-configuration-cache.md#adopting-the-configuration-cache">`IllegalMethodCalledDuringTaskExecution`</a>
+
+</td>
+<td>
+<a href="guide/adopting-the-configuration-cache.md#adopting-the-configuration-cache">Please read</a>
+</td>
+<td>
+
+Don't call `getProject()` in task actions. Instead, your tasks should take in the "smallest" type
+required for the task's functionality. For example, instead getProject().version(), you should declare the
+project version as an `@Input public abstract Property<String>`.
+
+Doing so improves performance in two ways:
+1. It makes your tasks compatible with the configuration cache
+2. It increases task parallelism. When two tasks, such as printProjectName and printProjectVersion, both
+require the same Project object as input, they cannot run in parallel due to prevent concurrent access.
+However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
+the tasks become independent and can execute in parallel.
+
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="NonAbstractGradleType" href="guide/managed-types-and-properties.md">`NonAbstractGradleType`</a>
 
 </td>
