@@ -6,6 +6,8 @@
 </tr></table>
 <!-- PreviousNext:END -->
 
+# Adopting the Configuration Cache
+
 This page is a WIP
 
 <!-- PreviousNext:START -->
