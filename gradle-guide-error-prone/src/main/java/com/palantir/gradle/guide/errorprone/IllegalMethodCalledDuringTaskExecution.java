@@ -138,6 +138,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoHeadingLink("adopting-the-configuration-cache.md", "Solving Configuration Cache problems");
+        return new MoreInfoHeadingLink("adopting-the-configuration-cache.md", "Adopting the Configuration Cache");
     }
 }
