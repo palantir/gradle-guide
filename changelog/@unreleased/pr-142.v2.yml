@@ -1,6 +1,6 @@
 type: feature
 feature:
-  description: Add the `GetProjectInvocations` ErrorProne to prevent Configuration
-    Cache problems
+  description: Add the `IllegalMethodCalledDuringTaskExecution` ErrorProne to prevent
+    `getProject()` calls from within a task action
   links:
   - https://github.com/palantir/gradle-guide/pull/142
