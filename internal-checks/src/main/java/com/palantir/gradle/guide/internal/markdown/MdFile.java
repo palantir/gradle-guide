@@ -67,6 +67,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         return linkTarget.linkTarget().htmlLinkFrom(path);
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     public String readContent() {
         try {
             return Files.readString(path);
@@ -75,6 +76,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         }
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     public void writeContent(String content) {
         try {
             Files.writeString(path, content);
@@ -83,6 +85,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         }
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     public static MdFile fromPath(Path mdFilePath) {
         try {
             String content = Files.readString(mdFilePath);

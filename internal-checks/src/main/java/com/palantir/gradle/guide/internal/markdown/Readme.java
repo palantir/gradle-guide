@@ -28,6 +28,7 @@ public record Readme(MdFile mdFile, TableOfContentsSource tableOfContentsSource)
         return TableOfContentsGenerator.generate(this);
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     public static Readme fromPath(Path readme, Set<MdFile> mdFiles) {
         try {
             String readmeContent = Files.readString(readme);
