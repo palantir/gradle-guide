@@ -60,11 +60,11 @@ Do not declare Properties, FileCollections and other Gradle managed types as fie
 <tr>
 <td>
 
-<a id="IllegalMethodCalledDuringTaskExecution" href="guide/adopting-the-configuration-cache.md#adopting-the-configuration-cache">`IllegalMethodCalledDuringTaskExecution`</a>
+<a id="IllegalMethodCalledDuringTaskExecution" href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">`IllegalMethodCalledDuringTaskExecution`</a>
 
 </td>
 <td>
-<a href="guide/adopting-the-configuration-cache.md#adopting-the-configuration-cache">Please read</a>
+<a href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">Please read</a>
 </td>
 <td>
 
