@@ -20,6 +20,7 @@ import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger
 import com.palantir.gradle.guide.internal.markdown.contentchanger.MultiContentChanger;
 import com.palantir.gradle.guide.internal.previousnext.PreviousNextLinksGenerator;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
@@ -44,7 +45,6 @@ public record Guide(Readme readme, Set<MdFile> mdFiles) {
         return new Guide(readme, allMdFiles);
     }
 
-    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     private static Set<Path> allMdFiles(Path guideDir) {
         try (Stream<Path> allMdFiles = Files.list(guideDir)) {
             return allMdFiles
@@ -52,7 +52,7 @@ public record Guide(Readme readme, Set<MdFile> mdFiles) {
                     .filter(path -> !path.getFileName().toString().startsWith("."))
                     .collect(Collectors.toSet());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
