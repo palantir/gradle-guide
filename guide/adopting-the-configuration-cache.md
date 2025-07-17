@@ -129,7 +129,7 @@ Occurs when you start external processes during the configuration phase. General
 
 #### cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the Configuration Cache
 
-Occurs because Gradle tasks shouldn't take mutable types as input — `Gradle`, `Settings`, `Project`, `SourceSet`, or `Configuration`. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized).
+Occurs because Gradle tasks shouldn't take Gradle model types as input — `Gradle`, `Settings`, `Project`, `SourceSet`, or `Configuration`. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (Gradle model types aren't serializable).
 
 To solve this, you can
 - Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of taking in `Project` and accessing `Project#version`
