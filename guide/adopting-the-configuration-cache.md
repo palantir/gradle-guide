@@ -96,34 +96,49 @@ The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Dir
    ...
 ```
 
-When you first run a Gradle task, the task graph is serialized and stored on disk. Upon a subsequent run of the same task, if none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
+### Why cache the configuration phase — speeding up feedback loops
+
+When you first request a task(s) (`./gradlew <tasks-requested...>`), the task graph is serialized and stored on disk. Upon a subsequent request of the same task(s), if none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
 
 The configuration phase typically runs faster than execution since heavy work belongs in the latter. However, without the cache, configuration phase is rerun with every Gradle run. If you run a unit test multiple times, configuration is repeated, reproducing the same task graph every time. When the task itself is light, configuration can take up a large fraction of the latency. Configuration caching solves this by storing and reusing configuration results between runs, eliminating redundant work and speeding up iteration cycles.
 
+The Configuration Cache dramatically speeds up development feedback loops in two key ways:
 
+1. Eliminates wasted work: Without caching, every Gradle run repeats the configuration phase, reproducing identical task graphs for the same tasks. For light operations like unit tests, this configuration overhead can dominate the total build time.
+2. Removes startup delay: When iterating on features, the configuration phase creates a noticeable delay before any actual compilation or testing begins.
+
+By storing and reusing configuration results between runs, the cache delivers immediate productivity gains during development.
 
 ## Finding Configuration Cache problems
 
-To find Configuration Cache problems:
+Start with a workflow you want to speed up (e.g. `./gradlew classes`). Then, to find Configuration Cache problems:
 
-1. Run `./gradlew build --configuration-cache`
+1. Run `./gradlew classes --configuration-cache` 
 2. Check the output for any problems. If none appear, great! Your build is compatible.
 3. If not, fix the problems.
-4. Run `./gradlew build --configuration-cache` again. In our experience, this reveals additional issues not seen in the first run.
+4. Run `./gradlew classes --configuration-cache` again. In our experience, this reveals additional issues not seen in the first run.
 
 The problems typically fall into three categories:
 
-1. **external process started `/usr/bin/git --version`**
-2. **cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the Configuration Cache**
-3. **invocation of `Task.project` at execution time is unsupported**
+### Most common categories of errors 
 
-The first error occurs when you start external processes during the configuration phase. Generally, it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE. 
+#### external process started `/usr/bin/git --version`
 
-The second and third errors occur because Gradle tasks shouldn't take mutable types as input — `Gradle`, `Settings`, `Project`, `SourceSet`, or `Configuration`. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized). 
+Occurs when you start external processes during the configuration phase. Generally, it is preferred to run external processes in tasks with properly declared inputs and outputs to avoid unnecessary work when the task is UP-TO-DATE.
 
-To solve the second and third errors, you can
-- Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of taking in `Project` and accessing `project.version`
+
+#### cannot serialize object of type `org.gradle.api.internal.project.DefaultProject`, a subtype of `org.gradle.api.Project`, as these are not supported with the Configuration Cache
+
+Occurs because Gradle tasks shouldn't take mutable types as input — `Gradle`, `Settings`, `Project`, `SourceSet`, or `Configuration`. Having these as inputs limits task concurrency (what if two tasks mutate a `Project` concurrently?) and prevents Gradle from serializing task inputs into the cache (they are too large to be serialized).
+
+To solve this, you can
+- Declare the smallest "surface area" your task needs as task input, e.g. take in `Property<String>` for project version, instead of taking in `Project` and accessing `Project#version`
 - [Inject a service](https://docs.gradle.org/current/userguide/service_injection.html) which provides the information/operation you need
+
+#### invocation of `Task.project` at execution time is unsupported
+
+Similar to the previous error. 
+
 
 
 ## Solving Configuration Cache problems
@@ -131,13 +146,14 @@ To solve the second and third errors, you can
 Let’s walk through some examples of fixing Configuration Cache problems
 
 > [!TIP]
-> If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues, as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
+> If you have a huge Gradle projects with many tasks, you can adopt the Configuration Cache incrementally. First, resolve all configuration phase issues (i.e. `external process started`), as incremental adoption only works for the execution phase. Then, apply the [gradle-incremental-configuration-cache](https://github.com/palantir/gradle-incremental-configuration-cache) plugin. Gradually add tasks to the allow list as they become compatible.
+
 
 ### Example 1: Fixing "external process started"
 
 #### Before: 
 - `MyPlugin` is already a [Gradle managed type](managed-types-and-properties.md)
-- `MyPlugin::apply` starts an external process in the configuration phase, causing the Configuration Cache to fail
+- `MyPlugin#apply` starts an external process `git`. This external process is started in the configuration phase, causing the Configuration Cache to fail
 
 ```java
 abstract class MyPlugin implements Plugin<Project> {
@@ -152,7 +168,6 @@ abstract class MyPlugin implements Plugin<Project> {
    private static String getLatestGitTag(Project project) {
       try {
          Process process = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
-                 .directory(project.getProjectDir())
                  .start();
          try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String tag = reader.readLine();
@@ -168,48 +183,49 @@ abstract class MyPlugin implements Plugin<Project> {
 
 #### After
 
-- To safely do an external call during the configuration phase, we can use the `ExecOperations` service.
-- To use `ExecOperations`, we can inject it into `MyPlugin`. 
+- To safely do an external call during the configuration phase, we can use the `ProviderFactory` service.
+- To use `ProviderFactory`, we can inject it into `MyPlugin`. 
 
 > [!NOTE]
 > To inject a service, make a protected/public abstract getter method returning that service. It has to be prefixed with `get-` for Gradle's injection to work properly!.
 > 
 > An alternative to `@Inject`-ing an abstract getter is to use a field with constructor injection (see [this code snippet](https://docs.gradle.org/current/userguide/service_injection.html#filesystemoperations)) 
 
+
+
 ```java
 abstract class MyPlugin implements Plugin<Project> {
    @Inject
-   protected abstract ExecOperations getExecOperations();
+   protected abstract ProviderFactory getProviderFactory();
+
+   private Provider<String> latestTag = getProviderFactory()
+            .exec(execSpec -> execSpec.setCommandLine("git", "describe", "--tags", "--abbrev=0"))
+            .getStandardOutput()
+            .getAsText()
+            .map(String::trim); 
 
    @Override
    public final void apply(Project project) {
-      String gitTag = getLatestGitTag(project);
+      String gitTag = latestTag.get();
       if (gitTag.equals("develop")) {
          // Do something...
-      }
-   }
-
-   private String getLatestGitTag(Project project) {
-      try {
-         OutputStream output = new ByteArrayOutputStream();
-         getExecOperations().exec(execSpec -> {
-            execSpec.workingDir(project.getProjectDir());
-            execSpec.setCommandLine("git", "describe", "--tags", "--abbrev=0");
-            execSpec.setStandardOutput(output);
-         });
-         return output.toString().strip();
-      } catch (Exception e) {
-         throw new RuntimeException(e);
       }
    }
 }
 ```
 
+> [!TIP]
+> If ProviderFactory#exec is called multiple times, the underlying external process e.g. git describe is run multiple times.
+>
+> However, if we have a single reference to the provider returned by ProviderFactory#exec, then we utilize ExecResult's caching, and `git describe` is only called once
+
+
+
 ### Example 2: Fixing "invocation of `Task.project` at execution time is unsupported"
 
 #### Before
 - `MyTask` is already a [Gradle managed type](managed-types-and-properties.md)
-- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail: **invocation of `Task.project` at execution time is unsupported**
+- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail.
 
 ```java
 abstract class MyTask extends DefaultTask {
@@ -259,7 +275,12 @@ Let's look at a more complicated example involving plain java classes being used
 
 #### Before
 - `MyTask` is already a [Gradle managed type](managed-types-and-properties.md)
-- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail: **invocation of `Task.project` at execution time is unsupported**
+- `MyTask` is calling `getProject()` at build time, causing the Configuration Cache to fail: 
+   
+   ```
+   invocation of `Task.project` at execution time is unsupported
+   ```
+
 - `Project` is being passed down to `Intermediate`, which uses two helpers `HelperA` and `HelperB`
 
 ```java
@@ -333,10 +354,10 @@ class Intermediate {
    }
    
    public void doSomething() {
-      HelperA helperA = new HelperA();
+      HelperA helperA = new HelperA(fileSystemOperations);
       helperA.doSomething();
 
-      HelperB helperB = new HelperB();
+      HelperB helperB = new HelperB(projectLayout);
       helperB.doSomething();
    }
 }
@@ -371,7 +392,7 @@ class HelperB {
 #### We can do better!
 - Instead of passing services down the call chain (which can bloat constructors), we can inject services into classes directly!
 - To inject a service into `HelperA`, we have to make it a Gradle-managed type by making it `abstract`. Ditto for `HelperB`
-- Now that `HelperA` is an abstract Gradle-managed type, we need to use `ObjectFactory::newInstance` to instantiate it.
+- Now that `HelperA` is an abstract Gradle-managed type, we need to use `ObjectFactory#newInstance` to instantiate it.
 - To get `ObjectFactory` in `Intermediate`, we have to inject it.
 - For injection to work in `Intermediate`, we also have to make it a Gradle-managed type.  
 
@@ -398,7 +419,7 @@ abstract class Intermediate {
       HelperA helperA = getObjectFactory().newInstance(HelperA.class);
       helperA.doSomething();
 
-      HelperB helperB = getObjectFactory().newInstance(HelperA.class);
+      HelperB helperB = getObjectFactory().newInstance(HelperB.class);
       helperB.doSomething();
    }
 }
@@ -425,7 +446,7 @@ abstract class HelperB {
 ```
 
 #### And better!
-- Since `HelperA` doesn't have a constructor with arguments, we can use Gradle's `@Nested` magic in place of `ObjectFactory::newInstance`. Ditto for `HelperB`
+- Since `HelperA` doesn't have a constructor with arguments, we can use Gradle's `@Nested` magic in place of `ObjectFactory#newInstance`. Ditto for `HelperB`
 
 ```java
 abstract class MyTask extends DefaultTask {
@@ -584,7 +605,7 @@ abstract class UploadDeploymentInformation extends DefaultTask {
     @TaskAction
     public void compress() {
         Deployment deployment = getObjectFactory().newInstance(Deployment.class, "The Shire");
-        UploadUtils.upload(startup, getUploadUri().get());
+        UploadUtils.upload(deployment, getUploadUri().get());
     }
 }
 ```
