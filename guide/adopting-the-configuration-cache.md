@@ -96,11 +96,11 @@ The configuration phase output is a task [DAG](https://en.wikipedia.org/wiki/Dir
    ...
 ```
 
-### Why cache the configuration phase — speeding up feedback loops
+### The Configuration Cache speeds up iteration cycles
 
-When you first request a task(s) (`./gradlew <tasks-requested...>`), the task graph is serialized and stored on disk. Upon a subsequent request of the same task(s), if none of these inputs have changed, Gradle skips the configuration phase entirely, loads the task graph from disk, and goes straight to the execution phase.
-
-The configuration phase typically runs faster than execution since heavy work belongs in the latter. However, without the cache, configuration phase is rerun with every Gradle run. If you run a unit test multiple times, configuration is repeated, reproducing the same task graph every time. When the task itself is light, configuration can take up a large fraction of the latency. Configuration caching solves this by storing and reusing configuration results between runs, eliminating redundant work and speeding up iteration cycles.
+Consider the case where we run `./gradlew <tasks-requested...>` repeatedly, with the same configuration inputs
+- Without Configuration Cache: the configuration phase is rerun everytime, reproducing the same task graph.
+- With Configuration Cache: the configuration phase is run in the first run, and the task graph and its inputs are cached. Upon subsequent runs, the configuration phase is skipped entirely.  Gradle loads the task graph from disk, and goes straight to the execution phase.
 
 The Configuration Cache dramatically speeds up development feedback loops in two key ways:
 
@@ -159,13 +159,13 @@ Let’s walk through some examples of fixing Configuration Cache problems
 abstract class MyPlugin implements Plugin<Project> {
    @Override
    public final void apply(Project project) {
-      String gitTag = getLatestGitTag(project);
+      String gitTag = getLatestGitTag();
       if (gitTag.equals("develop")) {
          // Do something...
       }
    }
 
-   private static String getLatestGitTag(Project project) {
+   private static String getLatestGitTag() {
       try {
          Process process = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
                  .start();
@@ -215,9 +215,9 @@ abstract class MyPlugin implements Plugin<Project> {
 ```
 
 > [!TIP]
-> If ProviderFactory#exec is called multiple times, the underlying external process e.g. git describe is run multiple times.
->
-> However, if we have a single reference to the provider returned by ProviderFactory#exec, then we utilize ExecResult's caching, and `git describe` is only called once
+>  If you call `ProviderFactory#exec` multiple times in your code, the external process `git describe` will run each time.
+> 
+> Instead, store the `Provider` in a field as shown above. With this approach, the `Provider` caches the result, and git describe runs only once, even if `latestTag.get()` is called multiple times.
 
 
 
