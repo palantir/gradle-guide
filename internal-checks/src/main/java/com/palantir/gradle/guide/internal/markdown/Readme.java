@@ -19,6 +19,7 @@ package com.palantir.gradle.guide.internal.markdown;
 import com.palantir.gradle.guide.internal.markdown.contentchanger.ContentChanger;
 import com.palantir.gradle.guide.internal.toc.TableOfContentsGenerator;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
@@ -28,7 +29,6 @@ public record Readme(MdFile mdFile, TableOfContentsSource tableOfContentsSource)
         return TableOfContentsGenerator.generate(this);
     }
 
-    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     public static Readme fromPath(Path readme, Set<MdFile> mdFiles) {
         try {
             String readmeContent = Files.readString(readme);
@@ -37,7 +37,7 @@ public record Readme(MdFile mdFile, TableOfContentsSource tableOfContentsSource)
                     TableOfContentsSource.fromString(mdFiles, readmeContent)
                             .orElseThrow(() -> new IllegalStateException("The readme must have a table of contents")));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
