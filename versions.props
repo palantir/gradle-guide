@@ -1,5 +1,4 @@
 com.fasterxml.jackson.*:* = 2.19.1
-com.fasterxml.jackson.core:jackson-databind = 2.18.2
 com.google.auto.service:* = 1.1.1
 com.google.errorprone:error_prone_* = 2.36.0
 com.google.guava:guava = 33.4.8-jre
@@ -10,7 +9,7 @@ net.ltgt.gradle:gradle-errorprone-plugin = 4.3.0
 org.junit.jupiter:* = 5.13.3
 org.assertj:* = 3.27.3
 one.util:streamex = 0.8.3
-org.immutables:* = 2.11.0
+org.immutables:* = 2.11.1
 org.jetbrains:annotations = 26.0.2
 
 # conflict resolution
