@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description:
+    Implement the method call graph
+  links:
+  - https://github.com/palantir/gradle-guide/pull/173

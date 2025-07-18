@@ -1,6 +1,0 @@
-type: feature
-feature:
-  description: Add the `GetProjectInvocations` ErrorProne to prevent Configuration
-    Cache problems
-  links:
-  - https://github.com/palantir/gradle-guide/pull/142
