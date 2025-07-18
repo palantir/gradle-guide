@@ -2,7 +2,7 @@
 <table><tr>
   <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
+  <td align="right">Next: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
 
@@ -152,6 +152,6 @@ Sometimes, you really do need to test your plugin in a CI environment. In every 
 <table><tr>
   <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="diagnosing-build-performance.md">Diagnosing Build Performance</a></td>
+  <td align="right">Next: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
 </tr></table>
 <!-- PreviousNext:END -->

@@ -35,8 +35,25 @@ import java.util.List;
 import java.util.Optional;
 
 @AutoService(BugChecker.class)
-@BugPattern(severity = SeverityLevel.ERROR, summary = GetProjectInvocations.SUMMARY)
-public final class GetProjectInvocations extends GradleGuideBugChecker implements BugChecker.MethodTreeMatcher {
+@BugPattern(
+        severity = SeverityLevel.ERROR,
+        summary =
+                """
+        Don't call `getProject()` in task actions. Instead, your tasks should take in the "smallest" type
+        required for the task's functionality. For example, instead getProject().version(), you should declare the
+        project version as an `@Input public abstract Property<String>`.
+
+        Doing so improves performance in two ways:
+        1. It makes your tasks compatible with the configuration cache
+        2. It increases task parallelism. When two tasks, such as printProjectName and printProjectVersion, both
+        require the same Project object as input, they cannot run in parallel due to prevent concurrent access.
+        However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
+        the tasks become independent and can execute in parallel.
+        """)
+public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
+        implements BugChecker.MethodTreeMatcher {
+    // Optional.empty() in projects without gradle on the classpath
+    // In that case, we should `return Description.NO_MATCH`
     private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
             s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Action")));
     private static final Supplier<Optional<ClassSymbol>> TASK_SYM =
@@ -62,20 +79,10 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
                 .findAny());
     };
 
-    private final MethodCallGraph callGraph = new MethodCallGraph();
-
     public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
 
-    public static final String SUMMARY =
-            """
-        Don't call `getProject()` in task actions. Large, mutable Gradle model types like `Gradle`, `Settings`, or
-        `Project` should not be passed into tasks as inputs. Instead, your tasks should take in the "smallest" type
-        required for the task's functionality. For example, instead of taking in `Project` to later do
-        `project.version`, you should declare the project version as a `Property<String>`.
-        Doing so improves performance in two ways:
-        1. It makes your tasks compatible with the configuration cache
-        2. It prevents tasks from being rendered out-of-date by a mutation unrelated to the task, e.g. to `project.name`
-        """;
+    private final MethodCallGraph callGraph = new MethodCallGraph();
+
 
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
@@ -106,6 +113,7 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
         return Matchers.hasAnnotation("org.gradle.api.tasks.TaskAction").matches(tree, state);
     }
 
+    // Returns true if `tree` is an override of `public void execute(Task)` from `Action<Task>`
     private static boolean overridesExecute(MethodTree tree, VisitorState state) {
         MethodSymbol methodSymbol = ASTHelpers.getSymbol(tree);
         Optional<ClassSymbol> enclosingClass = Optional.ofNullable(ASTHelpers.enclosingClass(methodSymbol));
@@ -138,7 +146,6 @@ public final class GetProjectInvocations extends GradleGuideBugChecker implement
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoHeadingLink(
-                "diagnosing-build-performance.md", "Unrelated tasks not running in parallel within the same project");
+        return new MoreInfoHeadingLink("adopting-the-configuration-cache.md", "Solving Configuration Cache problems");
     }
 }

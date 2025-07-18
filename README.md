@@ -18,6 +18,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 * lifecycle-of-a-gradle-build.md
 * avoiding-unnecessary-configuration.md
 * testing-and-running-your-plugins-locally.md
+* adopting-the-configuration-cache.md
 * diagnosing-build-performance.md
 -->
 
@@ -57,7 +58,12 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
     2. [Running your plugin in other repos locally](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-locally)
     3. [Debugging your Gradle plugin running on a different repo](guide/testing-and-running-your-plugins-locally.md#debugging-your-gradle-plugin-running-on-a-different-repo)
     4. [Running your plugin in other repos on CI](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-on-ci)
-8. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
+8. [Adopting the Configuration Cache](guide/adopting-the-configuration-cache.md)
+    1. [How does Configuration Caching work?](guide/adopting-the-configuration-cache.md#how-does-configuration-caching-work?)
+    2. [Finding Configuration Cache problems](guide/adopting-the-configuration-cache.md#finding-configuration-cache-problems)
+    3. [Solving Configuration Cache problems](guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems)
+    4. [Two strategies to write Configuration Cache friendly Gradle](guide/adopting-the-configuration-cache.md#two-strategies-to-write-configuration-cache-friendly-gradle)
+9. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
     1. [Expectations of performance](guide/diagnosing-build-performance.md#expectations-of-performance)
     2. [Finding a build scan](guide/diagnosing-build-performance.md#finding-a-build-scan)
     3. [Tasks: How to diagnose performance issues](guide/diagnosing-build-performance.md#tasks-how-to-diagnose-performance-issues)

@@ -17,6 +17,7 @@
 package com.palantir.gradle.guide.internal.markdown;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -71,7 +72,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         try {
             return Files.readString(path);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -79,7 +80,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
         try {
             Files.writeString(path, content);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -104,7 +105,7 @@ public record MdFile(Path path, String title, List<Heading> headings) implements
 
             return new MdFile(mdFilePath, title, headings);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
