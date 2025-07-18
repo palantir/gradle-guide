@@ -86,7 +86,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            reportAllViolations(tree, state, TASK_GET_PROJECT_METHOD, VIOLATION_MESSAGE);
+            reportAllViolations(state, TASK_GET_PROJECT_METHOD, VIOLATION_MESSAGE);
         }
 
         return Description.NO_MATCH;
@@ -128,9 +128,13 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     }
 
     /**
-     *  {@code MethodTree _method} expresses the invariant that this method should only be called from a MethodTree
+     *  Invariant: this method should only be called from a MethodTree
      */
-    private void reportAllViolations(MethodTree _method, VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
+    private void reportAllViolations(
+            VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
+        if (!(state.getPath().getLeaf() instanceof MethodTree)) {
+            throw new IllegalStateException("This method should only be called from a MethodTree context");
+        }
         new SuppressibleTreePathScanner<Boolean, MethodInvocationTree>(state) {
             @Override
             public Boolean visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree chained) {
@@ -145,10 +149,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         }.scan(state.getPath(), null);
     }
 
-    /**
-     * Provides trivial fixes for getProject invocations
-     * e.g. Task::getProject::getLogger -> Task::getLogger
-     */
     private static SuggestedFix suggestTrivialFix(
             MethodInvocationTree getProject, MethodInvocationTree chainedCall, VisitorState state) {
         if (PROJECT_GET_LOGGER_METHOD.matches(chainedCall, state)) {
