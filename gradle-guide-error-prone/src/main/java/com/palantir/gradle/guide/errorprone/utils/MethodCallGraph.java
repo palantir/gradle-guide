@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 
 /**
  * An incrementally built directed graph of "who calls who".
@@ -79,12 +78,10 @@ public class MethodCallGraph {
      * processes the edge {@code Set<MethodInvocationTree>} between the node and the neighbor using the provided action.
      * Uses depth-first traversal and automatically handles cycle detection.
      * @param start The starting method tree for traversal.
-     * @param visitNeighbourIf A predicate to filter neighbors (e.g., check if neighbor is Task::getProject).
      * @param edgeAction A BiConsumer to process the edge data {@code Set<MethodInvocationTree>} for matching neighbors.
      */
     public void scan(
             MethodTree start,
-            Predicate<MethodSymbol> visitNeighbourIf,
             BiConsumer<MethodSymbol, Set<MethodInvocationTree>> edgeAction) {
         MethodSymbol startSymbol = ASTHelpers.getSymbol(start);
 
@@ -96,11 +93,9 @@ public class MethodCallGraph {
 
         for (MethodSymbol current : traverser.depthFirstPreOrder(startSymbol)) {
             for (MethodSymbol neighbor : callGraph.successors(current)) {
-                if (visitNeighbourIf.test(neighbor)) {
-                    Set<MethodInvocationTree> edgeInvocations =
-                            callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
-                    edgeAction.accept(neighbor, edgeInvocations);
-                }
+                Set<MethodInvocationTree> edgeInvocations =
+                        callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
+                edgeAction.accept(neighbor, edgeInvocations);
             }
         }
     }

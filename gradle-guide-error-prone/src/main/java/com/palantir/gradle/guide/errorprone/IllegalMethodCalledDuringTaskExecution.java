@@ -83,17 +83,16 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     private final MethodCallGraph callGraph = new MethodCallGraph();
 
-
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            callGraph.scan(
-                    tree,
-                    methodSym -> isGetProjectOnTask(methodSym, state),
-                    (methodSym, invocTrees) ->
-                            invocTrees.forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
-                                    .setMessage(VIOLATION_MESSAGE)
-                                    .build())));
+            callGraph.scan(tree, (methodSym, invocTrees) -> {
+                if (!isSuppressed(methodSym, state) && isGetProjectOnTask(methodSym, state)) {
+                    invocTrees.forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
+                            .setMessage(VIOLATION_MESSAGE)
+                            .build()));
+                }
+            });
         }
 
         return Description.NO_MATCH;

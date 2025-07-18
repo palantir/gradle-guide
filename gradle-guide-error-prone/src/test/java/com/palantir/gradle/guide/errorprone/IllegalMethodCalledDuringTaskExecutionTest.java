@@ -76,6 +76,25 @@ class IllegalMethodCalledDuringTaskExecutionTest {
             }
             """);
         }
+
+        @Test
+        void suppressed_getProject_should_pass() {
+            test(
+                    """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                    String projectName = getProject().getName();
+                }
+            }
+            """);
+        }
     }
 
     /**
