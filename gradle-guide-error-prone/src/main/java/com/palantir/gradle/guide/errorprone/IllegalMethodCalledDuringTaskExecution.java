@@ -135,6 +135,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         if (!(state.getPath().getLeaf() instanceof MethodTree)) {
             throw new IllegalStateException("This method should only be called from a MethodTree context");
         }
+        //  e.g. In `getProject().getLogger()`, if node is `getProject()`, then `chained` is `getProject().getLogger()`
+        // `chained` holds the parent of `node` in the AST
         new SuppressibleTreePathScanner<Boolean, MethodInvocationTree>(state) {
             @Override
             public Boolean visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree chained) {
