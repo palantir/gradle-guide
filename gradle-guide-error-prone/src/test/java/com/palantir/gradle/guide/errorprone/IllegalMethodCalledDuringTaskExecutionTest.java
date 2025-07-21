@@ -54,6 +54,32 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
+        void getProject_within_TaskAction_call_graph_should_fail() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectName = getProject().getName();
+
+                        naughty();
+                    }
+
+                    void naughty() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectPath = getProject().getPath();
+                    }
+                }
+            """);
+        }
+
+        @Test
         void getProject_outside_of_TaskAction_should_pass() {
             test(
                     """
@@ -81,18 +107,37 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         void suppressed_getProject_should_pass() {
             test(
                     """
-            import org.gradle.api.DefaultTask;
-            import org.gradle.api.Plugin;
-            import org.gradle.api.Project;
-            import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
 
-            abstract class CustomTask extends DefaultTask {
-                @TaskAction
-                final void action() {
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        String projectName = getProject().getName();
+
+                        suppressed_statement();
+                        suppressed_method();
+                        no_oversuppression();
+                    }
+
+                    void suppressed_statement() {
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        String projectPath = getProject().getPath();
+                    }
+
                     @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
-                    String projectName = getProject().getName();
+                    void suppressed_method() {
+                        String projectPath = getProject().getPath();
+                    }
+
+                    void no_oversuppression() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectPath = getProject().getPath();
+                    }
                 }
-            }
             """);
         }
     }

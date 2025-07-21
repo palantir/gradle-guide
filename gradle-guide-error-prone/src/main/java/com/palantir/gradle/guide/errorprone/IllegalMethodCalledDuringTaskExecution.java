@@ -25,7 +25,6 @@ import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
-import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -50,7 +49,7 @@ import java.util.Optional;
         However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
         the tasks become independent and can execute in parallel.
         """)
-public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
+public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugChecker
         implements BugChecker.MethodTreeMatcher {
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`
@@ -81,16 +80,16 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
 
-    private final MethodCallGraph callGraph = new MethodCallGraph();
-
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            callGraph.scan(tree, (methodSym, invocTrees) -> {
-                if (!isSuppressed(methodSym, state) && isGetProjectOnTask(methodSym, state)) {
-                    invocTrees.forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
-                            .setMessage(VIOLATION_MESSAGE)
-                            .build()));
+            callGraph.get(state).scan(tree, state, (methodSym, invocTrees) -> {
+                if (isGetProjectOnTask(methodSym, state)) {
+                    invocTrees.stream()
+                            .filter(invocTree -> !isSuppressed(invocTree, state))
+                            .forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
+                                    .setMessage(VIOLATION_MESSAGE)
+                                    .build()));
                 }
             });
         }

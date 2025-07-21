@@ -14,44 +14,55 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.utils;
+package com.palantir.gradle.guide.errorprone;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.auto.service.AutoService;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
-import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
+import com.google.errorprone.BugPattern;
+import com.google.errorprone.BugPattern.SeverityLevel;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
+import com.palantir.gradle.guide.errorprone.CallGraphBugChecker.MethodCallGraph;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.Context;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class MethodCallGraphTest {
+class CallGraphBugCheckerTest {
+
+    private TestableCallGraphBugChecker checker;
 
     @BeforeEach
     void setUp() {
-        // No instance needed since MethodCallGraph uses static methods
+        checker = new TestableCallGraphBugChecker();
     }
 
     @Test
     void testDirectCallsOnly_NoTransitiveCalls() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void f1() {
                     f2();
                 }
@@ -66,9 +77,10 @@ class MethodCallGraphTest {
             }
             """;
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Find methods by name
@@ -98,7 +110,7 @@ class MethodCallGraphTest {
     void testMultipleDirectCalls() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void caller() {
                     method1();
                     method2();
@@ -118,9 +130,10 @@ class MethodCallGraphTest {
             }
             """;
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol caller = findMethodByName(graph.nodes(), "caller");
@@ -141,10 +154,49 @@ class MethodCallGraphTest {
     }
 
     @Test
+    void testDirectAndTransitiveCalls() throws Exception {
+        String javaCode =
+                """
+            class TestClass {
+                public void caller() {
+                    helper();
+                    method1();
+                }
+
+                public void method1() {
+                    helper();
+                }
+
+                public void helper() {
+                    // leaf method
+                }
+            }
+            """;
+
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
+
+        MethodSymbol caller = findMethodByName(graph.nodes(), "caller");
+        MethodSymbol method1 = findMethodByName(graph.nodes(), "method1");
+
+        // Verify caller calls method1, helper directly
+        Set<MethodSymbol> callerCallees = graph.successors(caller);
+        assertTrue(containsMethodNamed(callerCallees, "method1"), "caller should call method1");
+        assertTrue(containsMethodNamed(callerCallees, "helper"), "caller should call helper");
+
+        // Verify method1 calls helper
+        Set<MethodSymbol> method1Callees = graph.successors(method1);
+        assertTrue(containsMethodNamed(method1Callees, "helper"), "method1 should call helper");
+    }
+
+    @Test
     void testNoMethodCalls() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void standalone() {
                     int x = 42;
                     System.out.println(x);
@@ -152,9 +204,10 @@ class MethodCallGraphTest {
             }
             """;
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol standalone = findMethodByName(graph.nodes(), "standalone");
@@ -168,7 +221,7 @@ class MethodCallGraphTest {
     void testRecursiveMethod() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void recursive(int n) {
                     if (n > 0) {
                         recursive(n - 1);
@@ -176,10 +229,10 @@ class MethodCallGraphTest {
                 }
             }
             """;
+        VisitorState state = parseJavaCode(javaCode);
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol recursive = findMethodByName(graph.nodes(), "recursive");
@@ -196,7 +249,7 @@ class MethodCallGraphTest {
             import java.util.ArrayList;
             import java.util.List;
 
-            public class TestClass {
+            class TestClass {
                 public void chainCaller() {
                     getBuilder().setName("test").setValue(42).build();
                 }
@@ -233,10 +286,9 @@ class MethodCallGraphTest {
                 }
             }
             """;
-
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Test chainCaller method
@@ -275,7 +327,7 @@ class MethodCallGraphTest {
     void testComplexChaining() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void complexChain() {
                     // Nested chaining
                     getOuter().getInner().process().getResult();
@@ -315,9 +367,10 @@ class MethodCallGraphTest {
             }
             """;
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol complexChain = findMethodByName(graph.nodes(), "complexChain");
@@ -343,7 +396,7 @@ class MethodCallGraphTest {
     void testLongMethodChain() throws Exception {
         String javaCode =
                 """
-            public class TestClass {
+            class TestClass {
                 public void longChain() {
                     getValue()
                         .toString()
@@ -358,9 +411,9 @@ class MethodCallGraphTest {
             }
             """;
 
-        Tree ast = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = new MethodCallGraph();
-        callGraph.buildCallGraph(ast);
+        VisitorState state = parseJavaCode(javaCode);
+        MethodCallGraph callGraph = checker.new MethodCallGraph();
+        callGraph.buildForCompilationUnit(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol longChain = findMethodByName(graph.nodes(), "longChain");
@@ -382,24 +435,36 @@ class MethodCallGraphTest {
         assertEquals(7, methodCallCount, "should have exactly 7 direct calls");
     }
 
+    @AutoService(BugChecker.class)
+    @BugPattern(summary = "", severity = SeverityLevel.SUGGESTION)
+    private static final class TestableCallGraphBugChecker extends CallGraphBugChecker {
+        @Override
+        public MoreInfoLink moreInfoLink() {
+            return null;
+        }
+    }
+
     public static MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> peekInternalGraph(MethodCallGraph graph)
             throws NoSuchFieldException, IllegalAccessException {
-        Class<?> methodCallGraphClass = MethodCallGraph.class;
+        Class<?> methodCallGraphClass = graph.getClass();
         Field callGraphField = methodCallGraphClass.getDeclaredField("callGraph");
         callGraphField.setAccessible(true);
         return (MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>>) callGraphField.get(graph);
     }
 
-    private Tree parseJavaCode(String javaCode) throws IOException {
+    private VisitorState parseJavaCode(String javaCode) throws IOException {
         JavacTool tool = JavacTool.create();
         JavaFileObject sourceFile = new StringJavaFileObject("TestClass.java", javaCode);
+        Context context = new Context();
+        JavaFileManager fileManager = new JavacFileManager(context, true, UTF_8);
 
-        JavacTask task = tool.getTask(null, null, null, null, null, List.of(sourceFile));
-
+        JavacTask task = tool.getTask(null, fileManager, null, null, null, List.of(sourceFile));
         Iterable<? extends CompilationUnitTree> compilationUnits = task.parse();
         task.analyze(); // This is important for symbol resolution
 
-        return compilationUnits.iterator().next();
+        CompilationUnitTree compilationUnit = compilationUnits.iterator().next();
+        TreePath path = new TreePath(compilationUnit);
+        return VisitorState.createForUtilityPurposes(context).withPath(path);
     }
 
     private MethodSymbol findMethodByName(Set<MethodSymbol> methods, String name) {
