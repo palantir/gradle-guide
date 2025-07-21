@@ -128,7 +128,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     }
 
     /**
-     *  Invariant: this method should only be called from a MethodTree
+     *  Invariant: this method should only be called from a MethodTree.
      */
     private void reportAllViolations(
             VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
@@ -153,8 +153,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             MethodInvocationTree getProject, MethodInvocationTree chainedCall, VisitorState state) {
         if (PROJECT_GET_LOGGER_METHOD.matches(chainedCall, state)) {
             SuggestedFix.Builder fix = SuggestedFix.builder();
-            Optional<String> receiverSource = Optional.ofNullable(ASTHelpers.getReceiver(getProject))
-                    .flatMap(receiverTree -> Optional.ofNullable(state.getSourceForNode(receiverTree)));
+            Optional<String> receiverSource =
+                    Optional.ofNullable(ASTHelpers.getReceiver(getProject)).map(state::getSourceForNode);
 
             String simplifiedCall =
                     receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";

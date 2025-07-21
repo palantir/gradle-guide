@@ -67,7 +67,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @TaskAction
                     final void action() {
                         Logger logger = getProject().getLogger();
-                        logger.info("I am a happy squirrel");
                     }
                 }
             """,
@@ -80,7 +79,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @TaskAction
                     final void action() {
                         Logger logger = getLogger();
-                        logger.info("I am a happy squirrel");
                     }
                 }
             """);
@@ -190,7 +188,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @Override
                     public void execute(Task task) {
                         Logger logger = task.getProject().getLogger();
-                        logger.info("I am a happy squirrel");
                     }
                 }
             """,
@@ -204,7 +201,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @Override
                     public void execute(Task task) {
                         Logger logger = task.getLogger();
-                        logger.info("I am a happy squirrel");
                     }
                 }
             """);
