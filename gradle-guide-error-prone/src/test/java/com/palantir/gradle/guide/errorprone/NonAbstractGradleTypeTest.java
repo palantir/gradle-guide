@@ -16,6 +16,7 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
+import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,13 +29,18 @@ class NonAbstractGradleTypeTest {
     @Nested
     class Tasks {
         @Test
-        void non_abstract_task_should_fail() {
-            test(
+        void non_abstract_task_should_autofix() {
+            test_fix(
+                    "Test",
                     """
                     import org.gradle.api.DefaultTask;
 
-                    // BUG: Diagnostic contains: abstract class
                     class Test extends DefaultTask {}
+                    """,
+                    """
+                    import org.gradle.api.DefaultTask;
+
+                    abstract class Test extends DefaultTask {}
                     """);
         }
 
@@ -126,5 +132,12 @@ class NonAbstractGradleTypeTest {
 
     private void test(@Language("Java") String source) {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
+    }
+
+    private void test_fix(String filename, @Language("Java") String before, @Language("Java") String after) {
+        RefactoringValidator.of(NonAbstractGradleType.class, getClass())
+                .addInputLines(filename, before)
+                .addOutputLines(filename, after)
+                .doTest();
     }
 }

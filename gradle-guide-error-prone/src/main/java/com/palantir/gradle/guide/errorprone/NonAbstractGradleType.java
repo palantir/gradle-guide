@@ -21,6 +21,8 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
+import com.google.errorprone.fixes.SuggestedFixes;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
@@ -30,6 +32,7 @@ import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
+import java.util.Optional;
 import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
@@ -56,7 +59,14 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         }
 
         if (IS_TASK.matches(tree, state)) {
-            return buildDescription(tree).build();
+            Description.Builder builder = buildDescription(tree);
+
+            Optional<SuggestedFix> fix = maybeTurnClassAbstract(tree, state);
+            if (fix.isPresent()) {
+                return builder.addFix(fix.get()).build();
+            }
+
+            return builder.build();
         }
 
         return Description.NO_MATCH;
@@ -74,6 +84,10 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
 
     private static boolean isTypeAbstract(Type type) {
         return (type.tsym.flags() & Flags.ABSTRACT) != 0;
+    }
+
+    private static Optional<SuggestedFix> maybeTurnClassAbstract(ClassTree tree, VisitorState state) {
+        return SuggestedFixes.addModifiers(tree, state, Modifier.ABSTRACT);
     }
 
     @Override
