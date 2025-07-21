@@ -68,10 +68,10 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectName = getProject().getName();
 
-                        naughty();
+                        suppressed_statement();
                     }
 
-                    void naughty() {
+                    void suppressed_statement() {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectPath = getProject().getPath();
                     }
