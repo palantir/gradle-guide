@@ -135,15 +135,22 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         if (!(state.getPath().getLeaf() instanceof MethodTree)) {
             throw new IllegalStateException("This method should only be called from a MethodTree context");
         }
-        //  e.g. In `getProject().getLogger()`, if node is `getProject()`, then `chained` is `getProject().getLogger()`
-        // `chained` holds the parent of `node` in the AST
-        new SuppressibleTreePathScanner<Boolean, MethodInvocationTree>(state) {
+
+        // This SuppressibleTreePathScanner scans method invocations, and methods chained to it
+        // e.g. in a().b().c(),
+        // when `node` is a().b(), `previousCall` will point to c()
+        // when `node` is a(), `previousCall` will point to b()
+        //
+        // This is useful because when visiting the method invocation `getProject().getLogger()`,
+        // `node` is `getProject()`, while `previousCall` is `getProject().getLogger()`.
+        // `previousCall` will be used to suggest autofixes.
+        new SuppressibleTreePathScanner<Void, MethodInvocationTree>(state) {
             @Override
-            public Boolean visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree chained) {
+            public Void visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree previousCall) {
                 if (violationMatcher.matches(node, state)) {
                     state.reportMatch(buildDescription(node)
                             .setMessage(violationMessage)
-                            .addFix(suggestTrivialFix(node, chained, state))
+                            .addFix(suggestTrivialFix(node, previousCall, state))
                             .build());
                 }
                 return super.visitMethodInvocation(node, node);
