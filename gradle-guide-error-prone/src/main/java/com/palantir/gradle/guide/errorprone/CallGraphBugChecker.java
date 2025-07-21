@@ -33,15 +33,13 @@ import java.util.function.BiConsumer;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
-     * A directed graph of "who calls who".
+     * A directed graph of "who calls who, and where" within this compilation unit.
      */
     public class MethodCallGraph {
         private final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
-        public MethodCallGraph() {}
-
-        public void buildForCompilationUnit(VisitorState state) {
+        public MethodCallGraph(VisitorState state) {
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
                 @Override
                 public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
@@ -69,21 +67,14 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
 
         /**
-         * Traverses the call graph starting from the given method, visiting all reachable nodes.
-         * For each neighbor of a node, if the neighbor matches the provided visitNeighbourIf,
-         * processes the edge {@code Set<MethodInvocationTree>} between the node and the neighbor using the provided action.
+         * Starting from the given method, visit all the other methods called in this compilation unit, including
+         * those transitively called (e.g. `start` calls `foo` calls `bar`).
          * Uses depth-first traversal and automatically handles cycle detection.
-         * @param start The starting method tree for traversal.
-         * @param edgeAction A BiConsumer to process the edge data {@code Set<MethodInvocationTree>} for matching neighbors.
+         *
+         * @param edgeAction consumes all invocations to this method
          */
-        public void scan(
-                MethodTree start, VisitorState state, BiConsumer<MethodSymbol, Set<MethodInvocationTree>> edgeAction) {
+        public void scan(MethodTree start, BiConsumer<MethodSymbol, Set<MethodInvocationTree>> edgeAction) {
             MethodSymbol startSymbol = ASTHelpers.getSymbol(start);
-
-            if (!callGraph.nodes().contains(startSymbol)) {
-                buildForCompilationUnit(state);
-            }
-
             Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph);
 
             for (MethodSymbol current : traverser.depthFirstPreOrder(startSymbol)) {
@@ -96,9 +87,6 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
     }
 
-    protected final Supplier<MethodCallGraph> callGraph = Cache.memoize(state -> {
-        MethodCallGraph graph = new MethodCallGraph();
-        graph.buildForCompilationUnit(state);
-        return graph;
-    });
+    @SuppressWarnings("VisibilityModifier")
+    protected final Supplier<MethodCallGraph> callGraph = Cache.memoize(state -> new MethodCallGraph(state));
 }

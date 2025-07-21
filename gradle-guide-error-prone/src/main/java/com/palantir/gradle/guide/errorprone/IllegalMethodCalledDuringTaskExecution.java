@@ -25,6 +25,7 @@ import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -32,6 +33,8 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -83,15 +86,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
         if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            callGraph.get(state).scan(tree, state, (methodSym, invocTrees) -> {
-                if (isGetProjectOnTask(methodSym, state)) {
-                    invocTrees.stream()
-                            .filter(invocTree -> !isSuppressed(invocTree, state))
-                            .forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
+            BiConsumer<MethodSymbol, Set<MethodInvocationTree>> reportViolatingMethodCalls =
+                    (calledMethod, callsToMethod) -> {
+                        if (isGetProjectOnTask(calledMethod, state)) {
+                            callsToMethod.forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
                                     .setMessage(VIOLATION_MESSAGE)
                                     .build()));
-                }
-            });
+                        }
+                    };
+            callGraph.get(state).scan(tree, reportViolatingMethodCalls);
         }
 
         return Description.NO_MATCH;

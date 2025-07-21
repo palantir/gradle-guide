@@ -7,12 +7,10 @@ dependencies {
 
     annotationProcessor 'com.google.auto.service:auto-service'
     compileOnly 'com.google.auto.service:auto-service'
-    implementation 'com.palantir.safe-logging:preconditions'
-    implementation 'com.palantir.suppressible-error-prone:gradle-suppressible-error-prone'
     implementation 'com.google.errorprone:error_prone_check_api'
 
-    testImplementation 'com.google.auto.service:auto-service'
     testCompileOnly 'org.jetbrains:annotations'
+    testCompileOnly 'com.google.auto.service:auto-service'
     testImplementation localGroovy()
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -54,7 +54,7 @@ class CallGraphBugCheckerTest {
     private TestableCallGraphBugChecker checker;
 
     @BeforeEach
-    void setUp() {
+    void beforeEach() {
         checker = new TestableCallGraphBugChecker();
     }
 
@@ -79,8 +79,7 @@ class CallGraphBugCheckerTest {
 
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Find methods by name
@@ -132,8 +131,7 @@ class CallGraphBugCheckerTest {
 
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol caller = findMethodByName(graph.nodes(), "caller");
@@ -175,8 +173,7 @@ class CallGraphBugCheckerTest {
 
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol caller = findMethodByName(graph.nodes(), "caller");
@@ -206,8 +203,7 @@ class CallGraphBugCheckerTest {
 
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol standalone = findMethodByName(graph.nodes(), "standalone");
@@ -231,8 +227,7 @@ class CallGraphBugCheckerTest {
             """;
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol recursive = findMethodByName(graph.nodes(), "recursive");
@@ -287,8 +282,7 @@ class CallGraphBugCheckerTest {
             }
             """;
         VisitorState state = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         // Test chainCaller method
@@ -369,8 +363,7 @@ class CallGraphBugCheckerTest {
 
         VisitorState state = parseJavaCode(javaCode);
 
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol complexChain = findMethodByName(graph.nodes(), "complexChain");
@@ -412,8 +405,7 @@ class CallGraphBugCheckerTest {
             """;
 
         VisitorState state = parseJavaCode(javaCode);
-        MethodCallGraph callGraph = checker.new MethodCallGraph();
-        callGraph.buildForCompilationUnit(state);
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
         ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
 
         MethodSymbol longChain = findMethodByName(graph.nodes(), "longChain");
@@ -483,7 +475,7 @@ class CallGraphBugCheckerTest {
     private static class StringJavaFileObject extends SimpleJavaFileObject {
         private final String code;
 
-        public StringJavaFileObject(String name, String code) {
+        StringJavaFileObject(String name, String code) {
             super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
             this.code = code;
         }

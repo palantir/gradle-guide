@@ -24,7 +24,7 @@ import java.lang.ref.SoftReference;
  * Cache which depends on the {@code VisitorState}.
  * This cache depends on the current Compilation Unit, c.f. {@code VisitorState#memoize}, which doesn't.
  */
-public class Cache<T> implements Supplier<T> {
+public final class Cache<T> implements Supplier<T> {
     private final Supplier<T> impl;
     private SoftReference<T> cache = new SoftReference<>(null);
 
@@ -45,9 +45,9 @@ public class Cache<T> implements Supplier<T> {
     }
 
     /**
-     * Produces a cache for a function
+     * Produces a cache for a function.
      */
-    public static <T> Supplier<T> memoize(Supplier<T> f) {
-        return new Cache<>(f);
+    public static <T> Supplier<T> memoize(Supplier<T> func) {
+        return new Cache<>(func);
     }
 }
