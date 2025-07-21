@@ -21,6 +21,7 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
@@ -76,6 +77,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Task")
             .named("getProject");
 
+    private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER_METHOD = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getLogger");
+
     public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
 
     @Override
@@ -122,18 +127,50 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                         && ifaceType.getTypeArguments().get(0).tsym.equals(taskMaybe.get()));
     }
 
+    /**
+     *  Invariant: this method should only be called from a MethodTree.
+     */
     private void reportAllViolations(
             VisitorState state, Matcher<ExpressionTree> violationMatcher, String violationMessage) {
-        new SuppressibleTreePathScanner<Boolean, Void>(state) {
+        if (!(state.getPath().getLeaf() instanceof MethodTree)) {
+            throw new IllegalStateException("This method should only be called from a MethodTree context");
+        }
+
+        // This SuppressibleTreePathScanner scans method invocations, and methods chained to it
+        // e.g. in a().b().c(),
+        // when `node` is a().b(), `previousCall` will point to c()
+        // when `node` is a(), `previousCall` will point to b()
+        //
+        // This is useful because when visiting the method invocation `getProject().getLogger()`,
+        // `node` is `getProject()`, while `previousCall` is `getProject().getLogger()`.
+        // `previousCall` will be used to suggest autofixes.
+        new SuppressibleTreePathScanner<Void, MethodInvocationTree>(state) {
             @Override
-            public Boolean visitMethodInvocation(MethodInvocationTree node, Void unused) {
+            public Void visitMethodInvocation(MethodInvocationTree node, MethodInvocationTree previousCall) {
                 if (violationMatcher.matches(node, state)) {
-                    state.reportMatch(
-                            buildDescription(node).setMessage(violationMessage).build());
+                    state.reportMatch(buildDescription(node)
+                            .setMessage(violationMessage)
+                            .addFix(suggestTrivialFix(node, previousCall, state))
+                            .build());
                 }
-                return super.visitMethodInvocation(node, null);
+                return super.visitMethodInvocation(node, node);
             }
         }.scan(state.getPath(), null);
+    }
+
+    private static SuggestedFix suggestTrivialFix(
+            MethodInvocationTree getProject, MethodInvocationTree chainedCall, VisitorState state) {
+        if (PROJECT_GET_LOGGER_METHOD.matches(chainedCall, state)) {
+            SuggestedFix.Builder fix = SuggestedFix.builder();
+            Optional<String> receiverSource =
+                    Optional.ofNullable(ASTHelpers.getReceiver(getProject)).map(state::getSourceForNode);
+
+            String simplifiedCall =
+                    receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
+            return fix.replace(chainedCall, simplifiedCall).build();
+        }
+
+        return SuggestedFix.emptyFix();
     }
 
     @Override
