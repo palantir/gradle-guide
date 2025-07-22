@@ -36,7 +36,7 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
      * A directed graph of "who calls who, and where" within this compilation unit.
      */
     public class MethodCallGraph {
-        private final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
+        protected final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
         public MethodCallGraph(VisitorState state) {
