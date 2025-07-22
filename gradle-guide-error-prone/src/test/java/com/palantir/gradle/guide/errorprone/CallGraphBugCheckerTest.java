@@ -104,6 +104,60 @@ class CallGraphBugCheckerTest {
         Set<MethodSymbol> f3Callees = graph.successors(f3);
         assertTrue(f3Callees.isEmpty(), "f3 should call no other methods");
     }
+    
+    @Test
+    void testMultipleCallsToSameMethod() throws Exception {
+        String javaCode =
+                """
+            class TestClass {
+                public void f1() {
+                    f2(); // First call to f2
+                    f2(); // Second call to f2
+                }
+
+                public void f2() {
+                    f3();
+                }
+
+                public void f3() {
+                    // leaf method
+                }
+            }
+            """;
+
+        VisitorState state = parseJavaCode(javaCode);
+
+        MethodCallGraph callGraph = checker.new MethodCallGraph(state);
+        ValueGraph<MethodSymbol, Set<MethodInvocationTree>> graph = peekInternalGraph(callGraph);
+
+        // Find methods by name
+        MethodSymbol f1 = findMethodByName(graph.nodes(), "f1");
+        MethodSymbol f2 = findMethodByName(graph.nodes(), "f2");
+        MethodSymbol f3 = findMethodByName(graph.nodes(), "f3");
+
+        assertNotNull(f1, "f1 method should be in graph");
+        assertNotNull(f2, "f2 method should be in graph");
+        assertNotNull(f3, "f3 method should be in graph");
+
+        // Verify f1 calls f2 twice
+        Set<MethodSymbol> f1Callees = graph.successors(f1);
+        assertTrue(containsMethodNamed(f1Callees, "f2"), "f1 should call f2");
+        
+        // Get the edge value between f1 and f2, which should contain both invocations
+        Set<MethodInvocationTree> f1ToF2Calls = graph.edgeValue(f1, f2).orElseThrow();
+        assertEquals(2, f1ToF2Calls.size(), "f1 should call f2 exactly twice");
+        
+        // Verify f1 doesn't call f3 directly
+        assertFalse(containsMethodNamed(f1Callees, "f3"), "f1 should NOT call f3 directly");
+        
+        // Verify f2 calls f3
+        Set<MethodSymbol> f2Callees = graph.successors(f2);
+        assertTrue(containsMethodNamed(f2Callees, "f3"), "f2 should call f3");
+        
+        // Verify f3 calls no other methods
+        Set<MethodSymbol> f3Callees = graph.successors(f3);
+        assertTrue(f3Callees.isEmpty(), "f3 should call no other methods");
+    }
 
     @Test
     void testMultipleDirectCalls() throws Exception {
