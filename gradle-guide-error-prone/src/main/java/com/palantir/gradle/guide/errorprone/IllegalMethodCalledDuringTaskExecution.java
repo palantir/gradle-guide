@@ -21,10 +21,14 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -33,8 +37,6 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -54,22 +56,64 @@ import java.util.function.BiConsumer;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugChecker
         implements BugChecker.MethodTreeMatcher {
+    private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER_METHOD = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getLogger");
+    private static final Matcher<ExpressionTree> TASK_GET_PROJECT = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Task")
+            .named("getProject");
+
+    /**
+     * Represents strategies to report or auto-fix illegal methods and methods chained to it.
+     */
+    interface Violation {
+        /** If we encounter illegalMethod().chained(). */
+        boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state);
+
+        /** Then, suggest fixes or a warning. */
+        void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state);
+    }
+
+    protected class GetProject implements Violation {
+        public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            return TASK_GET_PROJECT.matches(illegalMethod, state);
+        }
+
+        public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            state.reportMatch(buildDescription(illegalMethod)
+                    .setMessage("Don't call `getProject()` in task actions")
+                    .build());
+        }
+    }
+
+    protected class GetProjectGetLogger implements Violation {
+        public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            return TASK_GET_PROJECT.matches(illegalMethod, state) && PROJECT_GET_LOGGER_METHOD.matches(chained, state);
+        }
+
+        public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            SuggestedFix.Builder fix = SuggestedFix.builder();
+            Optional<String> receiverSource =
+                    Optional.ofNullable(ASTHelpers.getReceiver(illegalMethod)).map(state::getSourceForNode);
+            String simplifiedCall =
+                    receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
+            fix.replace(chained, simplifiedCall).build();
+
+            state.reportMatch(buildDescription(illegalMethod)
+                    .addFix(fix.build())
+                    .setMessage("Instead of `getProject().getLogger()`, just do `getLogger()`")
+                    .build());
+        }
+    }
+
+    private final List<Violation> violations = List.of(new GetProject(), new GetProjectGetLogger());
+
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`
     private static final Supplier<Optional<ClassSymbol>> ACTION_SYM = VisitorState.memoize(
             s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Action")));
     private static final Supplier<Optional<ClassSymbol>> TASK_SYM =
             VisitorState.memoize(s -> Optional.ofNullable((ClassSymbol) s.getSymbolFromString("org.gradle.api.Task")));
-
-    @SuppressWarnings("ASTHelpersSuggestions")
-    private static final Supplier<Optional<MethodSymbol>> GET_PROJECT_SYM = state -> {
-        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
-        return taskMaybe.flatMap(task -> task.getEnclosedElements().stream()
-                .filter(enclosed -> enclosed.getSimpleName().contentEquals("getProject"))
-                .filter(getProject -> getProject instanceof MethodSymbol)
-                .map(getProject -> (MethodSymbol) getProject)
-                .findAny());
-    };
 
     @SuppressWarnings("ASTHelpersSuggestions")
     private static final Supplier<Optional<MethodSymbol>> EXECUTE_SYM = state -> {
@@ -81,33 +125,27 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
                 .findAny());
     };
 
-    public static final String VIOLATION_MESSAGE = "Don't call `getProject()` in task actions";
-
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
-        if (isTaskAction(tree, state) || overridesExecute(tree, state)) {
-            BiConsumer<MethodSymbol, Set<MethodInvocationTree>> reportViolatingMethodCalls =
-                    (calledMethod, callsToMethod) -> {
-                        if (isGetProjectOnTask(calledMethod, state)) {
-                            callsToMethod.forEach(invocTree -> state.reportMatch(buildDescription(invocTree)
-                                    .setMessage(VIOLATION_MESSAGE)
-                                    .build()));
+        if (shouldAnalyzeMethod(tree, state)) {
+            MethodSymbol start = ASTHelpers.getSymbol(tree);
+            callGraph.get(state).dfs(start, (from, to, edges, callToChainedCall) -> {
+                for (MethodInvocationTree invocation : edges) {
+                    MethodInvocationTree chained = callToChainedCall.get(invocation);
+                    for (Violation violation : violations) {
+                        if (violation.matches(invocation, chained, state)) {
+                            violation.fixOrReport(invocation, chained, state);
                         }
-                    };
-            callGraph.get(state).scan(tree, reportViolatingMethodCalls);
+                    }
+                }
+            });
         }
 
         return Description.NO_MATCH;
     }
 
-    private boolean isGetProjectOnTask(MethodSymbol methodSymbol, VisitorState state) {
-        Optional<MethodSymbol> getProjectMaybe = GET_PROJECT_SYM.get(state);
-        Optional<ClassSymbol> taskMaybe = TASK_SYM.get(state);
-        if (getProjectMaybe.isEmpty() || taskMaybe.isEmpty()) {
-            return false;
-        }
-
-        return methodSymbol.overrides(getProjectMaybe.get(), taskMaybe.get(), state.getTypes(), true);
+    private boolean shouldAnalyzeMethod(MethodTree tree, VisitorState state) {
+        return isTaskAction(tree, state) || overridesExecute(tree, state);
     }
 
     private static boolean isTaskAction(MethodTree tree, VisitorState state) {

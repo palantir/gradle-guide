@@ -26,18 +26,30 @@ import com.palantir.gradle.guide.errorprone.utils.Cache;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
      * A directed graph of "who calls who, and where" within this compilation unit.
      */
     public class MethodCallGraph {
+        /**
+         * Nodes are method declarations.
+         * The edge between two methods f and g are all the instances where f calls g directly.
+         * The edge does not contain any transitive calls from f to g (e.g. f calls h calls g)
+         * For more details, see {@code CallGraphBugCheckerTest} for the graph's specification
+         */
         protected final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+
+        /**
+         * This exists to be passed to {@code EdgeConsumer}s
+         */
+        private final HashMap<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
 
         public MethodCallGraph(VisitorState state) {
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
@@ -64,6 +76,28 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
                     return super.visitMethodInvocation(node, caller);
                 }
             }.scan(state.getPath().getCompilationUnit(), Optional.empty());
+
+            new SuppressibleTreePathScanner<Void, Optional<MethodInvocationTree>>(state) {
+                @Override
+                public Void visitMethodInvocation(
+                        MethodInvocationTree call, Optional<MethodInvocationTree> chainedCall) {
+                    chainedCall.ifPresent(chained -> callToChainedCall.put(call, chained));
+                    return super.visitMethodInvocation(call, Optional.of(call));
+                }
+            }.scan(state.getPath().getCompilationUnit(), Optional.empty());
+        }
+
+        /**
+         * Routine which processes an edge in the call graph.
+         * {@code callToChainedCall} maps a method call to the call immediately chained to it.
+         * We need the chained call to provide auto-fixes, e.g. getProject().getLogger() ==> getLogger()
+         */
+        public interface EdgeConsumer {
+            void accept(
+                    MethodSymbol from,
+                    MethodSymbol to,
+                    Set<MethodInvocationTree> edge,
+                    Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall);
         }
 
         /**
@@ -71,17 +105,16 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
          * those transitively called (e.g. `start` calls `foo` calls `bar`).
          * Uses depth-first traversal and automatically handles cycle detection.
          *
-         * @param edgeAction consumes all invocations to this method
+         * @param consumer consumes all invocations to this method
          */
-        public void scan(MethodTree start, BiConsumer<MethodSymbol, Set<MethodInvocationTree>> edgeAction) {
-            MethodSymbol startSymbol = ASTHelpers.getSymbol(start);
+        public void dfs(MethodSymbol start, EdgeConsumer consumer) {
             Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph);
 
-            for (MethodSymbol current : traverser.depthFirstPreOrder(startSymbol)) {
+            for (MethodSymbol current : traverser.depthFirstPreOrder(start)) {
                 for (MethodSymbol neighbor : callGraph.successors(current)) {
                     Set<MethodInvocationTree> edgeInvocations =
                             callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
-                    edgeAction.accept(neighbor, edgeInvocations);
+                    consumer.accept(current, neighbor, edgeInvocations, callToChainedCall);
                 }
             }
         }
