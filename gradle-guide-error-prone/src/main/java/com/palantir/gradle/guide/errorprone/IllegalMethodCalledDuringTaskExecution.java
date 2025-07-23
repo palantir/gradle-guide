@@ -56,7 +56,7 @@ import java.util.Optional;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugChecker
         implements BugChecker.MethodTreeMatcher {
-    private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER_METHOD = MethodMatchers.instanceMethod()
+    private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("getLogger");
     private static final Matcher<ExpressionTree> TASK_GET_PROJECT = MethodMatchers.instanceMethod()
@@ -74,6 +74,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state);
     }
 
+    /** Matches task.getProject(), and raises a warning */
     protected class GetProject implements Violation {
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalMethod, state);
@@ -86,9 +87,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
+    /** Matches task.getProject().getLogger(), and fixes them to task.getLogger() */
     protected class GetProjectGetLogger implements Violation {
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
-            return TASK_GET_PROJECT.matches(illegalMethod, state) && PROJECT_GET_LOGGER_METHOD.matches(chained, state);
+            return TASK_GET_PROJECT.matches(illegalMethod, state) && PROJECT_GET_LOGGER.matches(chained, state);
         }
 
         public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
@@ -106,6 +108,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
+    // Note that the ordering doesn't matter — errorprone handles conflicting matches, and chooses a fix over
+    // a warning in practice (make sure this is right!)
     private final List<Violation> violations = List.of(new GetProject(), new GetProjectGetLogger());
 
     // Optional.empty() in projects without gradle on the classpath
@@ -127,7 +131,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
 
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
-        if (shouldAnalyzeMethod(tree, state)) {
+        if (shouldTraverseCallGraph(tree, state)) {
             MethodSymbol start = ASTHelpers.getSymbol(tree);
             callGraph.get(state).dfs(start, (from, to, edges, callToChainedCall) -> {
                 for (MethodInvocationTree invocation : edges) {
@@ -144,7 +148,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         return Description.NO_MATCH;
     }
 
-    private boolean shouldAnalyzeMethod(MethodTree tree, VisitorState state) {
+    private boolean shouldTraverseCallGraph(MethodTree tree, VisitorState state) {
         return isTaskAction(tree, state) || overridesExecute(tree, state);
     }
 
