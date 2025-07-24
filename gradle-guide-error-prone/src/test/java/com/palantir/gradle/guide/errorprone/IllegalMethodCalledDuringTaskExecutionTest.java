@@ -85,7 +85,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_transitivelyCalled_should_fix() {
+        void getProject_getLogger_within_TaskAction_call_graph_should_fix() {
             test_fix(
                     "CustomTask.java",
                     """
