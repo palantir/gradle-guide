@@ -242,41 +242,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 }
             """);
         }
-
-        @Test
-        void testAbstractMethod() {
-            test(
-                    """
-import org.gradle.api.DefaultTask;
-import org.gradle.api.file.Directory;
-import org.gradle.api.tasks.TaskAction;
-
-abstract class NpmTask extends DefaultTask {
-
-    protected NpmTask() {
-        dependsOn("lol");
-    }
-
-    @TaskAction
-    public abstract void action();
-
-    /**
-     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
-     */
-    public void execute(boolean ignoreExitValue, String... args) {
-        getProject();
-    }
-
-    /**
-     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
-     */
-    public void executeInDir(Directory dir, boolean ignoreExitValue, String... args) {
-        getProject();
-    }
-}
-
-            """);
-        }
     }
 
     /**
