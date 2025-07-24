@@ -359,6 +359,17 @@ class CallGraphBugCheckerTest {
             """);
     }
 
+    @Test
+    void testAbstractMethod() {
+        test(
+                """
+            abstract class TestClass {
+                // BUG: Diagnostic contains: CallGraph: TestClass.action --> [ , ]
+                public abstract void action();
+                }
+        """);
+    }
+
     @AutoService(BugChecker.class)
     @BugPattern(summary = "", severity = SeverityLevel.SUGGESTION)
     private static final class TestableCallGraphBugChecker extends CallGraphBugChecker

@@ -85,6 +85,39 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
+        void fix_whatever_it_can() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        getProject();
+                        Logger logger = getProject().getLogger();
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        getProject();
+                        Logger logger = getLogger();
+                    }
+                }
+                """);
+        }
+
+        @Test
         void getProject_getLogger_within_TaskAction_call_graph_should_fix() {
             test_fix(
                     "CustomTask.java",
@@ -207,6 +240,41 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                         String projectPath = getProject().getPath();
                     }
                 }
+            """);
+        }
+
+        @Test
+        void testAbstractMethod() {
+            test(
+                    """
+import org.gradle.api.DefaultTask;
+import org.gradle.api.file.Directory;
+import org.gradle.api.tasks.TaskAction;
+
+abstract class NpmTask extends DefaultTask {
+
+    protected NpmTask() {
+        dependsOn("lol");
+    }
+
+    @TaskAction
+    public abstract void action();
+
+    /**
+     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
+     */
+    public void execute(boolean ignoreExitValue, String... args) {
+        getProject();
+    }
+
+    /**
+     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
+     */
+    public void executeInDir(Directory dir, boolean ignoreExitValue, String... args) {
+        getProject();
+    }
+}
+
             """);
         }
     }

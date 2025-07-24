@@ -17,13 +17,15 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.Traverser;
 import com.google.common.graph.ValueGraphBuilder;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
-import com.palantir.gradle.guide.errorprone.utils.Cache;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -32,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
@@ -125,6 +128,15 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
     }
 
+    private static final Cache<CompilationUnitTree, MethodCallGraph> callGraphCache =
+            CacheBuilder.newBuilder().maximumSize(1000).weakKeys().build();
+
     @SuppressWarnings("VisibilityModifier")
-    protected final Supplier<MethodCallGraph> callGraph = Cache.memoize(MethodCallGraph::new);
+    protected final Supplier<MethodCallGraph> callGraph = state -> {
+        try {
+            return callGraphCache.get(state.getPath().getCompilationUnit(), () -> new MethodCallGraph(state));
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    };
 }
