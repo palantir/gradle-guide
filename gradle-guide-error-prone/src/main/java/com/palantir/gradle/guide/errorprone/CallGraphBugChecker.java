@@ -16,9 +16,9 @@
 
 package com.palantir.gradle.guide.errorprone;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.Traverser;
 import com.google.common.graph.ValueGraphBuilder;
@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
@@ -129,14 +128,9 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     }
 
     private static final Cache<CompilationUnitTree, MethodCallGraph> callGraphCache =
-            CacheBuilder.newBuilder().maximumSize(1000).weakKeys().build();
+            Caffeine.newBuilder().maximumSize(1000).weakKeys().build();
 
     @SuppressWarnings("VisibilityModifier")
-    protected final Supplier<MethodCallGraph> callGraph = state -> {
-        try {
-            return callGraphCache.get(state.getPath().getCompilationUnit(), () -> new MethodCallGraph(state));
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    };
+    protected final Supplier<MethodCallGraph> callGraph =
+            state -> callGraphCache.get(state.getPath().getCompilationUnit(), key -> new MethodCallGraph(state));
 }
