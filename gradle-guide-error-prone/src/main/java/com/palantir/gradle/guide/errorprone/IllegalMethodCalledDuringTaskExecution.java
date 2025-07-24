@@ -126,15 +126,31 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
-    protected class GetProjectGetProjectDir implements Violation {
-        /** Matches task.getProject().getLogger(). */
-        @Override
-        public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
-            return TASK_GET_PROJECT.matches(illegalMethod, state)
-                    && PROJECT_GET_PROJECT_DIR_METHOD.matches(chained, state);
+    /**
+     * Autofixes from getProject().X to getProjectLayout().Y's
+     * X is exactly one chained method call, e.g. getProject().getProjectDir()
+     * Y can be one or more chained method calls, e.g. getProjectLayout().getProjectDirectory().getAsFile()
+     */
+    protected abstract class ProjectLayoutViolation implements Violation {
+        private final String oldChainedCall;
+        private final String newChainedCall;
+
+        private final Matcher<ExpressionTree> oldChainedCallMatcher;
+
+        protected ProjectLayoutViolation(String oldChainedCall, String newChainedCall) {
+            this.oldChainedCall = oldChainedCall;
+            this.newChainedCall = newChainedCall;
+
+            this.oldChainedCallMatcher = MethodMatchers.instanceMethod()
+                    .onDescendantOf("org.gradle.api.Project")
+                    .named(oldChainedCall.substring(0, oldChainedCall.lastIndexOf('(')));
         }
 
-        /** Fixes task.getProject().getLogger() to task.getLogger(). */
+        @Override
+        public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            return TASK_GET_PROJECT.matches(illegalMethod, state) && oldChainedCallMatcher.matches(chained, state);
+        }
+
         @Override
         public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             Optional<ClassTree> taskOrActionMaybe = findFirstEnclosingTaskOrAction(state.getPath(), state);
@@ -151,8 +167,11 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
                     .filter(Symbol::isAbstract)
                     .anyMatch(
                             symbol -> ASTHelpers.isSameType(symbol.getReturnType(), PROJECT_LAYOUT.get(state), state));
-            SuggestedFix.Builder builder =
-                    SuggestedFix.builder().replace(chained, "getProjectLayout().getProjectDirectory().getAsFile()");
+
+            SuggestedFix.Builder builder = SuggestedFix.builder()
+                    .replace(
+                            chained,
+                            newChainedCall.isEmpty() ? "getProjectLayout()" : "getProjectLayout()." + newChainedCall);
             SuggestedFixes.addModifiers(taskOrAction, state, Modifier.ABSTRACT).ifPresent(builder::merge);
             if (!projectLayoutAlreadyInjected) {
                 builder.addImport("org.gradle.api.file.ProjectLayout")
@@ -165,8 +184,9 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
             }
 
             state.reportMatch(buildDescription(illegalMethod)
-                    .setMessage("Instead of `getProject().getProjectDir()`, inject the "
-                            + "`ProjectLayout` service within a task action")
+                    .setMessage(String.format(
+                            "Within a task action, instead of `getProject().%s`, use `getProjectLayout().%s`",
+                            oldChainedCall, newChainedCall))
                     .addFix(builder.build())
                     .build());
         }
@@ -189,9 +209,31 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
+    protected class GetProjectGetProjectDir extends ProjectLayoutViolation {
+        public GetProjectGetProjectDir() {
+            super("getProjectDir()", "getProjectDirectory().getAsFile()");
+        }
+    }
+
+    protected class GetProjectGetBuildDir extends ProjectLayoutViolation {
+        public GetProjectGetBuildDir() {
+            super("getBuildDir()", "getBuildDirectory().getAsFile().get()");
+        }
+    }
+
+    protected class GetProjectGetLayout extends ProjectLayoutViolation {
+        public GetProjectGetLayout() {
+            super("getLayout()", "");
+        }
+    }
+
     // Only the first matching violation is applied. Put more specific violations first.
-    private final List<Violation> violations =
-            List.of(new GetProjectGetLogger(), new GetProjectGetProjectDir(), new GetProject());
+    private final List<Violation> violations = List.of(
+            new GetProjectGetLogger(),
+            new GetProjectGetProjectDir(),
+            new GetProjectGetBuildDir(),
+            new GetProjectGetLayout(),
+            new GetProject());
 
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`
