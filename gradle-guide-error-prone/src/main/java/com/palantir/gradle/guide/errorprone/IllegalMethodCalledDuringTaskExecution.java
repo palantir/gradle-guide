@@ -114,9 +114,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
-    // Note that the ordering doesn't matter — errorprone handles conflicting matches, and chooses a fix over
-    // a warning in practice (make sure this is right!)
-    private final List<Violation> violations = List.of(new GetProject(), new GetProjectGetLogger());
+    // Only the first matching violation is applied. Put more specific violations first.
+    private final List<Violation> violations = List.of(new GetProjectGetLogger(), new GetProject());
 
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`
@@ -145,6 +144,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
                     for (Violation violation : violations) {
                         if (violation.matches(invocation, chained, state)) {
                             violation.fixOrReport(invocation, chained, state);
+                            break;
                         }
                     }
                 }
