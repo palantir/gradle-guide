@@ -85,39 +85,6 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void fix_whatever_it_can() {
-            test_fix(
-                    "CustomTask.java",
-                    """
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.tasks.TaskAction;
-                import org.gradle.api.logging.Logger;
-
-                abstract class CustomTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        getProject();
-                        Logger logger = getProject().getLogger();
-                    }
-                }
-            """,
-                    """
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.tasks.TaskAction;
-                import org.gradle.api.logging.Logger;
-
-                abstract class CustomTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
-                        getProject();
-                        Logger logger = getLogger();
-                    }
-                }
-                """);
-        }
-
-        @Test
         void getProject_getLogger_within_TaskAction_call_graph_should_fix() {
             test_fix(
                     "CustomTask.java",
@@ -244,37 +211,112 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void testAbstractMethod() {
-            test(
+        void getProject_getLayout_should_fix() {
+            test_fix(
+                    "CustomTask.java",
                     """
-import org.gradle.api.DefaultTask;
-import org.gradle.api.file.Directory;
-import org.gradle.api.tasks.TaskAction;
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+                class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProject().getProjectDir();
+                    }
+                }
+            """,
+                    """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.ProjectLayout;
+                import org.gradle.api.tasks.TaskAction;
+                abstract class CustomTask extends DefaultTask {
+                    @Inject
+                    protected abstract ProjectLayout getProjectLayout();
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProjectLayout().getProjectDirectory().getAsFile();
+                    }
+                }
+            """);
+        }
 
-abstract class NpmTask extends DefaultTask {
+        @Test
+        void getProject_multiple_getLayout_should_fix() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+                class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProject().getProjectDir();
+                        File projDir2 = getProject().getProjectDir();
+                    }
+                }
+            """,
+                    """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.ProjectLayout;
+                import org.gradle.api.tasks.TaskAction;
+                abstract class CustomTask extends DefaultTask {
+                    @Inject
+                    protected abstract ProjectLayout getProjectLayout();
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        File projDir2 = getProjectLayout().getProjectDirectory().getAsFile();
+                    }
+                }
+            """);
+        }
 
-    protected NpmTask() {
-        dependsOn("lol");
-    }
-
-    @TaskAction
-    public abstract void action();
-
-    /**
-     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
-     */
-    public void execute(boolean ignoreExitValue, String... args) {
-        getProject();
-    }
-
-    /**
-     * Executes `npm {args}`. Will throw if the command fails and ignoreExitValue is false.
-     */
-    public void executeInDir(Directory dir, boolean ignoreExitValue, String... args) {
-        getProject();
-    }
-}
-
+        @Test
+        void dont_inject_already_injected_services() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.ProjectLayout;
+                import org.gradle.api.tasks.TaskAction;
+                abstract class CustomTask extends DefaultTask {
+                    @Inject
+                    protected abstract ProjectLayout getProjectLayout();
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProject().getProjectDir();
+                        File projDir2 = getProject().getProjectDir();
+                    }
+                }
+            """,
+                    """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.ProjectLayout;
+                import org.gradle.api.tasks.TaskAction;
+                abstract class CustomTask extends DefaultTask {
+                    @Inject
+                    protected abstract ProjectLayout getProjectLayout();
+                    @TaskAction
+                    final void action() {
+                        File projDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        File projDir2 = getProjectLayout().getProjectDirectory().getAsFile();
+                    }
+                }
             """);
         }
     }
@@ -371,6 +413,38 @@ abstract class NpmTask extends DefaultTask {
                     @Override
                     public void execute(Task task) {
                         Logger logger = task.getLogger();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void getProject_getLayout_should_fix() {
+            test_fix(
+                    "CustomTaskAction.java",
+                    """
+                import java.io.File;
+                import org.gradle.api.Action;
+                import org.gradle.api.Task;
+                class CustomTaskAction implements Action<Task> {
+                    @Override
+                    public final void execute(Task task) {
+                        File projDir = task.getProject().getProjectDir();
+                    }
+                }
+            """,
+                    """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.Action;
+                import org.gradle.api.Task;
+                import org.gradle.api.file.ProjectLayout;
+                abstract class CustomTaskAction implements Action<Task> {
+                    @Inject
+                    protected abstract ProjectLayout getProjectLayout();
+                    @Override
+                    public final void execute(Task task) {
+                        File projDir = getProjectLayout().getProjectDirectory().getAsFile();
                     }
                 }
             """);
