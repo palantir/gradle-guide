@@ -22,21 +22,27 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.fixes.SuggestedFix;
+import com.google.errorprone.fixes.SuggestedFixes;
+import com.google.errorprone.fixes.SuggestedFixes.AdditionPosition;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.util.TreePath;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.Modifier;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -62,6 +68,12 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     private static final Matcher<ExpressionTree> TASK_GET_PROJECT = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Task")
             .named("getProject");
+    private static final Matcher<ExpressionTree> PROJECT_GET_PROJECT_DIR_METHOD = MethodMatchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getProjectDir");
+    private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
+    private static final Supplier<Type> PROJECT_LAYOUT =
+            VisitorState.memoize(state -> state.getTypeFromString("org.gradle.api.file.ProjectLayout"));
 
     /**
      * Represents strategies to report or auto-fix illegal methods and methods chained to it.
@@ -114,8 +126,72 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
+    protected class GetProjectGetProjectDir implements Violation {
+        /** Matches task.getProject().getLogger(). */
+        @Override
+        public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            return TASK_GET_PROJECT.matches(illegalMethod, state)
+                    && PROJECT_GET_PROJECT_DIR_METHOD.matches(chained, state);
+        }
+
+        /** Fixes task.getProject().getLogger() to task.getLogger(). */
+        @Override
+        public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+            Optional<ClassTree> taskOrActionMaybe = findFirstEnclosingTaskOrAction(state.getPath(), state);
+            if (taskOrActionMaybe.isEmpty()) {
+                return;
+            }
+
+            ClassTree taskOrAction = taskOrActionMaybe.get();
+
+            boolean projectLayoutAlreadyInjected = ASTHelpers.getSymbol(taskOrAction).getEnclosedElements().stream()
+                    .filter(symbol -> symbol instanceof MethodSymbol)
+                    .map(symbol -> (MethodSymbol) symbol)
+                    .filter(symbol -> symbol.getSimpleName().contentEquals("getProjectLayout"))
+                    .filter(Symbol::isAbstract)
+                    .anyMatch(
+                            symbol -> ASTHelpers.isSameType(symbol.getReturnType(), PROJECT_LAYOUT.get(state), state));
+            SuggestedFix.Builder builder =
+                    SuggestedFix.builder().replace(chained, "getProjectLayout().getProjectDirectory().getAsFile()");
+            SuggestedFixes.addModifiers(taskOrAction, state, Modifier.ABSTRACT).ifPresent(builder::merge);
+            if (!projectLayoutAlreadyInjected) {
+                builder.addImport("org.gradle.api.file.ProjectLayout")
+                        .addImport("javax.inject.Inject")
+                        .merge(SuggestedFixes.addMembers(
+                                taskOrAction,
+                                state,
+                                AdditionPosition.FIRST,
+                                "@Inject\nprotected abstract ProjectLayout getProjectLayout();"));
+            }
+
+            state.reportMatch(buildDescription(illegalMethod)
+                    .setMessage("Instead of `getProject().getProjectDir()`, inject the "
+                            + "`ProjectLayout` service within a task action")
+                    .addFix(builder.build())
+                    .build());
+        }
+
+        /**
+         * Finds the first enclosing {@code Task} or {@code Action<Task>}
+         */
+        private static Optional<ClassTree> findFirstEnclosingTaskOrAction(TreePath path, VisitorState state) {
+            TreePath curr = path;
+            while (curr.getParentPath() != null) {
+                if (curr.getLeaf() instanceof ClassTree classTree) {
+                    if (IS_TASK.matches(classTree, state)
+                            || implementsActionOfTask(ASTHelpers.getSymbol(classTree), state)) {
+                        return Optional.of(classTree);
+                    }
+                }
+                curr = curr.getParentPath();
+            }
+            return Optional.empty();
+        }
+    }
+
     // Only the first matching violation is applied. Put more specific violations first.
-    private final List<Violation> violations = List.of(new GetProjectGetLogger(), new GetProject());
+    private final List<Violation> violations =
+            List.of(new GetProjectGetLogger(), new GetProjectGetProjectDir(), new GetProject());
 
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`
