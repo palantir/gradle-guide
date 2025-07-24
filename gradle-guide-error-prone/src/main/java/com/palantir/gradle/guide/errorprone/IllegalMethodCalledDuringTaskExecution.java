@@ -74,12 +74,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state);
     }
 
-    /** Matches task.getProject(), and raises a warning */
     protected class GetProject implements Violation {
+        /** Matches task.GetProject(). */
+        @Override
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalMethod, state);
         }
 
+        /** Raises a warning. */
+        @Override
         public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             state.reportMatch(buildDescription(illegalMethod)
                     .setMessage("Don't call `getProject()` in task actions")
@@ -87,12 +90,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
     }
 
-    /** Matches task.getProject().getLogger(), and fixes them to task.getLogger() */
     protected class GetProjectGetLogger implements Violation {
+        /** Matches task.getProject().getLogger(). */
+        @Override
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalMethod, state) && PROJECT_GET_LOGGER.matches(chained, state);
         }
 
+        /** Fixes task.getProject().getLogger() to task.getLogger(). */
+        @Override
         public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             SuggestedFix.Builder fix = SuggestedFix.builder();
             Optional<String> receiverSource =

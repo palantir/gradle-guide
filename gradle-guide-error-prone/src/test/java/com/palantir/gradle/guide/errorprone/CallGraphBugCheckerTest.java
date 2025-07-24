@@ -33,6 +33,7 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("LineLength")
 class CallGraphBugCheckerTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(TestableCallGraphBugChecker.class, getClass());

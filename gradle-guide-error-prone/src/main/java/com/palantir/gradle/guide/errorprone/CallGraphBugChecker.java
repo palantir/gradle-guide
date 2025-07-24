@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.guide.errorprone;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.Traverser;
 import com.google.common.graph.ValueGraphBuilder;
@@ -35,6 +36,7 @@ import java.util.Set;
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
      * A directed graph of "who calls who, and where" within this compilation unit.
+     * A compilation unit is just fancy speak for a java file.
      */
     public class MethodCallGraph {
         /**
@@ -43,13 +45,17 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
          * The edge does not contain any transitive calls from f to g (e.g. f calls h calls g)
          * For more details, see {@code CallGraphBugCheckerTest} for the graph's specification
          */
+        @VisibleForTesting // Ideally MethodCallGraph is its own class, but SuppressibleTreePathScanner is protected
         protected final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
         /**
-         * This exists to be passed to {@code EdgeConsumer}s
+         * This exists to be passed to {@code EdgeConsumer}s.
+         *  e.g. if the CompilationUnit contains the chained call getProject().getLogger(), this will map
+         *      getProject() to getProject().getLogger()
+         *  In other words, it maps child calls to parent calls in the AST of the Compilation Unit.
          */
-        private final HashMap<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
+        private final Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
 
         public MethodCallGraph(VisitorState state) {
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
@@ -101,8 +107,7 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
 
         /**
-         * Starting from the given method, visit all the other methods called in this compilation unit, including
-         * those transitively called (e.g. `start` calls `foo` calls `bar`).
+         * From `start`, visit all the methods called in `start` recursively.
          * Uses depth-first traversal and automatically handles cycle detection.
          *
          * @param consumer consumes all invocations to this method
@@ -121,5 +126,5 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     }
 
     @SuppressWarnings("VisibilityModifier")
-    protected final Supplier<MethodCallGraph> callGraph = Cache.memoize(state -> new MethodCallGraph(state));
+    protected final Supplier<MethodCallGraph> callGraph = Cache.memoize(MethodCallGraph::new);
 }
