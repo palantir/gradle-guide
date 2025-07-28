@@ -36,6 +36,15 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
      * A directed graph of "who calls who, and where" within this compilation unit (source file).
      */
     protected class MethodCallGraph {
+
+        /**
+         * Represents a method call with optional chained call information.
+         * For example, in {@code getProject().getLogger()}, {@code rootCall = getProject()},
+         * {@code chainedCall = getProject().getLogger()}
+         *
+         */
+        public record MethodCall(MethodInvocationTree rootCall, Optional<MethodInvocationTree> chainedCall) {}
+
         /**
          * Nodes are method declarations. The edge between two methods {@code f} and {@code g} are all the instances
          * where {@code f} calls {@code g} directly. The edge does not contain any transitive calls from {@code f} to
@@ -43,19 +52,28 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
          * {@code CallGraphBugCheckerTest} for the graph's specification
          */
         @VisibleForTesting
-        protected final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
+        protected final MutableValueGraph<MethodSymbol, Set<MethodCall>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
         /**
-         * This exists to be passed to {@code EdgeConsumer}s.
-         *  e.g. if the {@code CompilationUnit} contains the chained call {@code getProject().getLogger()}, this will
+         * This maps method invocations to their chained calls for building MethodCallEdges.
+         * e.g. if the {@code CompilationUnit} contains the chained call {@code getProject().getLogger()}, this will
          *      map {@code getProject() to getProject().getLogger()}
-         *  In other words, it maps child calls to parent calls in the AST of the Compilation Unit.
          */
         private final Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
 
         public MethodCallGraph(VisitorState state) {
-            // Do two separate walks for clarity. Can merge them if perf becomes an issue.
+            // First pass: build the chained call mapping
+            new SuppressibleTreePathScanner<Void, Optional<MethodInvocationTree>>(state) {
+                @Override
+                public Void visitMethodInvocation(
+                        MethodInvocationTree call, Optional<MethodInvocationTree> chainedCall) {
+                    chainedCall.ifPresent(chained -> callToChainedCall.put(call, chained));
+                    return super.visitMethodInvocation(call, Optional.of(call));
+                }
+            }.scan(state.getPath().getCompilationUnit(), Optional.empty());
+
+            // Second pass: build the call graph
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
                 @Override
                 public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
@@ -71,37 +89,24 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
 
                     if (caller.isPresent()) {
                         MethodSymbol callerSymbol = caller.get();
-                        Set<MethodInvocationTree> existingInvocations =
+                        Set<MethodCall> existingEdges =
                                 callGraph.edgeValue(callerSymbol, calleeSymbol).orElseGet(HashSet::new);
-                        existingInvocations.add(node);
-                        callGraph.putEdgeValue(callerSymbol, calleeSymbol, existingInvocations);
+
+                        Optional<MethodInvocationTree> chainedCall = Optional.ofNullable(callToChainedCall.get(node));
+                        existingEdges.add(new MethodCall(node, chainedCall));
+                        callGraph.putEdgeValue(callerSymbol, calleeSymbol, existingEdges);
                     }
 
                     return super.visitMethodInvocation(node, caller);
-                }
-            }.scan(state.getPath().getCompilationUnit(), Optional.empty());
-
-            new SuppressibleTreePathScanner<Void, Optional<MethodInvocationTree>>(state) {
-                @Override
-                public Void visitMethodInvocation(
-                        MethodInvocationTree call, Optional<MethodInvocationTree> chainedCall) {
-                    chainedCall.ifPresent(chained -> callToChainedCall.put(call, chained));
-                    return super.visitMethodInvocation(call, Optional.of(call));
                 }
             }.scan(state.getPath().getCompilationUnit(), Optional.empty());
         }
 
         /**
          * Routine which processes an edge in the call graph.
-         * {@code callToChainedCall} maps a method call to the call immediately chained to it.
-         * We need the chained call to provide auto-fixes, e.g. getProject().getLogger() ==> getLogger()
          */
         public interface EdgeConsumer {
-            void accept(
-                    MethodSymbol from,
-                    MethodSymbol to,
-                    Set<MethodInvocationTree> edge,
-                    Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall);
+            void accept(MethodSymbol from, MethodSymbol to, Set<MethodCall> edge);
         }
 
         /**
@@ -115,9 +120,9 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
 
             for (MethodSymbol current : traverser.depthFirstPreOrder(start)) {
                 for (MethodSymbol neighbor : callGraph.successors(current)) {
-                    Set<MethodInvocationTree> edgeInvocations =
+                    Set<MethodCall> callsToNeighbour =
                             callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
-                    consumer.accept(current, neighbor, edgeInvocations, callToChainedCall);
+                    consumer.accept(current, neighbor, callsToNeighbour);
                 }
             }
         }

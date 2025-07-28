@@ -366,8 +366,9 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
-                        // TODO: But can't fix lambda Action<Task> yet
-                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst((Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
+                        // TODO(okelvin): But can't fix lambda Action<Task> yet
+                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst(
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """,
@@ -392,8 +393,9 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
-                        // TODO: But can't fix lambda Action<Task> yet
-                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst((Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
+                        // TODO(okelviN): But can't fix lambda Action<Task> yet
+                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst(
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """);

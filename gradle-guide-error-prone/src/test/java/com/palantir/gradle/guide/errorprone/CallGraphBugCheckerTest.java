@@ -29,20 +29,12 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.util.Name;
 import java.util.StringJoiner;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("LineLength")
 class CallGraphBugCheckerTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(TestableCallGraphBugChecker.class, getClass());
-
-    private TestableCallGraphBugChecker checker;
-
-    @BeforeEach
-    void beforeEach() {
-        checker = new TestableCallGraphBugChecker();
-    }
 
     @Test
     void testDirectCallsOnly_NoTransitiveCalls() {
@@ -384,7 +376,9 @@ class CallGraphBugCheckerTest {
                     (MethodTree) state.findPathToEnclosing(MethodTree.class).getLeaf());
             MethodSymbol callee = (MethodSymbol) ASTHelpers.getSymbol(tree.getMethodSelect());
             getCallGraph(state).callGraph.edgeValue(caller, callee).ifPresent(invocTrees -> {
-                if (invocTrees.contains(tree)) {
+                boolean graphContainsTree = invocTrees.stream()
+                        .anyMatch(invocTree -> invocTree.rootCall().equals(tree));
+                if (graphContainsTree) {
                     String outgoingNode = getFullyQualifiedName(callee).toString();
                     String diagnostic = String.format("CallGraph Edge: %s", outgoingNode);
                     state.reportMatch(
