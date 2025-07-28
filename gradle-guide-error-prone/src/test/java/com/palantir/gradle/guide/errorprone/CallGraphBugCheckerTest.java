@@ -388,7 +388,7 @@ class CallGraphBugCheckerTest {
             return Description.NO_MATCH;
         }
 
-        public static Name getFullyQualifiedName(MethodSymbol sym) {
+        private static Name getFullyQualifiedName(MethodSymbol sym) {
             return sym.owner.getQualifiedName().append('.', sym.getQualifiedName());
         }
 
