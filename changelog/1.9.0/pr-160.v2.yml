@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description:
+    Fill in adopting-the-configuration-cache.md
+  links:
+  - https://github.com/palantir/gradle-guide/pull/160

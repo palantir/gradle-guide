@@ -67,7 +67,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
      * Represents strategies to report or auto-fix illegal methods and methods chained to it.
      */
     interface Violation {
-        /** If we encounter illegalMethod().chained(). */
+        /** If we encounter {@code illegalMethod().chained()}. */
         boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state);
 
         /** Then, suggest fixes or a warning. */
@@ -75,15 +75,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     }
 
     protected class GetProject implements Violation {
-        /** Matches task.GetProject(). */
+        /** Matches {@code task.GetProject()}. */
         @Override
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalMethod, state);
         }
 
-        /** Raises a warning. */
         @Override
-        public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
+        public final void fixOrReport(
+                MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             state.reportMatch(buildDescription(illegalMethod)
                     .setMessage("Don't call `getProject()` in task actions")
                     .build());
@@ -91,24 +91,22 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     }
 
     protected class GetProjectGetLogger implements Violation {
-        /** Matches task.getProject().getLogger(). */
+        /** Matches {@code task.getProject().getLogger()}. */
         @Override
         public boolean matches(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalMethod, state) && PROJECT_GET_LOGGER.matches(chained, state);
         }
 
-        /** Fixes task.getProject().getLogger() to task.getLogger(). */
+        /** Fixes {@code task.getProject().getLogger() to task.getLogger()}. */
         @Override
         public void fixOrReport(MethodInvocationTree illegalMethod, MethodInvocationTree chained, VisitorState state) {
-            SuggestedFix.Builder fix = SuggestedFix.builder();
             Optional<String> receiverSource =
                     Optional.ofNullable(ASTHelpers.getReceiver(illegalMethod)).map(state::getSourceForNode);
             String simplifiedCall =
                     receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
-            fix.replace(chained, simplifiedCall).build();
 
             state.reportMatch(buildDescription(illegalMethod)
-                    .addFix(fix.build())
+                    .addFix(SuggestedFix.replace(chained, simplifiedCall))
                     .setMessage("Instead of `getProject().getLogger()`, just do `getLogger()`")
                     .build());
         }
@@ -136,20 +134,22 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
 
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
-        if (shouldTraverseCallGraph(tree, state)) {
-            MethodSymbol start = ASTHelpers.getSymbol(tree);
-            callGraph.get(state).dfs(start, (from, to, edges, callToChainedCall) -> {
-                for (MethodInvocationTree invocation : edges) {
-                    MethodInvocationTree chained = callToChainedCall.get(invocation);
-                    for (Violation violation : violations) {
-                        if (violation.matches(invocation, chained, state)) {
-                            violation.fixOrReport(invocation, chained, state);
-                            break;
-                        }
+        if (!shouldTraverseCallGraph(tree, state)) {
+            return Description.NO_MATCH;
+        }
+
+        MethodSymbol start = ASTHelpers.getSymbol(tree);
+        getCallGraph(state).dfs(start, (from, to, edges, callToChainedCall) -> {
+            for (MethodInvocationTree invocation : edges) {
+                MethodInvocationTree chained = callToChainedCall.get(invocation);
+                for (Violation violation : violations) {
+                    if (violation.matches(invocation, chained, state)) {
+                        violation.fixOrReport(invocation, chained, state);
+                        break;
                     }
                 }
-            });
-        }
+            }
+        });
 
         return Description.NO_MATCH;
     }

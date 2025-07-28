@@ -16,16 +16,12 @@
 
 package com.palantir.gradle.guide.errorprone;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.Traverser;
 import com.google.common.graph.ValueGraphBuilder;
 import com.google.errorprone.VisitorState;
-import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
-import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -37,29 +33,29 @@ import java.util.Set;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
-     * A directed graph of "who calls who, and where" within this compilation unit.
-     * A compilation unit is just fancy speak for a java file.
+     * A directed graph of "who calls who, and where" within this compilation unit (source file).
      */
-    public class MethodCallGraph {
+    protected class MethodCallGraph {
         /**
-         * Nodes are method declarations.
-         * The edge between two methods f and g are all the instances where f calls g directly.
-         * The edge does not contain any transitive calls from f to g (e.g. f calls h calls g)
-         * For more details, see {@code CallGraphBugCheckerTest} for the graph's specification
+         * Nodes are method declarations. The edge between two methods {@code f} and {@code g} are all the instances
+         * where {@code f} calls {@code g} directly. The edge does not contain any transitive calls from {@code f} to
+         * {@code g} (e.g. {@code f} calls {@code h} calls {@code g}). For more details, see
+         * {@code CallGraphBugCheckerTest} for the graph's specification
          */
-        @VisibleForTesting // Ideally MethodCallGraph is its own class, but SuppressibleTreePathScanner is protected
+        @VisibleForTesting
         protected final MutableValueGraph<MethodSymbol, Set<MethodInvocationTree>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
         /**
          * This exists to be passed to {@code EdgeConsumer}s.
-         *  e.g. if the CompilationUnit contains the chained call getProject().getLogger(), this will map
-         *      getProject() to getProject().getLogger()
+         *  e.g. if the {@code CompilationUnit} contains the chained call {@code getProject().getLogger()}, this will
+         *      map {@code getProject() to getProject().getLogger()}
          *  In other words, it maps child calls to parent calls in the AST of the Compilation Unit.
          */
         private final Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
 
         public MethodCallGraph(VisitorState state) {
+            // Do two separate walks for clarity. Can merge them if perf becomes an issue.
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
                 @Override
                 public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
@@ -109,7 +105,7 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
 
         /**
-         * From `start`, visit all the methods called in `start` recursively.
+         * From {@code start}, visit all the methods called in {@code start} recursively.
          * Uses depth-first traversal and automatically handles cycle detection.
          *
          * @param consumer consumes all invocations to this method
@@ -127,10 +123,17 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
     }
 
-    private static final Cache<CompilationUnitTree, MethodCallGraph> callGraphCache =
-            Caffeine.newBuilder().maximumSize(1000).weakKeys().build();
+    private MethodCallGraph callGraph;
 
-    @SuppressWarnings("VisibilityModifier")
-    protected final Supplier<MethodCallGraph> callGraph =
-            state -> callGraphCache.get(state.getPath().getCompilationUnit(), key -> new MethodCallGraph(state));
+    /**
+     * The first call to this method builds the call graph on the state's compilation unit.
+     * Subsequent calls will return the cached call graph.
+     */
+    protected MethodCallGraph getCallGraph(VisitorState state) {
+        if (callGraph == null) {
+            callGraph = new MethodCallGraph(state);
+        }
+
+        return callGraph;
+    }
 }

@@ -10,7 +10,6 @@ dependencies {
     implementation 'com.google.errorprone:error_prone_check_api'
 
     testCompileOnly 'org.jetbrains:annotations'
-    testCompileOnly 'com.google.auto.service:auto-service'
     testImplementation localGroovy()
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'

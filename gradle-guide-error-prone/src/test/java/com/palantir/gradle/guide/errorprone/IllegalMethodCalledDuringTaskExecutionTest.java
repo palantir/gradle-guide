@@ -96,8 +96,8 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 abstract class CustomTask extends DefaultTask {
                     @TaskAction
                     final void action() {
-                        getProject();
-                        Logger logger = getProject().getLogger();
+                        getProject();  // not fixable
+                        Logger logger = getProject().getLogger();  // fixable to getLogger()
                     }
                 }
             """,
@@ -133,7 +133,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     }
 
                     void helper() {
-                        Logger logger = getProject().getLogger();
+                        Logger logger = getProject().getLogger();  // fixable to getLogger()
                     }
                 }
             """,
@@ -322,7 +322,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 abstract class CustomTaskAction implements Action<Task> {
                     @Override
                     public void execute(Task task) {
-                        Logger logger = task.getProject().getLogger();
+                        Logger logger = task.getProject().getLogger();  // fixable to getLogger()
                     }
                 }
             """,
@@ -336,6 +336,64 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @Override
                     public void execute(Task task) {
                         Logger logger = task.getLogger();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void doFirst_doLast_should_Fix() {
+            test_fix(
+                    "MyPlugin.java",
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Project;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        // Should fix anonymous class Action<Task>
+                        project.getTasks().withType(Task.class, tsk -> {
+                            tsk.doFirst(new Action<Task>() {
+                                @Override
+                                public void execute(Task task) {
+                                    task.getProject().getLogger().info("I am a happy squirrel");
+                                }
+                            });
+                        });
+
+                        // TODO: But can't fix lambda Action<Task> yet
+                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst((Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Project;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        // Should fix anonymous class Action<Task>
+                        project.getTasks().withType(Task.class, tsk -> {
+                            tsk.doFirst(new Action<Task>() {
+                                @Override
+                                public void execute(Task task) {
+                                    task.getLogger().info("I am a happy squirrel");
+                                }
+                            });
+                        });
+
+                        // TODO: But can't fix lambda Action<Task> yet
+                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst((Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """);

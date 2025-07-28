@@ -16,7 +16,6 @@
 
 package com.palantir.gradle.guide.errorprone;
 
-import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.CompilationTestHelper;
@@ -370,7 +369,7 @@ class CallGraphBugCheckerTest {
         """);
     }
 
-    @AutoService(BugChecker.class)
+    @SuppressWarnings("BugCheckerAutoService") // We load the BugChecker directly here, rather than via service loading
     @BugPattern(summary = "", severity = SeverityLevel.SUGGESTION)
     private static final class TestableCallGraphBugChecker extends CallGraphBugChecker
             implements BugChecker.MethodInvocationTreeMatcher, BugChecker.MethodTreeMatcher {
@@ -384,7 +383,7 @@ class CallGraphBugCheckerTest {
             MethodSymbol caller = ASTHelpers.getSymbol(
                     (MethodTree) state.findPathToEnclosing(MethodTree.class).getLeaf());
             MethodSymbol callee = (MethodSymbol) ASTHelpers.getSymbol(tree.getMethodSelect());
-            callGraph.get(state).callGraph.edgeValue(caller, callee).ifPresent(invocTrees -> {
+            getCallGraph(state).callGraph.edgeValue(caller, callee).ifPresent(invocTrees -> {
                 if (invocTrees.contains(tree)) {
                     String outgoingNode = getFullyQualifiedName(callee).toString();
                     String diagnostic = String.format("CallGraph Edge: %s", outgoingNode);
@@ -404,7 +403,7 @@ class CallGraphBugCheckerTest {
             MethodSymbol curr = ASTHelpers.getSymbol(tree);
             String methodName = getFullyQualifiedName(curr).toString();
             StringJoiner listOfNeighbours = new StringJoiner(", ", "[ ", ", ]");
-            callGraph.get(state).callGraph.successors(curr).stream()
+            getCallGraph(state).callGraph.successors(curr).stream()
                     .map(TestableCallGraphBugChecker::getFullyQualifiedName)
                     .map(Name::toString)
                     .sorted()
