@@ -55,15 +55,10 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         protected final MutableValueGraph<MethodSymbol, Set<MethodCall>> callGraph =
                 ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 
-        /**
-         * This maps method invocations to their chained calls for building MethodCallEdges.
-         * e.g. if the {@code CompilationUnit} contains the chained call {@code getProject().getLogger()}, this will
-         *      map {@code getProject() to getProject().getLogger()}
-         */
-        private final Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
-
+        // Separate graph construction into two passes for clarity. We can combine them later if perf becomes an issue.
         public MethodCallGraph(VisitorState state) {
-            // First pass: build the chained call mapping
+            // First pass: build a map from each method call to the call chained to it (if any)
+            Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
             new SuppressibleTreePathScanner<Void, Optional<MethodInvocationTree>>(state) {
                 @Override
                 public Void visitMethodInvocation(
