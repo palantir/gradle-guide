@@ -17,101 +17,69 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.ImmutableGraph;
+import com.google.common.graph.MutableGraph;
 import com.google.common.graph.Traverser;
-import com.google.common.graph.ValueGraphBuilder;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
     /**
-     * A directed graph of "who calls who, and where" within this compilation unit (source file).
+     * A directed graph of "who is called by who" within this compilation unit (source file).
      */
     protected class MethodCallGraph {
 
         /**
-         * Represents a method call with optional chained call information.
-         * For example, in {@code getProject().getLogger()}, {@code rootCall = getProject()},
-         * {@code chainedCall = getProject().getLogger()}
-         *
-         */
-        public record MethodCall(MethodInvocationTree rootCall, Optional<MethodInvocationTree> chainedCall) {}
-
-        /**
-         * Nodes are method declarations. The edge between two methods {@code f} and {@code g} are all the instances
-         * where {@code f} calls {@code g} directly. The edge does not contain any transitive calls from {@code f} to
-         * {@code g} (e.g. {@code f} calls {@code h} calls {@code g}). For more details, see
-         * {@code CallGraphBugCheckerTest} for the graph's specification
+         * Nodes are {@code MethodSymbol}s. There is an edge from {@code f} to {@code g} iff {@code f} is called by
+         * {@code g}.
          */
         @VisibleForTesting
-        protected final MutableValueGraph<MethodSymbol, Set<MethodCall>> callGraph =
-                ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+        protected final ImmutableGraph<MethodSymbol> callGraph;
 
-        // Separate graph construction into two passes for clarity. We can combine them later if perf becomes an issue.
         public MethodCallGraph(VisitorState state) {
-            // First pass: build a map from each method call to the call chained to it (if any)
-            Map<MethodInvocationTree, MethodInvocationTree> callToChainedCall = new HashMap<>();
-            new SuppressibleTreePathScanner<Void, Optional<MethodInvocationTree>>(state) {
-                @Override
-                public Void visitMethodInvocation(
-                        MethodInvocationTree call, Optional<MethodInvocationTree> chainedCall) {
-                    chainedCall.ifPresent(chained -> callToChainedCall.put(call, chained));
-                    return super.visitMethodInvocation(call, Optional.of(call));
-                }
-            }.scan(state.getPath().getCompilationUnit(), Optional.empty());
+            MutableGraph<MethodSymbol> mutableCallGraph =
+                    GraphBuilder.directed().allowsSelfLoops(true).build();
 
-            // Second pass: build the call graph
             new SuppressibleTreePathScanner<Void, Optional<MethodSymbol>>(state) {
                 @Override
                 public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
                     MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);
-                    callGraph.addNode(methodSymbol);
+                    mutableCallGraph.addNode(methodSymbol);
                     return super.visitMethod(node, Optional.of(methodSymbol));
                 }
 
                 @Override
                 public Void visitMethodInvocation(MethodInvocationTree node, Optional<MethodSymbol> caller) {
                     MethodSymbol calleeSymbol = (MethodSymbol) ASTHelpers.getSymbol(node.getMethodSelect());
-                    callGraph.addNode(calleeSymbol);
+                    mutableCallGraph.addNode(calleeSymbol);
 
                     if (caller.isPresent()) {
                         MethodSymbol callerSymbol = caller.get();
-                        Set<MethodCall> existingEdges =
-                                callGraph.edgeValue(callerSymbol, calleeSymbol).orElseGet(HashSet::new);
-
-                        Optional<MethodInvocationTree> chainedCall = Optional.ofNullable(callToChainedCall.get(node));
-                        existingEdges.add(new MethodCall(node, chainedCall));
-                        callGraph.putEdgeValue(callerSymbol, calleeSymbol, existingEdges);
+                        mutableCallGraph.putEdge(calleeSymbol, callerSymbol);
                     }
 
                     return super.visitMethodInvocation(node, caller);
                 }
             }.scan(state.getPath().getCompilationUnit(), Optional.empty());
+
+            callGraph = ImmutableGraph.copyOf(mutableCallGraph);
         }
 
         /**
-         * Returns a set of method calls that are reachable from {@code start} within this compilation unit (source file)
+         * Returns the set of methods that call {@code target} transitively within this compilation unit (source file).
          */
-        public Set<MethodCall> callsUnderTransitiveClosureOf(MethodSymbol start) {
-            Set<MethodCall> result = new HashSet<>();
-
-            Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph);
-            for (MethodSymbol current : traverser.depthFirstPreOrder(start)) {
-                for (MethodSymbol neighbor : callGraph.successors(current)) {
-                    Set<MethodCall> callsToNeighbour =
-                            callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
-                    result.addAll(callsToNeighbour);
-                }
+        public Set<MethodSymbol> transitiveCallers(MethodSymbol target) {
+            Set<MethodSymbol> result = new HashSet<>();
+            for (MethodSymbol node : Traverser.forGraph(callGraph).depthFirstPreOrder(target)) {
+                result.addAll(callGraph.successors(node));
             }
-
             return result;
         }
     }

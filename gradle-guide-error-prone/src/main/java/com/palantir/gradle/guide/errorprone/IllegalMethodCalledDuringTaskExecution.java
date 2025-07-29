@@ -37,6 +37,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -55,7 +56,7 @@ import java.util.Optional;
         the tasks become independent and can execute in parallel.
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugChecker
-        implements BugChecker.MethodTreeMatcher {
+        implements BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("getLogger");
@@ -63,31 +64,50 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
             .onDescendantOf("org.gradle.api.Task")
             .named("getProject");
 
+    @Override
+    public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
+        Optional<Violation> firstMatchingViolation = violations.stream()
+                .filter(violation -> violation.matches(tree, state))
+                .findFirst();
+        if (firstMatchingViolation.isEmpty()) {
+            return Description.NO_MATCH;
+        }
+
+        MethodSymbol matched = ASTHelpers.getSymbol(tree);
+        Set<MethodSymbol> transitiveCallers = getCallGraph(state).transitiveCallers(matched);
+
+        boolean isInvokedAtTaskExecution = transitiveCallers.stream().anyMatch(caller -> {
+            MethodTree callerTree = ASTHelpers.findMethod(caller, state);
+            return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
+        });
+        if (isInvokedAtTaskExecution) {
+            firstMatchingViolation.get().fixOrReport(tree, state);
+        }
+
+        return Description.NO_MATCH;
+    }
+
     /**
      * Represents strategies to report or auto-fix illegal methods and methods chained to it.
      */
     interface Violation {
-        /** If we encounter {@code illegalMethod().chained()}. */
-        boolean matches(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state);
+        /** If we encounter {@code illegalCall}. */
+        boolean matches(MethodInvocationTree illegalCall, VisitorState state);
 
         /** Then, suggest fixes or a warning. */
-        void fixOrReport(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state);
+        void fixOrReport(MethodInvocationTree illegalCall, VisitorState state);
     }
 
     protected class GetProject implements Violation {
         /** Matches {@code task.GetProject()}. */
         @Override
-        public boolean matches(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state) {
-            return TASK_GET_PROJECT.matches(illegalMethod, state);
+        public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
+            return TASK_GET_PROJECT.matches(illegalCall, state);
         }
 
         @Override
-        public final void fixOrReport(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state) {
-            state.reportMatch(buildDescription(illegalMethod)
+        public final void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
+            state.reportMatch(buildDescription(illegalCall)
                     .setMessage("Don't call `getProject()` in task actions")
                     .build());
         }
@@ -96,25 +116,31 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     protected class GetProjectGetLogger implements Violation {
         /** Matches {@code task.getProject().getLogger()}. */
         @Override
-        public boolean matches(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state) {
-            return TASK_GET_PROJECT.matches(illegalMethod, state)
-                    && chainedMaybe
-                            .map(chained -> PROJECT_GET_LOGGER.matches(chained, state))
-                            .orElse(false);
+        public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
+
+            Optional<ExpressionTree> receiverMaybe = Optional.ofNullable(ASTHelpers.getReceiver(illegalCall));
+            boolean receiverIsMethodCall = receiverMaybe
+                    .map(receiver -> receiver instanceof MethodInvocationTree)
+                    .orElse(false);
+            if (receiverIsMethodCall) {
+                MethodInvocationTree receiverCall = (MethodInvocationTree) receiverMaybe.get();
+                return TASK_GET_PROJECT.matches(receiverCall, state) && PROJECT_GET_LOGGER.matches(illegalCall, state);
+            }
+
+            return false;
         }
 
         /** Fixes {@code task.getProject().getLogger() to task.getLogger()}. */
         @Override
-        public void fixOrReport(
-                MethodInvocationTree illegalMethod, Optional<MethodInvocationTree> chainedMaybe, VisitorState state) {
+        public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
+            MethodInvocationTree getProject = (MethodInvocationTree) ASTHelpers.getReceiver(illegalCall);
             Optional<String> receiverSource =
-                    Optional.ofNullable(ASTHelpers.getReceiver(illegalMethod)).map(state::getSourceForNode);
+                    Optional.ofNullable(ASTHelpers.getReceiver(getProject)).map(state::getSourceForNode);
             String simplifiedCall =
                     receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
 
-            state.reportMatch(buildDescription(illegalMethod)
-                    .addFix(SuggestedFix.replace(chainedMaybe.get(), simplifiedCall))
+            state.reportMatch(buildDescription(illegalCall)
+                    .addFix(SuggestedFix.replace(illegalCall, simplifiedCall))
                     .setMessage("Instead of `getProject().getLogger()`, just do `getLogger()`")
                     .build());
         }
@@ -139,25 +165,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
                 .map(execute -> (MethodSymbol) execute)
                 .findAny());
     };
-
-    @Override
-    public Description matchMethod(MethodTree tree, VisitorState state) {
-        if (!shouldTraverseCallGraph(tree, state)) {
-            return Description.NO_MATCH;
-        }
-
-        MethodSymbol start = ASTHelpers.getSymbol(tree);
-        getCallGraph(state).callsUnderTransitiveClosureOf(start).forEach(call -> {
-            for (Violation violation : violations) {
-                if (violation.matches(call.rootCall(), call.chainedCall(), state)) {
-                    violation.fixOrReport(call.rootCall(), call.chainedCall(), state);
-                    break;
-                }
-            }
-        });
-
-        return Description.NO_MATCH;
-    }
 
     private boolean shouldTraverseCallGraph(MethodTree tree, VisitorState state) {
         return isTaskAction(tree, state) || overridesExecute(tree, state);
