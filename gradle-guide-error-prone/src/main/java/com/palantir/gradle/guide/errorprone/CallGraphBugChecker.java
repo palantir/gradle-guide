@@ -98,28 +98,21 @@ public abstract class CallGraphBugChecker extends GradleGuideBugChecker {
         }
 
         /**
-         * Routine which processes an edge in the call graph.
+         * Returns a set of method calls that are reachable from {@code start} within this compilation unit (source file)
          */
-        public interface EdgeConsumer {
-            void accept(MethodSymbol from, MethodSymbol to, Set<MethodCall> edge);
-        }
+        public Set<MethodCall> callsUnderTransitiveClosureOf(MethodSymbol start) {
+            Set<MethodCall> result = new HashSet<>();
 
-        /**
-         * From {@code start}, visit all the methods called in {@code start} recursively.
-         * Uses depth-first traversal and automatically handles cycle detection.
-         *
-         * @param consumer consumes all invocations to this method
-         */
-        public void dfs(MethodSymbol start, EdgeConsumer consumer) {
             Traverser<MethodSymbol> traverser = Traverser.forGraph(callGraph);
-
             for (MethodSymbol current : traverser.depthFirstPreOrder(start)) {
                 for (MethodSymbol neighbor : callGraph.successors(current)) {
                     Set<MethodCall> callsToNeighbour =
                             callGraph.edgeValue(current, neighbor).orElseGet(Set::of);
-                    consumer.accept(current, neighbor, callsToNeighbour);
+                    result.addAll(callsToNeighbour);
                 }
             }
+
+            return result;
         }
     }
 

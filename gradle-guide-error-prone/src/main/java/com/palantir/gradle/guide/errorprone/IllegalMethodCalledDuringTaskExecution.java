@@ -28,7 +28,6 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
-import com.palantir.gradle.guide.errorprone.CallGraphBugChecker.MethodCallGraph.MethodCall;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -148,13 +147,11 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
         }
 
         MethodSymbol start = ASTHelpers.getSymbol(tree);
-        getCallGraph(state).dfs(start, (from, to, edge) -> {
-            for (MethodCall call : edge) {
-                for (Violation violation : violations) {
-                    if (violation.matches(call.rootCall(), call.chainedCall(), state)) {
-                        violation.fixOrReport(call.rootCall(), call.chainedCall(), state);
-                        break;
-                    }
+        getCallGraph(state).callsUnderTransitiveClosureOf(start).forEach(call -> {
+            for (Violation violation : violations) {
+                if (violation.matches(call.rootCall(), call.chainedCall(), state)) {
+                    violation.fixOrReport(call.rootCall(), call.chainedCall(), state);
+                    break;
                 }
             }
         });
