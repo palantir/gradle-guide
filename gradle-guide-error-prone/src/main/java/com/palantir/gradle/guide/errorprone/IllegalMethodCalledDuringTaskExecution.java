@@ -166,10 +166,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
                 .findAny());
     };
 
-    private boolean shouldTraverseCallGraph(MethodTree tree, VisitorState state) {
-        return isTaskAction(tree, state) || overridesExecute(tree, state);
-    }
-
     private static boolean isTaskAction(MethodTree tree, VisitorState state) {
         return Matchers.hasAnnotation("org.gradle.api.tasks.TaskAction").matches(tree, state);
     }
