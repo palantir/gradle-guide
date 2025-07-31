@@ -55,7 +55,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_should_fix() {
+        void should_fix_getProject_getLogger() {
             test_fix(
                     "CustomTask.java",
                     """
@@ -85,7 +85,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void fix_whatever_it_can() {
+        void fixes_whatever_it_can_and_warns_for_the_others() {
             test_fix(
                     "CustomTask.java",
                     """
@@ -118,7 +118,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_within_TaskAction_call_graph_should_fix() {
+        void should_fix_transitive_calls_to_getLogger() {
             test_fix(
                     "CustomTask.java",
                     """
@@ -156,7 +156,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_within_TaskAction_call_graph_should_fail() {
+        void transitive_calls_to_getProject_should_fail() {
             test(
                     """
                 import org.gradle.api.DefaultTask;
@@ -170,10 +170,10 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectName = getProject().getName();
 
-                        suppressed_statement();
+                        helper();
                     }
 
-                    void suppressed_statement() {
+                    void helper() {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectPath = getProject().getPath();
                     }
@@ -206,7 +206,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void suppressed_getProject_should_pass() {
+        void suppressed_calls_to_getProject_should_pass() {
             test(
                     """
                 import org.gradle.api.DefaultTask;
@@ -251,7 +251,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
     @Nested
     class Actions {
         @Test
-        void getProject_within_Action_of_Task_should_fail() {
+        void transitive_calls_to_getProject_should_fail() {
             test(
                     """
             import org.gradle.api.Action;
@@ -268,7 +268,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void action_of_Task_should_pass() {
+        void action_without_calls_to_getProject_should_pass() {
             test(
                     """
             import org.gradle.api.Action;
@@ -291,7 +291,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_within_Action_of_non_task_should_pass() {
+        void dont_fail_actions_of_nontask() {
             test(
                     """
             import org.gradle.api.Action;
@@ -310,7 +310,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_should_fix() {
+        void should_fix_getProject_getLogger() {
             test_fix(
                     "CustomTaskAction.java",
                     """
@@ -342,7 +342,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void doFirst_doLast_should_Fix() {
+        void should_fix_getProject_getLogger_within_doFirst_doLast_blocks() {
             test_fix(
                     "MyPlugin.java",
                     """
@@ -366,7 +366,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
-                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst(
+                        project.getTasks().withType(Task.class, tsk -> tsk.doLast(
                             (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
@@ -392,7 +392,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
-                        project.getTasks().withType(Task.class, tsk -> tsk.doFirst(
+                        project.getTasks().withType(Task.class, tsk -> tsk.doLast(
                             (Action<Task>) task -> task.getLogger().info("I am a happy squirrel")));
                     }
                 }

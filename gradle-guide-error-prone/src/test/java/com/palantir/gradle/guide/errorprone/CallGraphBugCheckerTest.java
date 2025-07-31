@@ -36,7 +36,7 @@ class CallGraphBugCheckerTest {
             CompilationTestHelper.newInstance(TestableCallGraphBugChecker.class, getClass());
 
     @Test
-    void testDirectCallsOnly_NoTransitiveCalls() {
+    void captures_direct_callers_but_not_transitive_callers() {
         test(
                 """
             class TestClass {
@@ -59,7 +59,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testMultipleDirectCalls() {
+    void captures_multiple_callers() {
         test(
                 """
             class TestClass {
@@ -88,7 +88,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testDirectAndTransitiveCalls() {
+    void captures_first_and_second_level_callers() {
         test(
                 """
             class TestClass {
@@ -112,7 +112,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testNoMethodCalls() {
+    void correctly_represents_no_method_calls() {
         test(
                 """
             class TestClass {
@@ -125,7 +125,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testRecursiveMethod() {
+    void captures_recursive_calls() {
         test(
                 """
             class TestClass {
@@ -140,7 +140,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testChainedMethodCalls() {
+    void captures_chained_calls() {
         test(
                 """
             import java.util.ArrayList;
@@ -168,7 +168,7 @@ class CallGraphBugCheckerTest {
     }
 
     @Test
-    void testAbstractMethod() {
+    void works_with_abstract_methods() {
         test(
                 """
             abstract class TestClass {
