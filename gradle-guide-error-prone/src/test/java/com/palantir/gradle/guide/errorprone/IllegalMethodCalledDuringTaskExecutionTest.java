@@ -235,7 +235,12 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                         String projectPath = getProject().getPath();
                     }
 
+                    @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
                     void no_oversuppression() {
+                        helper();
+                    }
+
+                    void helper() {
                         // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         String projectPath = getProject().getPath();
                     }

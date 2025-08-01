@@ -16,6 +16,8 @@
 
 package com.palantir.gradle.guide.errorprone;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
@@ -28,6 +30,8 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -55,8 +59,11 @@ import java.util.Set;
         However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
         the tasks become independent and can execute in parallel.
         """)
-public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugChecker
+public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
+    private static final LoadingCache<CompilationUnitTree, MethodCallGraph> callGraphCache =
+            Caffeine.newBuilder().maximumSize(1_000).weakKeys().softValues().build(MethodCallGraph::new);
+
     private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("getLogger");
@@ -66,6 +73,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
+        if (isSuppressed(tree, state)) {
+            return Description.NO_MATCH;
+        }
+
         Optional<Violation> firstMatchingViolation = violations.stream()
                 .filter(violation -> violation.matches(tree, state))
                 .findFirst();
@@ -73,8 +84,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
             return Description.NO_MATCH;
         }
 
+        CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
+        MethodCallGraph callGraph = callGraphCache.get(compilationUnit);
         MethodSymbol matched = ASTHelpers.getSymbol(tree);
-        Set<MethodSymbol> transitiveCallers = getCallGraph(state).transitiveCallers(matched);
+        Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(matched);
 
         boolean isInvokedAtTaskExecution = transitiveCallers.stream().anyMatch(caller -> {
             MethodTree callerTree = ASTHelpers.findMethod(caller, state);
@@ -99,7 +112,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends CallGraphBugCh
     }
 
     protected class GetProject implements Violation {
-        /** Matches {@code task.GetProject()}. */
+        /** Matches {@code task.getProject()}. */
         @Override
         public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
             return TASK_GET_PROJECT.matches(illegalCall, state);

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.utils;
 
+import com.google.common.graph.ImmutableGraph;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.CompilationTestHelper;
@@ -23,15 +24,19 @@ import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
+import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.util.Name;
+import java.lang.reflect.Field;
 import java.util.StringJoiner;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("LineLength")
-class CallGraphBugCheckerTest {
+class MethodCallGraphTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(TestableCallGraphBugChecker.class, getClass());
 
@@ -180,11 +185,23 @@ class CallGraphBugCheckerTest {
 
     @SuppressWarnings("BugCheckerAutoService") // We load the BugChecker directly here, rather than via service loading
     @BugPattern(summary = "", severity = SeverityLevel.SUGGESTION)
-    private static final class TestableCallGraphBugChecker extends CallGraphBugChecker
+    private static final class TestableCallGraphBugChecker extends GradleGuideBugChecker
             implements BugChecker.MethodTreeMatcher {
-        @Override
-        public MoreInfoLink moreInfoLink() {
-            return null;
+        private MethodCallGraph callGraph;
+
+        private ImmutableGraph<MethodSymbol> peekInternalCallGraph(CompilationUnitTree compilationUnitTree) {
+            if (callGraph == null) {
+                callGraph = new MethodCallGraph(compilationUnitTree);
+            }
+
+            try {
+                Class<?> clazz = callGraph.getClass();
+                Field field = clazz.getDeclaredField("callGraph");
+                field.setAccessible(true);
+                return (ImmutableGraph<MethodSymbol>) field.get(callGraph);
+            } catch (IllegalAccessException | NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private static Name getFullyQualifiedName(MethodSymbol sym) {
@@ -196,7 +213,9 @@ class CallGraphBugCheckerTest {
             MethodSymbol curr = ASTHelpers.getSymbol(tree);
             String methodName = getFullyQualifiedName(curr).toString();
             StringJoiner listOfNeighbours = new StringJoiner(", ", "[ ", ", ]");
-            getCallGraph(state).callGraph.successors(curr).stream()
+
+            CompilationUnitTree compilationUnitTree = state.getPath().getCompilationUnit();
+            peekInternalCallGraph(compilationUnitTree).successors(curr).stream()
                     .map(TestableCallGraphBugChecker::getFullyQualifiedName)
                     .map(Name::toString)
                     .sorted()
@@ -205,6 +224,11 @@ class CallGraphBugCheckerTest {
             String diagnostic = String.format("CallGraph: %s", outgoingNodesSorted);
             state.reportMatch(buildDescription(tree).setMessage(diagnostic).build());
             return Description.NO_MATCH;
+        }
+
+        @Override
+        public MoreInfoLink moreInfoLink() {
+            return null;
         }
     }
 
