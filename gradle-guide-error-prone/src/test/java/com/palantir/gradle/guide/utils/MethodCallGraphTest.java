@@ -187,12 +187,9 @@ class MethodCallGraphTest {
     @BugPattern(summary = "", severity = SeverityLevel.SUGGESTION)
     private static final class TestableCallGraphBugChecker extends GradleGuideBugChecker
             implements BugChecker.MethodTreeMatcher {
-        private MethodCallGraph callGraph;
 
         private ImmutableGraph<MethodSymbol> peekInternalCallGraph(CompilationUnitTree compilationUnitTree) {
-            if (callGraph == null) {
-                callGraph = new MethodCallGraph(compilationUnitTree);
-            }
+            MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnitTree);
 
             try {
                 Class<?> clazz = callGraph.getClass();

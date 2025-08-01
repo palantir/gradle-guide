@@ -16,8 +16,6 @@
 
 package com.palantir.gradle.guide.errorprone;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
@@ -61,8 +59,6 @@ import java.util.Set;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
-    private static final LoadingCache<CompilationUnitTree, MethodCallGraph> callGraphCache =
-            Caffeine.newBuilder().maximumSize(1_000).weakKeys().softValues().build(MethodCallGraph::new);
 
     private static final Matcher<ExpressionTree> PROJECT_GET_LOGGER = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
@@ -73,10 +69,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        if (isSuppressed(tree, state)) {
-            return Description.NO_MATCH;
-        }
-
         Optional<Violation> firstMatchingViolation = violations.stream()
                 .filter(violation -> violation.matches(tree, state))
                 .findFirst();
@@ -85,7 +77,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         }
 
         CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
-        MethodCallGraph callGraph = callGraphCache.get(compilationUnit);
+        MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
         MethodSymbol matched = ASTHelpers.getSymbol(tree);
         Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(matched);
 

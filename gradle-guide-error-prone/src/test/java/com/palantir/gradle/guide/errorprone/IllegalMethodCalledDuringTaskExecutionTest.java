@@ -193,13 +193,71 @@ class IllegalMethodCalledDuringTaskExecutionTest {
             abstract class CustomTask extends DefaultTask {
                 private String projectName;
 
-                CustomTask() {
-                    projectName = getProject().getName();
+                public final void not_called_anywhere() {
+                    getProject();
                 }
 
                 @TaskAction
                 public final void action() {
                     System.out.println("Project name: " + projectName);
+                }
+            }
+            """);
+        }
+
+        @Test
+        void getProject_in_constructors_should_pass() {
+            test(
+                    """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                private String projectName;
+
+                CustomTask() {
+                    projectName = getProject().getName();
+                    called_in_constructor();
+                }
+
+                public final void called_in_constructor() {
+                    getProject();
+                }
+
+                @TaskAction
+                public final void action() {
+                    System.out.println("Project name: " + projectName);
+                }
+            }
+            """);
+        }
+
+        @Test
+        void getProject_in_shared_helper_should_fail() {
+            test(
+                    """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                private String projectName;
+
+                CustomTask() {
+                    getProjectName();
+                }
+
+                public final String getProjectName() {
+                    // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                    return getProject().getName();
+                }
+
+                @TaskAction
+                public final void action() {
+                    System.out.println("Project name: " + getProjectName());
                 }
             }
             """);

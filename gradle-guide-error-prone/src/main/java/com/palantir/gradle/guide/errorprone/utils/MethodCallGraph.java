@@ -16,6 +16,8 @@
 
 package com.palantir.gradle.guide.errorprone.utils;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.ImmutableGraph;
 import com.google.common.graph.MutableGraph;
@@ -33,14 +35,25 @@ import java.util.Set;
 /**
  * A directed graph of "who is called by who" within this compilation unit (source file).
  */
-public class MethodCallGraph {
+public final class MethodCallGraph {
+    private static final LoadingCache<CompilationUnitTree, MethodCallGraph> callGraphCache =
+            Caffeine.newBuilder().maximumSize(1_000).weakKeys().softValues().build(MethodCallGraph::new);
+
+    /**
+     * Builds the `MethodCallGraph` of this Compilation Unit at the first call, and returns the cached graph in
+     * subsequent calls.
+     */
+    public static MethodCallGraph getOrBuild(CompilationUnitTree compilationUnitTree) {
+        return callGraphCache.get(compilationUnitTree);
+    }
+
     /**
      * Nodes are {@code MethodSymbol}s. There is an edge from {@code f} to {@code g} iff {@code f} is called by
      * {@code g}.
      */
     private final ImmutableGraph<MethodSymbol> callGraph;
 
-    public MethodCallGraph(CompilationUnitTree compilationUnitTree) {
+    private MethodCallGraph(CompilationUnitTree compilationUnitTree) {
         MutableGraph<MethodSymbol> mutableCallGraph =
                 GraphBuilder.directed().allowsSelfLoops(true).build();
 
