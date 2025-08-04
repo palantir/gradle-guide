@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import one.util.streamex.StreamEx;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -90,9 +91,9 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         // If we included methods defined externally into the call graph,
         // IllegalMethodCalledDuringTaskExecutionTest#getProject_in_constructor_ok will fail.
         Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
-        transitiveCallersOfIllegalMethod.add(enclosingMethod);
 
-        boolean isInvokedAtTaskExecution = transitiveCallersOfIllegalMethod.stream()
+        boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
+                .append(enclosingMethod)
                 .anyMatch(caller -> {
                     MethodTree callerTree = ASTHelpers.findMethod(caller, state);
                     return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
