@@ -305,6 +305,34 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 }
             """);
         }
+
+        @Test
+        void getProject_in_TaskAction_doesnt_cause_other_getProjects_to_be_flagged() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    // getProject() in field is OK
+                    private final Project project = getProject();
+
+                    CustomTask() {
+                        // getProject() in task constructor is OK
+                        Project project = getProject();
+                    }
+
+                    @TaskAction
+                    final void action() {
+                        // ... even if getProject()
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        Project project = getProject();
+                    }
+                }
+            """);
+        }
     }
 
     /**
@@ -429,6 +457,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
+                        // TODO(okelvin): fix lambdas
                         project.getTasks().withType(Task.class, tsk -> tsk.doLast(
                             (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
@@ -455,8 +484,9 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
+                        // TODO(okelvin): fix lambdas
                         project.getTasks().withType(Task.class, tsk -> tsk.doLast(
-                            (Action<Task>) task -> task.getLogger().info("I am a happy squirrel")));
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """);

@@ -48,8 +48,8 @@ public final class MethodCallGraph {
     }
 
     /**
-     * Nodes are {@code MethodSymbol}s. There is an edge from {@code f} to {@code g} iff {@code f} is called by
-     * {@code g}.
+     * Nodes are {@code MethodSymbol}s of methods declared within this compilation unit.
+     * There is an edge from {@code f} to {@code g} iff {@code f} is called by {@code g}.
      */
     private final ImmutableGraph<MethodSymbol> callGraph;
 
@@ -57,24 +57,29 @@ public final class MethodCallGraph {
         MutableGraph<MethodSymbol> mutableCallGraph =
                 GraphBuilder.directed().allowsSelfLoops(true).build();
 
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethod(MethodTree node, Void unused) {
+                MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);
+                mutableCallGraph.addNode(methodSymbol);
+                return super.visitMethod(node, unused);
+            }
+        }.scan(compilationUnitTree, null);
+
         new TreePathScanner<Void, Optional<MethodSymbol>>() {
             @Override
             public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
                 MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);
-                mutableCallGraph.addNode(methodSymbol);
                 return super.visitMethod(node, Optional.of(methodSymbol));
             }
 
             @Override
             public Void visitMethodInvocation(MethodInvocationTree node, Optional<MethodSymbol> caller) {
                 MethodSymbol calleeSymbol = (MethodSymbol) ASTHelpers.getSymbol(node.getMethodSelect());
-                mutableCallGraph.addNode(calleeSymbol);
-
-                if (caller.isPresent()) {
+                if (mutableCallGraph.nodes().contains(calleeSymbol) && caller.isPresent()) {
                     MethodSymbol callerSymbol = caller.get();
                     mutableCallGraph.putEdge(calleeSymbol, callerSymbol);
                 }
-
                 return super.visitMethodInvocation(node, caller);
             }
         }.scan(compilationUnitTree, Optional.empty());

@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import one.util.streamex.StreamEx;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -78,13 +79,25 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
         CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
         MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
-        MethodSymbol matched = ASTHelpers.getSymbol(tree);
-        Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(matched);
 
-        boolean isInvokedAtTaskExecution = transitiveCallers.stream().anyMatch(caller -> {
-            MethodTree callerTree = ASTHelpers.findMethod(caller, state);
-            return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
-        });
+        Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
+        if (enclosingMethodMaybe.isEmpty()) {
+            return Description.NO_MATCH;
+        }
+
+        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
+        // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
+        // Gradle source, not the source file this BugChecker is running on.
+        // If we included methods defined externally into the call graph,
+        // IllegalMethodCalledDuringTaskExecutionTest#getProject_in_constructor_ok will fail.
+        Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
+
+        boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
+                .append(enclosingMethod)
+                .anyMatch(caller -> {
+                    MethodTree callerTree = ASTHelpers.findMethod(caller, state);
+                    return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
+                });
         if (isInvokedAtTaskExecution) {
             firstMatchingViolation.get().fixOrReport(tree, state);
         }
