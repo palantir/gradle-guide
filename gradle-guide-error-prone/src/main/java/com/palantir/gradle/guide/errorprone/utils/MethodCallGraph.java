@@ -57,14 +57,14 @@ public final class MethodCallGraph {
         MutableGraph<MethodSymbol> mutableCallGraph =
                 GraphBuilder.directed().allowsSelfLoops(true).build();
 
-        new TreePathScanner<Void, Optional<MethodSymbol>>() {
+        new TreePathScanner<Void, Void>() {
             @Override
-            public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
+            public Void visitMethod(MethodTree node, Void unused) {
                 MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);
                 mutableCallGraph.addNode(methodSymbol);
-                return super.visitMethod(node, Optional.of(methodSymbol));
+                return super.visitMethod(node, unused);
             }
-        }.scan(compilationUnitTree, Optional.empty());
+        }.scan(compilationUnitTree, null);
 
         new TreePathScanner<Void, Optional<MethodSymbol>>() {
             @Override
