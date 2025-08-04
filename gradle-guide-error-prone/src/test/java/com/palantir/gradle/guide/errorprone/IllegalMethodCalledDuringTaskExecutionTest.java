@@ -317,7 +317,8 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
                 abstract class CustomTask extends DefaultTask {
                     CustomTask() {
-                        // Illegal method in task constructor (configuration phase) is OK
+                        // getProject() in task constructor is OK,
+                        // even when getProject() is illegally called elsewhere.
                         Project project = getProject();
                     }
 

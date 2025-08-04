@@ -85,13 +85,18 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         }
 
         MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
-        Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(enclosingMethod);
-        transitiveCallers.add(enclosingMethod);
+        // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
+        // Gradle source, not the source file this BugChecker is running on.
+        // If we included methods defined externally into the call graph,
+        // IllegalMethodCalledDuringTaskExecutionTest#getProject_in_constructor_ok will fail.
+        Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
+        transitiveCallersOfIllegalMethod.add(enclosingMethod);
 
-        boolean isInvokedAtTaskExecution = transitiveCallers.stream().anyMatch(caller -> {
-            MethodTree callerTree = ASTHelpers.findMethod(caller, state);
-            return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
-        });
+        boolean isInvokedAtTaskExecution = transitiveCallersOfIllegalMethod.stream()
+                .anyMatch(caller -> {
+                    MethodTree callerTree = ASTHelpers.findMethod(caller, state);
+                    return isTaskAction(callerTree, state) || overridesExecute(callerTree, state);
+                });
         if (isInvokedAtTaskExecution) {
             firstMatchingViolation.get().fixOrReport(tree, state);
         }

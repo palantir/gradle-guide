@@ -48,8 +48,8 @@ public final class MethodCallGraph {
     }
 
     /**
-     * Nodes are {@code MethodSymbol}s. There is an edge from {@code f} to {@code g} iff {@code f} is called by
-     * {@code g}.
+     * Nodes are {@code MethodSymbol}s of methods declared within this compilation unit.
+     * There is an edge from {@code f} to {@code g} iff {@code f} is called by {@code g}.
      */
     private final ImmutableGraph<MethodSymbol> callGraph;
 
