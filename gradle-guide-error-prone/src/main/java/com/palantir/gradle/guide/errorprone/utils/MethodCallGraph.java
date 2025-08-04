@@ -64,17 +64,22 @@ public final class MethodCallGraph {
                 mutableCallGraph.addNode(methodSymbol);
                 return super.visitMethod(node, Optional.of(methodSymbol));
             }
+        }.scan(compilationUnitTree, Optional.empty());
+
+        new TreePathScanner<Void, Optional<MethodSymbol>>() {
+            @Override
+            public Void visitMethod(MethodTree node, Optional<MethodSymbol> caller) {
+                MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);
+                return super.visitMethod(node, Optional.of(methodSymbol));
+            }
 
             @Override
             public Void visitMethodInvocation(MethodInvocationTree node, Optional<MethodSymbol> caller) {
                 MethodSymbol calleeSymbol = (MethodSymbol) ASTHelpers.getSymbol(node.getMethodSelect());
-                mutableCallGraph.addNode(calleeSymbol);
-
-                if (caller.isPresent()) {
+                if (mutableCallGraph.nodes().contains(calleeSymbol) && caller.isPresent()) {
                     MethodSymbol callerSymbol = caller.get();
                     mutableCallGraph.putEdge(calleeSymbol, callerSymbol);
                 }
-
                 return super.visitMethodInvocation(node, caller);
             }
         }.scan(compilationUnitTree, Optional.empty());

@@ -78,8 +78,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
         CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
         MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
-        MethodSymbol matched = ASTHelpers.getSymbol(tree);
-        Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(matched);
+
+        Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
+        if (enclosingMethodMaybe.isEmpty()) {
+            return Description.NO_MATCH;
+        }
+
+        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
+        Set<MethodSymbol> transitiveCallers = callGraph.transitiveCallers(enclosingMethod);
+        transitiveCallers.add(enclosingMethod);
 
         boolean isInvokedAtTaskExecution = transitiveCallers.stream().anyMatch(caller -> {
             MethodTree callerTree = ASTHelpers.findMethod(caller, state);

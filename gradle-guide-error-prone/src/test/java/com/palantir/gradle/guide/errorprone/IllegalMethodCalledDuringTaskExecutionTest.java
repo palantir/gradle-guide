@@ -305,6 +305,30 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 }
             """);
         }
+
+        @Test
+        void getProject_in_constructor_ok() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    CustomTask() {
+                        // Illegal method in task constructor (configuration phase) is OK
+                        Project project = getProject();
+                    }
+
+                    @TaskAction
+                    final void action() {
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        Project project = getProject();
+                    }
+                }
+            """);
+        }
     }
 
     /**
@@ -429,6 +453,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
+                        // TODO(okelvin): fix lambdas
                         project.getTasks().withType(Task.class, tsk -> tsk.doLast(
                             (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
@@ -455,8 +480,9 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                             });
                         });
 
+                        // TODO(okelvin): fix lambdas
                         project.getTasks().withType(Task.class, tsk -> tsk.doLast(
-                            (Action<Task>) task -> task.getLogger().info("I am a happy squirrel")));
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """);
