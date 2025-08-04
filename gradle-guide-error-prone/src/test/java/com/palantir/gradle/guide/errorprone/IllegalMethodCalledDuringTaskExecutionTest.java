@@ -307,7 +307,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_in_constructor_ok() {
+        void getProject_in_TaskAction_doesnt_cause_other_getProjects_to_be_flagged() {
             test(
                     """
                 import org.gradle.api.DefaultTask;
@@ -316,14 +316,17 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 import org.gradle.api.tasks.TaskAction;
 
                 abstract class CustomTask extends DefaultTask {
+                    // getProject() in field is OK
+                    private final Project project = getProject();
+
                     CustomTask() {
-                        // getProject() in task constructor is OK,
-                        // even when getProject() is illegally called elsewhere.
+                        // getProject() in task constructor is OK
                         Project project = getProject();
                     }
 
                     @TaskAction
                     final void action() {
+                        // ... even if getProject()
                         @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
                         Project project = getProject();
                     }
