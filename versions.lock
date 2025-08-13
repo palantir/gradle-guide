@@ -21,7 +21,7 @@ javax.inject:javax.inject:1 (1 constraints: 201230d1)
 net.ltgt.gradle:gradle-errorprone-plugin:4.3.0 (2 constraints: 0322b579)
 one.util:streamex:0.8.4 (1 constraints: 0e050736)
 org.checkerframework:checker-qual:3.49.5 (4 constraints: 56321d0f)
-org.immutables:value:2.11.2 (1 constraints: 3805343b)
+org.immutables:value:2.11.3 (1 constraints: 3905353b)
 org.jspecify:jspecify:1.0.0 (3 constraints: 4431fdfd)
 org.ow2.asm:asm:9.7.1 (2 constraints: 0f27a36e)
 
