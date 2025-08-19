@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description:
+    Implement the `CallGraphBugChecker` to catch errorprone violations in helper methods
+  links:
+  - https://github.com/palantir/gradle-guide/pull/173

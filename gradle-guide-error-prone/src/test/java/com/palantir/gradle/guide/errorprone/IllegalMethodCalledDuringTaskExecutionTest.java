@@ -55,7 +55,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_should_fix() {
+        void should_fix_getProject_getLogger() {
             test_fix(
                     "CustomTask.java",
                     """
@@ -85,7 +85,128 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
+        void fixes_whatever_it_can_and_warns_for_the_others() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        getProject();  // not fixable
+                        Logger logger = getProject().getLogger();  // fixable to getLogger()
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        getProject();
+                        Logger logger = getLogger();
+                    }
+                }
+                """);
+        }
+
+        @Test
+        void should_fix_transitive_calls_to_getLogger() {
+            test_fix(
+                    "CustomTask.java",
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    void helper() {
+                        Logger logger = getProject().getLogger();  // fixable to getLogger()
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    void helper() {
+                        Logger logger = getLogger();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void transitive_calls_to_getProject_should_fail() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectName = getProject().getName();
+
+                        helper();
+                    }
+
+                    void helper() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectPath = getProject().getPath();
+                    }
+                }
+            """);
+        }
+
+        @Test
         void getProject_outside_of_TaskAction_should_pass() {
+            test(
+                    """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                private String projectName;
+
+                public final void not_called_anywhere() {
+                    getProject();
+                }
+
+                @TaskAction
+                public final void action() {
+                    System.out.println("Project name: " + projectName);
+                }
+            }
+            """);
+        }
+
+        @Test
+        void getProject_in_constructors_should_pass() {
             test(
                     """
             import org.gradle.api.DefaultTask;
@@ -98,6 +219,11 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
                 CustomTask() {
                     projectName = getProject().getName();
+                    called_in_constructor();
+                }
+
+                public final void called_in_constructor() {
+                    getProject();
                 }
 
                 @TaskAction
@@ -105,6 +231,106 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     System.out.println("Project name: " + projectName);
                 }
             }
+            """);
+        }
+
+        @Test
+        void getProject_in_shared_helper_should_fail() {
+            test(
+                    """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                private String projectName;
+
+                CustomTask() {
+                    getProjectName();
+                }
+
+                public final String getProjectName() {
+                    // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                    return getProject().getName();
+                }
+
+                @TaskAction
+                public final void action() {
+                    System.out.println("Project name: " + getProjectName());
+                }
+            }
+            """);
+        }
+
+        @Test
+        void suppressed_calls_to_getProject_should_pass() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        String projectName = getProject().getName();
+
+                        suppressed_statement();
+                        suppressed_method();
+                        no_oversuppression();
+                    }
+
+                    void suppressed_statement() {
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        String projectPath = getProject().getPath();
+                    }
+
+                    @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                    void suppressed_method() {
+                        String projectPath = getProject().getPath();
+                    }
+
+                    @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                    void no_oversuppression() {
+                        helper();
+                    }
+
+                    void helper() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
+                        String projectPath = getProject().getPath();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void getProject_in_TaskAction_doesnt_cause_other_getProjects_to_be_flagged() {
+            test(
+                    """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class CustomTask extends DefaultTask {
+                    // getProject() in field is OK
+                    private final Project project = getProject();
+
+                    CustomTask() {
+                        // getProject() in task constructor is OK
+                        Project project = getProject();
+                    }
+
+                    @TaskAction
+                    final void action() {
+                        // ... even if getProject()
+                        @SuppressWarnings("IllegalMethodCalledDuringTaskExecution")
+                        Project project = getProject();
+                    }
+                }
             """);
         }
     }
@@ -116,7 +342,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
     @Nested
     class Actions {
         @Test
-        void getProject_within_Action_of_Task_should_fail() {
+        void transitive_calls_to_getProject_should_fail() {
             test(
                     """
             import org.gradle.api.Action;
@@ -133,7 +359,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void action_of_Task_should_pass() {
+        void action_without_calls_to_getProject_should_pass() {
             test(
                     """
             import org.gradle.api.Action;
@@ -156,7 +382,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_within_Action_of_non_task_should_pass() {
+        void dont_fail_actions_of_nontask() {
             test(
                     """
             import org.gradle.api.Action;
@@ -175,7 +401,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         }
 
         @Test
-        void getProject_getLogger_should_fix() {
+        void should_fix_getProject_getLogger() {
             test_fix(
                     "CustomTaskAction.java",
                     """
@@ -187,7 +413,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                 abstract class CustomTaskAction implements Action<Task> {
                     @Override
                     public void execute(Task task) {
-                        Logger logger = task.getProject().getLogger();
+                        Logger logger = task.getProject().getLogger();  // fixable to getLogger()
                     }
                 }
             """,
@@ -201,6 +427,66 @@ class IllegalMethodCalledDuringTaskExecutionTest {
                     @Override
                     public void execute(Task task) {
                         Logger logger = task.getLogger();
+                    }
+                }
+            """);
+        }
+
+        @Test
+        void should_fix_getProject_getLogger_within_doFirst_doLast_blocks() {
+            test_fix(
+                    "MyPlugin.java",
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Project;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        // Should fix anonymous class Action<Task>
+                        project.getTasks().withType(Task.class, tsk -> {
+                            tsk.doFirst(new Action<Task>() {
+                                @Override
+                                public void execute(Task task) {
+                                    task.getProject().getLogger().info("I am a happy squirrel");
+                                }
+                            });
+                        });
+
+                        // TODO(okelvin): fix lambdas
+                        project.getTasks().withType(Task.class, tsk -> tsk.doLast(
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
+                    }
+                }
+            """,
+                    """
+                import org.gradle.api.Action;
+                import org.gradle.api.Project;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
+
+                class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        // Should fix anonymous class Action<Task>
+                        project.getTasks().withType(Task.class, tsk -> {
+                            tsk.doFirst(new Action<Task>() {
+                                @Override
+                                public void execute(Task task) {
+                                    task.getLogger().info("I am a happy squirrel");
+                                }
+                            });
+                        });
+
+                        // TODO(okelvin): fix lambdas
+                        project.getTasks().withType(Task.class, tsk -> tsk.doLast(
+                            (Action<Task>) task -> task.getProject().getLogger().info("I am a happy squirrel")));
                     }
                 }
             """);
