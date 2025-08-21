@@ -45,6 +45,28 @@ class NonAbstractGradleTypeTest {
         }
 
         @Test
+        void non_abstract_task_subtype_should_autofix() {
+            test_fix(
+                    "Test",
+                    """
+                    import org.gradle.api.DefaultTask;
+
+                    class Foo {
+                        abstract class Parent extends DefaultTask {}
+                        class Child extends Parent {}
+                    }
+                    """,
+                    """
+                    import org.gradle.api.DefaultTask;
+
+                    class Foo {
+                        abstract class Parent extends DefaultTask {}
+                        abstract class Child extends Parent {}
+                    }
+                    """);
+        }
+
+        @Test
         void abstract_task_is_fine() {
             test(
                     """

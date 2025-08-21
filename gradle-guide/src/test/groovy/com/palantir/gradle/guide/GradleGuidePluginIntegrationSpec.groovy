@@ -29,9 +29,9 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                     mavenCentral()
                     mavenLocal()
                 }
-
+                
                 apply plugin: 'java'
-
+             
                 pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
                     suppressibleErrorProne {
                        // Our test source files are placed under `build/nebulatest`, which is ignored by default
