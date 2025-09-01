@@ -98,5 +98,21 @@ When defining a custom Task or Extension, you should make it an abstract class w
 
 </td>
 </tr>
+
+<tr>
+<td>
+
+<a id="UseGradleExecInsteadOfProviderFactoryExec" href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">`UseGradleExecInsteadOfProviderFactoryExec`</a>
+
+</td>
+<td>
+<a href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">Please read</a>
+</td>
+<td>
+
+Use GradleExec.exec() instead of ProviderFactory.exec(). GradleExec provides configuration cache compatibility, eliminates manual provider zipping, and captures execution context for clear error messages instead of Gradle internal stack traces. It returns a single FallibleProvider combining stdout, stderr, and exit code.
+
+</td>
+</tr>
 </tbody>
 </table>
