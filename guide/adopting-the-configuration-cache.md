@@ -183,8 +183,8 @@ abstract class MyPlugin implements Plugin<Project> {
 
 #### After
 
-- To safely do an external call during the configuration phase, we can use the `ProviderFactory` service.
-- To use `ProviderFactory`, we can inject it into `MyPlugin`. 
+- To safely do an external call during the configuration phase, we can use the  [`GradleExec`](https://github.com/palantir/gradle-utils?tab=readme-ov-file#gradleexec) service.
+- To use `GradleExec`, we can inject it into `MyPlugin`. 
 
 > [!NOTE]
 > To inject a service, make a protected/public abstract getter method returning that service. It has to be prefixed with `get-` for Gradle's injection to work properly!.
@@ -195,14 +195,13 @@ abstract class MyPlugin implements Plugin<Project> {
 
 ```java
 abstract class MyPlugin implements Plugin<Project> {
-   @Inject
-   protected abstract ProviderFactory getProviderFactory();
+   @Nested
+   protected abstract GradleExec getGradleExec();
 
-   private Provider<String> latestTag = getProviderFactory()
+    Provider<String> latestTag = gradleExec
             .exec(execSpec -> execSpec.setCommandLine("git", "describe", "--tags", "--abbrev=0"))
-            .getStandardOutput()
-            .getAsText()
-            .map(String::trim); 
+            .map(GradleExecResult::stdOut)
+            .map(String::trim);
 
    @Override
    public final void apply(Project project) {
@@ -215,7 +214,7 @@ abstract class MyPlugin implements Plugin<Project> {
 ```
 
 > [!TIP]
->  If you call `ProviderFactory#exec` multiple times in your code, the external process `git describe` will run each time.
+>  If you call `GradleExec#exec` multiple times in your code, the external process `git describe` will run each time.
 > 
 > Instead, store the `Provider` in a field as shown above. With this approach, the `Provider` caches the result, and git describe runs only once, even if `latestTag.get()` is called multiple times.
 
