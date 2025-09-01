@@ -43,11 +43,11 @@ public final class UseGradleExecInsteadOfProviderFactoryExec extends GradleGuide
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        if (!PROVIDER_FACTORY_EXEC.matches(tree, state)) {
-            return Description.NO_MATCH;
+        if (PROVIDER_FACTORY_EXEC.matches(tree, state)) {
+            return buildDescription(tree).build();
         }
 
-        return buildDescription(tree).build();
+        return Description.NO_MATCH;
     }
 
     @Override
