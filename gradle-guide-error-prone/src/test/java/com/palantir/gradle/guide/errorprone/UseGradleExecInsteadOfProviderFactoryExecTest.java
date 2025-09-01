@@ -38,7 +38,7 @@ class UseGradleExecInsteadOfProviderFactoryExecTest {
                     abstract ProviderFactory getProviderFactory();
 
                     void doSomething() {
-                        // BUG: Diagnostic contains: Use GradleExec.e xec() instead
+                        // BUG: Diagnostic contains: Use GradleExec.exec() instead
                         getProviderFactory().exec(spec -> {
                             spec.commandLine("echo", "hello");
                         });
