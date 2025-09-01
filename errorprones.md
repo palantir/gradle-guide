@@ -102,11 +102,11 @@ When defining a custom Task or Extension, you should make it an abstract class w
 <tr>
 <td>
 
-<a id="UseGradleExecInsteadOfProviderFactoryExec" href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">`UseGradleExecInsteadOfProviderFactoryExec`</a>
+<a id="UseGradleExecInsteadOfProviderFactoryExec" href="guide/adopting-the-configuration-cache.md">`UseGradleExecInsteadOfProviderFactoryExec`</a>
 
 </td>
 <td>
-<a href="guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems">Please read</a>
+<a href="guide/adopting-the-configuration-cache.md">Please read</a>
 </td>
 <td>
 

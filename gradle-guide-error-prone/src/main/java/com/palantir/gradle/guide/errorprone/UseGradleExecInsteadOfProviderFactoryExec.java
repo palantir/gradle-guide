@@ -52,6 +52,6 @@ public final class UseGradleExecInsteadOfProviderFactoryExec extends GradleGuide
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return new MoreInfoHeadingLink("adopting-the-configuration-cache.md", "Solving Configuration Cache problems");
+        return new MoreInfoPageLink("adopting-the-configuration-cache.md");
     }
 }
