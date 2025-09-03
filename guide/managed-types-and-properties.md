@@ -79,6 +79,9 @@ public abstract class SomeTask extends DefaultTask {
 } 
 ```
 
+> [!NOTE]
+> This repository ships with the [NonAbstractGradleType](https://github.com/palantir/gradle-guide/blob/develop/gradle-guide-error-prone/src/main/java/com/palantir/gradle/guide/errorprone/NonAbstractGradleType.java) errorprone, which automatically fixes your Gradle tasks to be abstract.
+
 <!-- PreviousNext:START -->
 <hr>
 <table><tr>
