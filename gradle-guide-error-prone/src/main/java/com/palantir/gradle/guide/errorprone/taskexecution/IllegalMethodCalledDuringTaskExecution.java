@@ -21,14 +21,15 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
-import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
+import com.palantir.gradle.guide.errorprone.taskexecution.violations.GetProject;
+import com.palantir.gradle.guide.errorprone.taskexecution.violations.GetProjectGetLogger;
+import com.palantir.gradle.guide.errorprone.taskexecution.violations.Violation;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -55,8 +56,6 @@ import one.util.streamex.StreamEx;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
-    // Only the first matching violation is applied. Put more specific violations first.
-    private final List<Violation> violations = List.of(new GetProjectGetLogger(), new GetProject());
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
@@ -95,64 +94,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         return Description.NO_MATCH;
     }
 
-    /**
-     * Represents strategies to report or auto-fix illegal methods and methods chained to it.
-     */
-    interface Violation {
-        /** If we encounter {@code illegalCall}. */
-        boolean matches(MethodInvocationTree illegalCall, VisitorState state);
-
-        /** Then, suggest fixes or a warning. */
-        void fixOrReport(MethodInvocationTree illegalCall, VisitorState state);
-    }
-
-    protected class GetProject implements Violation {
-        /** Matches {@code task.getProject()}. */
-        @Override
-        public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
-            return Tasks.isGetProject(illegalCall, state);
-        }
-
-        @Override
-        public final void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
-            state.reportMatch(buildDescription(illegalCall)
-                    .setMessage("Don't call `getProject()` in task actions")
-                    .build());
-        }
-    }
-
-    protected class GetProjectGetLogger implements Violation {
-        /** Matches {@code task.getProject().getLogger()}. */
-        @Override
-        public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
-
-            Optional<ExpressionTree> receiverMaybe = Optional.ofNullable(ASTHelpers.getReceiver(illegalCall));
-            boolean receiverIsMethodCall = receiverMaybe
-                    .map(receiver -> receiver instanceof MethodInvocationTree)
-                    .orElse(false);
-            if (receiverIsMethodCall) {
-                MethodInvocationTree receiverCall = (MethodInvocationTree) receiverMaybe.get();
-                return Tasks.isGetProject(receiverCall, state) && Tasks.isGetLogger(illegalCall, state);
-            }
-
-            return false;
-        }
-
-        /** Fixes {@code task.getProject().getLogger() to task.getLogger()}. */
-        @Override
-        public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
-            MethodInvocationTree getProject = (MethodInvocationTree) ASTHelpers.getReceiver(illegalCall);
-            Optional<String> receiverSource =
-                    Optional.ofNullable(ASTHelpers.getReceiver(getProject)).map(state::getSourceForNode);
-            String simplifiedCall =
-                    receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
-
-            state.reportMatch(buildDescription(illegalCall)
-                    .addFix(SuggestedFix.replace(illegalCall, simplifiedCall))
-                    .setMessage("Instead of `getProject().getLogger()`, just do `getLogger()`")
-                    .build());
-        }
-    }
+    // Only the first matching violation is applied. Put more specific violations first.
+    private final List<Violation> violations = List.of(new GetProjectGetLogger(this), new GetProject(this));
 
     @Override
     public MoreInfoLink moreInfoLink() {
