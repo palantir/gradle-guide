@@ -56,6 +56,8 @@ import one.util.streamex.StreamEx;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
+    // Only the first matching violation is applied. Put more specific violations first.
+    private final List<Violation> violations = List.of(new GetProjectGetLogger(), new GetProject());
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
@@ -88,14 +90,11 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     return Tasks.isTaskAction(callerTree, state) || Tasks.overridesExecute(callerTree, state);
                 });
         if (isInvokedAtTaskExecution) {
-            firstMatchingViolation.get().fixOrReport(tree, state);
+            firstMatchingViolation.get().fixOrReport(tree, state, this);
         }
 
         return Description.NO_MATCH;
     }
-
-    // Only the first matching violation is applied. Put more specific violations first.
-    private final List<Violation> violations = List.of(new GetProjectGetLogger(this), new GetProject(this));
 
     @Override
     public MoreInfoLink moreInfoLink() {

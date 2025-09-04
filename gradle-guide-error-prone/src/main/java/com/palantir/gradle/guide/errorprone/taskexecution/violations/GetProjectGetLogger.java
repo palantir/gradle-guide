@@ -17,21 +17,15 @@
 package com.palantir.gradle.guide.errorprone.taskexecution.violations;
 
 import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.util.ASTHelpers;
-import com.palantir.gradle.guide.errorprone.taskexecution.IllegalMethodCalledDuringTaskExecution;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import java.util.Optional;
 
 public final class GetProjectGetLogger implements Violation {
-    private final IllegalMethodCalledDuringTaskExecution illegalMethodCalledDuringTaskExecution;
-
-    public GetProjectGetLogger(IllegalMethodCalledDuringTaskExecution illegalMethodCalledDuringTaskExecution) {
-        this.illegalMethodCalledDuringTaskExecution = illegalMethodCalledDuringTaskExecution;
-    }
-
     /** Matches {@code task.getProject().getLogger()}. */
     @Override
     public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
@@ -51,13 +45,13 @@ public final class GetProjectGetLogger implements Violation {
 
     /** Fixes {@code task.getProject().getLogger() to task.getLogger()}. */
     @Override
-    public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
+    public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugchecker) {
         MethodInvocationTree getProject = (MethodInvocationTree) ASTHelpers.getReceiver(illegalCall);
         Optional<String> receiverSource =
                 Optional.ofNullable(ASTHelpers.getReceiver(getProject)).map(state::getSourceForNode);
         String simplifiedCall = receiverSource.map(receiver -> receiver + ".").orElse("") + "getLogger()";
 
-        state.reportMatch(illegalMethodCalledDuringTaskExecution
+        state.reportMatch(bugchecker
                 .buildDescription(illegalCall)
                 .addFix(SuggestedFix.replace(illegalCall, simplifiedCall))
                 .setMessage("Instead of `getProject().getLogger()`, just do `getLogger()`")

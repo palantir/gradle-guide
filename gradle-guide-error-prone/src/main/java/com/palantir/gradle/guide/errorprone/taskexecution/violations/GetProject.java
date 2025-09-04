@@ -17,16 +17,11 @@
 package com.palantir.gradle.guide.errorprone.taskexecution.violations;
 
 import com.google.errorprone.VisitorState;
-import com.palantir.gradle.guide.errorprone.taskexecution.IllegalMethodCalledDuringTaskExecution;
+import com.google.errorprone.bugpatterns.BugChecker;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.MethodInvocationTree;
 
 public final class GetProject implements Violation {
-    private final IllegalMethodCalledDuringTaskExecution illegalMethodCalledDuringTaskExecution;
-
-    public GetProject(IllegalMethodCalledDuringTaskExecution illegalMethodCalledDuringTaskExecution) {
-        this.illegalMethodCalledDuringTaskExecution = illegalMethodCalledDuringTaskExecution;
-    }
 
     /** Matches {@code task.getProject()}. */
     @Override
@@ -35,8 +30,8 @@ public final class GetProject implements Violation {
     }
 
     @Override
-    public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state) {
-        state.reportMatch(illegalMethodCalledDuringTaskExecution
+    public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugchecker) {
+        state.reportMatch(bugchecker
                 .buildDescription(illegalCall)
                 .setMessage("Don't call `getProject()` in task actions")
                 .build());

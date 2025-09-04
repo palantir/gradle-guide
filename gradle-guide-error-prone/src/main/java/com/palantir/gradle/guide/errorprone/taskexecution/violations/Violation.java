@@ -17,6 +17,7 @@
 package com.palantir.gradle.guide.errorprone.taskexecution.violations;
 
 import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
 import com.sun.source.tree.MethodInvocationTree;
 
 /**
@@ -27,5 +28,5 @@ public sealed interface Violation permits GetProject, GetProjectGetLogger {
     boolean matches(MethodInvocationTree illegalCall, VisitorState state);
 
     /** Then, suggest fixes or a warning. */
-    void fixOrReport(MethodInvocationTree illegalCall, VisitorState state);
+    void fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugchecker);
 }
