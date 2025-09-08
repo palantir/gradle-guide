@@ -21,7 +21,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.MethodInvocationTree;
 
-public final class GetProject implements Violation {
+public final class GetProject implements TaskExecutionViolation {
 
     /** Matches {@code task.getProject()}. */
     @Override

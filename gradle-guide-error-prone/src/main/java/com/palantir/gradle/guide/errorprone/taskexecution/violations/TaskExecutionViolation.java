@@ -23,7 +23,7 @@ import com.sun.source.tree.MethodInvocationTree;
 /**
  * Represents strategies to report or auto-fix illegal methods and methods chained to it.
  */
-public sealed interface Violation permits GetProject, GetProjectGetLogger {
+public interface TaskExecutionViolation {
     /** If we encounter {@code illegalCall}. */
     boolean matches(MethodInvocationTree illegalCall, VisitorState state);
 

@@ -25,7 +25,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import java.util.Optional;
 
-public final class GetProjectGetLogger implements Violation {
+public final class GetProjectGetLogger implements TaskExecutionViolation {
     /** Matches {@code task.getProject().getLogger()}. */
     @Override
     public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
