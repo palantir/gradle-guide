@@ -49,7 +49,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     private static final MethodCall getLogger = new MethodCall("org.gradle.api.Project", "getLogger");
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT =
-            TaskExecutionViolation.warn(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
+            TaskExecutionViolation.report(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
             ChainedCall.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",

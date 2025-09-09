@@ -42,7 +42,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
         return new TaskExecutionViolation(violation, message, Optional.of(fix));
     }
 
-    public static TaskExecutionViolation warn(ChainedCall violation, String message) {
+    public static TaskExecutionViolation report(ChainedCall violation, String message) {
         return new TaskExecutionViolation(violation, message, Optional.empty());
     }
 
