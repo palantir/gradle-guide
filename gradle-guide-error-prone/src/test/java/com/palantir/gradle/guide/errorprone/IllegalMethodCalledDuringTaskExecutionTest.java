@@ -57,7 +57,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
         @Test
         void should_fix_getProject_getLogger() {
-            test_fix(
+            testFix(
                     "CustomTask.java",
                     """
                 import org.gradle.api.DefaultTask;
@@ -87,7 +87,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
         @Test
         void fixes_whatever_it_can_and_warns_for_the_others() {
-            test_fix(
+            testFix(
                     "CustomTask.java",
                     """
                 import org.gradle.api.DefaultTask;
@@ -120,7 +120,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
         @Test
         void should_fix_transitive_calls_to_getLogger() {
-            test_fix(
+            testFix(
                     "CustomTask.java",
                     """
                 import org.gradle.api.DefaultTask;
@@ -403,7 +403,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
         @Test
         void should_fix_getProject_getLogger() {
-            test_fix(
+            testFix(
                     "CustomTaskAction.java",
                     """
                 import org.gradle.api.Action;
@@ -435,7 +435,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
 
         @Test
         void should_fix_getProject_getLogger_within_doFirst_doLast_blocks() {
-            test_fix(
+            testFix(
                     "MyPlugin.java",
                     """
                 import org.gradle.api.Action;
@@ -498,7 +498,7 @@ class IllegalMethodCalledDuringTaskExecutionTest {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
     }
 
-    private void test_fix(String filename, @Language("Java") String before, @Language("Java") String after) {
+    private void testFix(String filename, @Language("Java") String before, @Language("Java") String after) {
         RefactoringValidator.of(IllegalMethodCalledDuringTaskExecution.class, getClass())
                 .addInputLines(filename, before)
                 .addOutputLines(filename, after)
