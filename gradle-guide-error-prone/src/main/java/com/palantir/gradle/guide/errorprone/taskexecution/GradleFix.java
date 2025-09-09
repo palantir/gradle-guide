@@ -61,7 +61,7 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
 
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
-        // Replace the illegal call, making sure to preserve any receivers
+        // Replace the illegal call, taking care to preserve any receivers
         MethodInvocationTree innermost = context.illegalCallToReplace;
         for (int i = 0; i < context.violatingChainLength - 1; ++i) {
             innermost = (MethodInvocationTree) ASTHelpers.getReceiver(innermost);
