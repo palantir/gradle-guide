@@ -49,7 +49,7 @@ import one.util.streamex.StreamEx;
         Doing so improves performance in two ways:
         1. It makes your tasks compatible with the configuration cache
         2. It increases task parallelism. When two tasks, such as printProjectName and printProjectVersion, both
-        require the same Project object as input, they cannot run in parallel due to prevent concurrent access.
+        require the same Project object as input, they cannot run in parallel to prevent concurrent access.
         However, if their inputs are changed to Provider<String> name and Provider<String> version respectively,
         the tasks become independent and can execute in parallel.
         """)
