@@ -22,10 +22,9 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.utils.GradleManagedTypes;
+import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.VariableTree;
@@ -39,8 +38,6 @@ import java.util.stream.StreamSupport;
 @BugPattern(severity = SeverityLevel.ERROR, summary = GradleTypesAsFields.SUMMARY)
 public final class GradleTypesAsFields extends GradleGuideBugChecker
         implements BugChecker.VariableTreeMatcher, ExtensionClassMatcher {
-    private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-
     public static final String SUMMARY =
             "Do not declare Properties, FileCollections and other Gradle managed types as fields directly on Tasks or "
                     + "Extensions. Instead, declare an abstract getter method, e.g., 'public abstract Property<String> "
@@ -53,7 +50,7 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (!IS_TASK.matches(enclosingClass, state)) {
+        if (!Tasks.TASK.matches(enclosingClass, state)) {
             return Description.NO_MATCH;
         }
 

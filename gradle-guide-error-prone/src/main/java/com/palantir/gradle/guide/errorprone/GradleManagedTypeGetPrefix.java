@@ -22,10 +22,9 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.utils.GradleManagedTypes;
+import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -40,7 +39,6 @@ import javax.lang.model.element.Modifier;
 @BugPattern(severity = SeverityLevel.ERROR, summary = GradleManagedTypeGetPrefix.SUMMARY)
 public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
         implements BugChecker.MethodTreeMatcher, ExtensionClassMatcher {
-    private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
 
     public static final String SUMMARY =
             "Abstract methods in Tasks or Extensions that return Gradle managed types should start with 'get'. "
@@ -57,7 +55,7 @@ public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (!IS_TASK.matches(enclosingClass, state)) {
+        if (!Tasks.TASK.matches(enclosingClass, state)) {
             return Description.NO_MATCH;
         }
 
