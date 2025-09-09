@@ -59,7 +59,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
     public boolean fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugChecker) {
         boolean callMatchesViolation = violation.matches(illegalCall, state);
         if (!callMatchesViolation) {
-            return false; // prune most true negatives
+            return false; // Prune most true negatives
         }
 
         // Now, we have to prune cases where illegalCall matches the violating chained call,
@@ -70,7 +70,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
 
         Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
         if (enclosingMethodMaybe.isEmpty()) {
-            return false;
+            return false; // We can't do anything here
         }
         MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
 
@@ -94,7 +94,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
 
         Optional<TaskOrAction> taskOrActionMaybe = Tasks.findFirstEnclosingTaskOrAction(state.getPath(), state);
         if (taskOrActionMaybe.isEmpty()) {
-            return false; // Prune calls done outside of task execution
+            return false; // We can't do anything here
         }
 
         TaskOrAction taskOrAction = taskOrActionMaybe.get();
