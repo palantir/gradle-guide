@@ -16,7 +16,6 @@
 
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
-
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
@@ -63,8 +62,9 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
             return false; // prune most true negatives
         }
 
-        // Now, we only have to care about calls which match this, but are done outside of execution time
-        // Do this with the (quite expensive) method illegalCall graph
+        // Now, we have to prune cases where illegalCall matches the violating chained call,
+        // but are done outside of execution time.
+        // There will only be a few such cases. So, we now use the (quite expensive) method call graph.
         CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
         MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
 
@@ -87,13 +87,14 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
                     return Tasks.isTaskAction(callerTree, state) || Tasks.overridesExecute(callerTree, state);
                 });
         if (!isInvokedAtTaskExecution) {
-            return false; // We're not sure whether `illegalCall` is done during task execution. So let's be
-            // conservative.
+            // We're not sure whether `illegalCall` is done during task execution.
+            // So let's be conservative.
+            return false;
         }
 
         Optional<TaskOrAction> taskOrActionMaybe = Tasks.findFirstEnclosingTaskOrAction(state.getPath(), state);
         if (taskOrActionMaybe.isEmpty()) {
-            return false; // We only care about Task or Action<Task>
+            return false; // Prune calls done outside of task execution
         }
 
         TaskOrAction taskOrAction = taskOrActionMaybe.get();
@@ -103,7 +104,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
         GradleFixContext context = new GradleFixContext(illegalCall, violation.chainLength(), taskOrAction);
         switch (taskOrAction.type()) {
             case ACTION:
-                // We can't inject stuff into `Action<Task>`s, as they must be concrete
+                // We can't inject stuff into `Action<Task>`s, as `Action`s can't be made abstract
                 boolean canFix = fix.map(gradleFix -> !gradleFix.requiresServiceInjection())
                         .orElse(false);
                 if (canFix) {
