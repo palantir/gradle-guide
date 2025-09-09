@@ -47,10 +47,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         implements BugChecker.MethodInvocationTreeMatcher {
     private static final MethodCall getProject = new MethodCall("org.gradle.api.Task", "getProject");
     private static final MethodCall getLogger = new MethodCall("org.gradle.api.Project", "getLogger");
-    private static final MethodCall getProjectDir = new MethodCall("org.gradle.api.Project", "getProjectDir");
-
-    private static final GradleService projectLayout =
-            new GradleService("org.gradle.api.file.ProjectLayout", "getProjectLayout");
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT =
             TaskExecutionViolation.warn(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
