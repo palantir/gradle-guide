@@ -23,15 +23,14 @@ import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Type;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -42,12 +41,41 @@ import java.util.Optional;
         """)
 public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
 
+    private static final Set<String> KNOWN_LIFECYCLE_TASKS = Set.of(
+            // Core bundling tasks
+            "org.gradle.api.tasks.bundling.Jar",
+            "org.gradle.api.tasks.bundling.War",
+            "org.gradle.api.tasks.bundling.Zip",
+            "org.gradle.api.tasks.bundling.Tar",
+
+            // Testing
+            "org.gradle.api.tasks.testing.Test",
+
+            // Compilation
+            "org.gradle.api.tasks.compile.JavaCompile",
+
+            // Documentation
+            "org.gradle.api.tasks.javadoc.Javadoc",
+
+            // Application
+            "org.gradle.api.tasks.JavaExec",
+            "org.gradle.api.tasks.application.CreateStartScripts",
+
+            // Quality
+            "org.gradle.api.plugins.quality.Checkstyle",
+            "com.github.spotbugs.snom.SpotBugsTask",
+
+            // Publishing
+            "org.gradle.api.publish.maven.tasks.PublishToMavenRepository",
+            "org.gradle.api.publish.maven.tasks.PublishToMavenLocal",
+            "org.gradle.api.publish.maven.tasks.GenerateMavenPom",
+
+            // Cleanup
+            "org.gradle.api.tasks.Delete");
+
     private static final Matcher<ExpressionTree> TASK_DEPENDS_ON = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Task")
             .named("dependsOn");
-
-    private static final Matcher<Tree> TASK_PROVIDER_SUBTYPE =
-            Matchers.isSubtypeOf("org.gradle.api.tasks.TaskProvider");
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
@@ -61,7 +89,7 @@ public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.M
         }
         ExpressionTree receiver = receiverMaybe.get();
 
-        if (!isCustomTask(receiver, state)) {
+        if (isKnownLifecycleTask(receiver, state)) {
             return Description.NO_MATCH;
         }
 
@@ -71,18 +99,31 @@ public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.M
                 .build();
     }
 
-    /**
-     * @param arg Any expression you can pass to {@code Task::dependsOn} — <a href="https://docs.gradle.org/current/javadoc/org/gradle/api/Task.html#dependencies">list in docs</a>
-     */
-    private static boolean isCustomTask(ExpressionTree arg, VisitorState state) {
-        Type taskType =
-                TASK_PROVIDER_SUBTYPE.matches(arg, state) ? extractTaskType(arg, state) : ASTHelpers.getType(arg);
-        Type genericTaskType = state.getTypeFromString("org.gradle.api.Task");
-        return ASTHelpers.isSubtype(taskType, genericTaskType, state)
-                && !ASTHelpers.isSameType(taskType, genericTaskType, state);
+    private static boolean isKnownLifecycleTask(ExpressionTree task, VisitorState state) {
+        Type taskType = ASTHelpers.getType(task);
+
+        // We assume people don't write custom types for lifecycle tasks
+        if (!isCustomTask(taskType, state)) {
+            return true;
+        }
+
+        for (String lifecycleType : KNOWN_LIFECYCLE_TASKS) {
+            Type knownType = state.getTypeFromString(lifecycleType);
+            if (ASTHelpers.isSameType(taskType, knownType, state)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private static Type extractTaskType(ExpressionTree taskProvider, VisitorState state) {
+    private static boolean isCustomTask(Type task, VisitorState state) {
+        Type genericTaskType = state.getTypeFromString("org.gradle.api.Task");
+        return ASTHelpers.isSubtype(task, genericTaskType, state)
+                && !ASTHelpers.isSameType(task, genericTaskType, state);
+    }
+
+    private static Type extractTaskType(ExpressionTree taskProvider) {
         Type taskProviderType = ASTHelpers.getType(taskProvider);
         Type.ClassType classType = (Type.ClassType) taskProviderType;
         List<Type> typeArgs = classType.getTypeArguments();

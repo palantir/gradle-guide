@@ -24,35 +24,33 @@ class TaskDependsOnTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(TaskDependsOn.class, getClass());
 
+    // language=Java
+    private final String TEST_SETUP =
+            """
+            import java.io.File;
+            import org.gradle.api.*;
+            import org.gradle.api.file.*;
+            import org.gradle.api.provider.*;
+            import org.gradle.api.tasks.*;
+            import org.gradle.api.tasks.testing.*;
+            import org.gradle.api.tasks.bundling.*;
+
+            abstract class ProducingTask extends DefaultTask {
+                @OutputFile
+                public abstract RegularFileProperty getOutputFile();
+            }
+
+            abstract class ConsumingTask extends DefaultTask {
+                @InputFile
+                public abstract RegularFileProperty getInputFile();
+            }
+    """;
+
     @Test
-    void should_fix_getProject_getLogger() {
+    void dependsOn_subclass_of_task_should_fail() {
         test(
                 """
-            import java.io.File;
-            import org.gradle.api.Plugin;
-            import org.gradle.api.Project;
-            import org.gradle.api.DefaultTask;
-            import org.gradle.api.file.RegularFile;
-            import org.gradle.api.file.RegularFileProperty;
-            import org.gradle.api.provider.Provider;
-            import org.gradle.api.tasks.Input;
-            import org.gradle.api.tasks.InputFile;
-            import org.gradle.api.tasks.OutputFile;
-            import org.gradle.api.tasks.TaskAction;
-            import org.gradle.api.tasks.TaskProvider;
-
             abstract class MyPlugin implements Plugin<Project> {
-
-                abstract class ProducingTask extends DefaultTask {
-                    @OutputFile
-                    public abstract RegularFileProperty getOutputFile();
-                }
-
-                abstract class ConsumingTask extends DefaultTask {
-                    @InputFile
-                    public abstract RegularFileProperty getInputFile();
-                }
-
                 @Override
                 public final void apply(Project project) {
                     Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
@@ -67,12 +65,73 @@ class TaskDependsOnTest {
                         task.dependsOn(producingTask);
                     });
 
+                    consumingTask.configure(task -> {
+                        // BUG: Diagnostic contains: Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers
+                        task.dependsOn(producingTask);
+                    });
+                }
+            }
+        """);
+    }
+
+    @Test
+    void dependsOn_generic_task_should_pass() {
+        test(
+                """
+            abstract class MyPlugin implements Plugin<Project> {
+                @Override
+                public final void apply(Project project) {
+                    Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
+
+                    TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
+                        task.getOutputFile().set(sharedFile);
+                    });
+
+                    TaskProvider<?> lifecycleTask = project.getTasks().register("lifecycleTask");
+                    Task check = project.getTasks().getByName("check");
+                    project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
+                        task.getInputFile().set(sharedFile);
+
+                        // These are OK, because we assume that all lifecycle tasks to be non-custom, regular `Task`s
+                        lifecycleTask.configure(lifecycle -> lifecycle.dependsOn(task));
+                        check.dependsOn(check);
+                    });
+
+                    TaskProvider<Task> consumingTask = project.getTasks().named("consumingTask");
+                    consumingTask.configure(task -> {
+                        // Ideally we'd catch this case, but we don't know whether producingTask is actually a custom task or not, so be conservative
+                        task.dependsOn(producingTask);
+                    });
+                }
+            }
+        """);
+    }
+
+    @Test
+    void dependsOn_known_lifecycle_task_should_pass() {
+        test(
+                """
+            abstract class MyPlugin implements Plugin<Project> {
+                @Override
+                public final void apply(Project project) {
+                    Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
+
+                    TaskProvider<Jar> jarTask = project.getTasks().named("jar", Jar.class);
+                    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class);
+
+                    TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
+                        task.getOutputFile().set(sharedFile);
+                        // These are okay, as Jar and Test are lifecycle tasks
+                        jarTask.configure(jar -> jar.dependsOn(task));
+                        testTasks.configureEach(test -> test.dependsOn(task));
+                        project.getTasks().named("check").configure(check -> check.dependsOn(task));
+                    });
                 }
             }
         """);
     }
 
     private void test(@Language("Java") String source) {
-        compilationTestHelper.addSourceLines("Test.java", source).doTest();
+        compilationTestHelper.addSourceLines("Test.java", TEST_SETUP + source).doTest();
     }
 }
