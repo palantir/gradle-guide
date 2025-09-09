@@ -50,7 +50,7 @@ public final class GradleTypesAsFields extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (!Tasks.TASK.matches(enclosingClass, state)) {
+        if (!Tasks.isTask(enclosingClass, state)) {
             return Description.NO_MATCH;
         }
 

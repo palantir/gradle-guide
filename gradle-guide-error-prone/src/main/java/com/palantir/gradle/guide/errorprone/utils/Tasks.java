@@ -17,7 +17,6 @@
 package com.palantir.gradle.guide.errorprone.utils;
 
 import com.google.errorprone.VisitorState;
-import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
@@ -33,13 +32,23 @@ import java.util.List;
 import java.util.Optional;
 
 public class Tasks {
-    public static final Matcher<ClassTree> TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-    public static final Matcher<ExpressionTree> PROJECT_GET_LOGGER = MethodMatchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.Project")
-            .named("getLogger");
-    public static final Matcher<ExpressionTree> TASK_GET_PROJECT = MethodMatchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.Task")
-            .named("getProject");
+    public static boolean isTask(ClassTree tree, VisitorState state) {
+        return Matchers.isSubtypeOf("org.gradle.api.Task").matches(tree, state);
+    }
+
+    public static boolean isGetProject(ExpressionTree expr, VisitorState state) {
+        return MethodMatchers.instanceMethod()
+                .onDescendantOf("org.gradle.api.Task")
+                .named("getProject")
+                .matches(expr, state);
+    }
+
+    public static boolean isGetLogger(ExpressionTree expr, VisitorState state) {
+        return MethodMatchers.instanceMethod()
+                .onDescendantOf("org.gradle.api.Project")
+                .named("getLogger")
+                .matches(expr, state);
+    }
 
     // Optional.empty() in projects without gradle on the classpath
     // In that case, we should `return Description.NO_MATCH`

@@ -110,7 +110,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         /** Matches {@code task.getProject()}. */
         @Override
         public boolean matches(MethodInvocationTree illegalCall, VisitorState state) {
-            return Tasks.TASK_GET_PROJECT.matches(illegalCall, state);
+            return Tasks.isGetProject(illegalCall, state);
         }
 
         @Override
@@ -132,8 +132,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     .orElse(false);
             if (receiverIsMethodCall) {
                 MethodInvocationTree receiverCall = (MethodInvocationTree) receiverMaybe.get();
-                return Tasks.TASK_GET_PROJECT.matches(receiverCall, state)
-                        && Tasks.PROJECT_GET_LOGGER.matches(illegalCall, state);
+                return Tasks.isGetProject(receiverCall, state) && Tasks.isGetLogger(illegalCall, state);
             }
 
             return false;

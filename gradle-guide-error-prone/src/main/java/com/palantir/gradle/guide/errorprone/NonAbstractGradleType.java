@@ -55,7 +55,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (Tasks.TASK.matches(tree, state)) {
+        if (Tasks.isTask(tree, state)) {
             Description.Builder builder = buildDescription(tree).setMessage("Gradle Tasks should be abstract");
 
             Optional<SuggestedFix> fix = maybeTurnClassAbstract(tree, state);
