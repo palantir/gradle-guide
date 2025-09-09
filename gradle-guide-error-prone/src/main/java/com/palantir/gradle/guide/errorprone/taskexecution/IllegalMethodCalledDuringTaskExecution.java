@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone;
+package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
@@ -28,6 +28,7 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
