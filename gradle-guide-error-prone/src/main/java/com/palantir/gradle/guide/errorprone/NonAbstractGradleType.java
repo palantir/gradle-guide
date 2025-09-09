@@ -83,7 +83,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
         return (type.tsym.flags() & Flags.ABSTRACT) != 0;
     }
 
-    private static Optional<SuggestedFix> maybeTurnClassAbstract(ClassTree tree, VisitorState state) {
+    public static Optional<SuggestedFix> maybeTurnClassAbstract(ClassTree tree, VisitorState state) {
         return SuggestedFixes.addModifiers(tree, state, Modifier.ABSTRACT);
     }
 

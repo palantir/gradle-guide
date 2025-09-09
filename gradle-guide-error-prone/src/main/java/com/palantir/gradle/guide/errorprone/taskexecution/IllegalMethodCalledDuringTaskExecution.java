@@ -22,19 +22,10 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
-import com.palantir.gradle.guide.errorprone.taskexecution.violations.TaskExecutionViolation;
-import com.palantir.gradle.guide.errorprone.taskexecution.violations.TaskExecutionViolationMatcher;
-import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
-import com.palantir.gradle.guide.errorprone.utils.Tasks;
-import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import java.util.Optional;
-import java.util.Set;
-import one.util.streamex.StreamEx;
+import java.util.List;
+import java.util.stream.Stream;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -54,37 +45,35 @@ import one.util.streamex.StreamEx;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
+    private static final MethodCall getProject = new MethodCall("org.gradle.api.Task", "getProject");
+    private static final MethodCall getLogger = new MethodCall("org.gradle.api.Project", "getLogger");
+    private static final MethodCall getProjectDir = new MethodCall("org.gradle.api.Project", "getProjectDir");
+
+    private static final GradleService projectLayout = new GradleService("org.gradle.api.file.ProjectLayout", "getProjectLayout");
+
+    private static final TaskExecutionViolation REPORT_GET_PROJECT =
+            TaskExecutionViolation.warn(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
+            ChainedCall.of(getProject, getLogger),
+            "Instead of `getProject().getLogger()`, just do `getLogger()`",
+            GradleFix.of("getLogger()"));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
+            ChainedCall.of(getProject, getProjectDir),
+            "Instead of `getProject().getProjectDir()`, just do `getProjectLayout().getProjectDirectory().getAsFile()`",
+            GradleFix.of(projectLayout, "getProjectLayout().getProjectDirectory().getAsFile()"));
+
+    private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
+                    FIX_GET_PROJECT_GET_PROJECT_DIR, FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT)
+            .sorted()
+            .toList();
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        Optional<TaskExecutionViolation> violation = TaskExecutionViolationMatcher.matchMostSpecific(tree, state);
-        if (violation.isEmpty()) {
-            return Description.NO_MATCH;
-        }
-
-        CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
-        MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
-
-        Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
-        if (enclosingMethodMaybe.isEmpty()) {
-            return Description.NO_MATCH;
-        }
-
-        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
-        // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
-        // Gradle source, not the source file this BugChecker is running on.
-        // If we included methods defined externally into the call graph,
-        // GetProjectTest#getProject_in_constructors_should_pass will fail.
-        Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
-
-        boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
-                .append(enclosingMethod)
-                .anyMatch(caller -> {
-                    MethodTree callerTree = ASTHelpers.findMethod(caller, state);
-                    return Tasks.isTaskAction(callerTree, state) || Tasks.overridesExecute(callerTree, state);
-                });
-        if (isInvokedAtTaskExecution) {
-            violation.get().fixOrReport(tree, state, this);
+        for (TaskExecutionViolation violation : violationsInOrderOfSpecificity) {
+            // Take the most specific fix/report, if any
+            if (violation.fixOrReport(tree, state, this)) {
+                return Description.NO_MATCH;
+            }
         }
 
         return Description.NO_MATCH;

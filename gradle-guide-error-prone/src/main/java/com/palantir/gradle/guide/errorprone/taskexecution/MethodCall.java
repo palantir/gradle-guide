@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone.taskexecution.violations;
+package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.errorprone.VisitorState;
-import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.method.MethodMatchers;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
 /**
- * Represents strategies to report or auto-fix illegal methods and methods chained to it.
+ * Identifies a method call
  */
-public interface TaskExecutionViolation {
-    /** If we encounter {@code illegalCall}. */
-    boolean matches(MethodInvocationTree illegalCall, VisitorState state);
+public class MethodCall {
+    private Matcher<ExpressionTree> matcher;
 
-    /** Then, suggest fixes or a warning. */
-    void fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugchecker);
+    public MethodCall(String className, String name) {
+        this.matcher = MethodMatchers.instanceMethod().onDescendantOf(className).named(name);
+    }
+
+    public boolean matches(MethodInvocationTree other, VisitorState state) {
+        return this.matcher.matches(other, state);
+    }
 }
