@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void should_fix_getProject_getLogger() {
-        test_fix(
+        testFix(
                 "CustomTask.java",
                 """
             import org.gradle.api.DefaultTask;
@@ -51,7 +51,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
 
     @Test
     void fixes_whatever_it_can_and_warns_for_the_others() {
-        test_fix(
+        testFix(
                 "CustomTask.java",
                 """
             import org.gradle.api.DefaultTask;
@@ -84,7 +84,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
 
     @Test
     void should_fix_transitive_calls_to_getLogger() {
-        test_fix(
+        testFix(
                 "CustomTask.java",
                 """
             import org.gradle.api.DefaultTask;
@@ -122,7 +122,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
 
     @Test
     void should_fix_getProject_getLogger_in_Action() {
-        test_fix(
+        testFix(
                 "CustomTaskAction.java",
                 """
             import org.gradle.api.Action;
@@ -154,7 +154,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
 
     @Test
     void should_fix_getProject_getLogger_within_doFirst_doLast_blocks() {
-        test_fix(
+        testFix(
                 "MyPlugin.java",
                 """
             import org.gradle.api.Action;

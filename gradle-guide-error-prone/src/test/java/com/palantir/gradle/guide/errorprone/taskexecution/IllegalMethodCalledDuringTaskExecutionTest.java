@@ -28,7 +28,7 @@ public abstract class IllegalMethodCalledDuringTaskExecutionTest {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
     }
 
-    protected final void test_fix(String filename, @Language("Java") String before, @Language("Java") String after) {
+    protected final void testFix(String filename, @Language("Java") String before, @Language("Java") String after) {
         RefactoringValidator.of(IllegalMethodCalledDuringTaskExecution.class, getClass())
                 .addInputLines(filename, before)
                 .addOutputLines(filename, after)

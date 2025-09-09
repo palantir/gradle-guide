@@ -30,7 +30,7 @@ class NonAbstractGradleTypeTest {
     class Tasks {
         @Test
         void non_abstract_task_should_autofix() {
-            test_fix(
+            testFix(
                     "Test",
                     """
                     import org.gradle.api.DefaultTask;
@@ -46,7 +46,7 @@ class NonAbstractGradleTypeTest {
 
         @Test
         void non_abstract_task_subtype_should_autofix() {
-            test_fix(
+            testFix(
                     "Test",
                     """
                     import org.gradle.api.DefaultTask;
@@ -156,7 +156,7 @@ class NonAbstractGradleTypeTest {
         compilationTestHelper.addSourceLines("Test.java", source).doTest();
     }
 
-    private void test_fix(String filename, @Language("Java") String before, @Language("Java") String after) {
+    private void testFix(String filename, @Language("Java") String before, @Language("Java") String after) {
         RefactoringValidator.of(NonAbstractGradleType.class, getClass())
                 .addInputLines(filename, before)
                 .addOutputLines(filename, after)
