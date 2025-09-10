@@ -25,9 +25,9 @@ import com.sun.tools.javac.code.Type;
  */
 @SuppressWarnings("ImmutableEnumChecker")
 public enum GradleService {
-    BuildLayout("org.gradle.api.file.BuildLayout", "getBuildLayout"),
-    ProjectLayout("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
-    FileSystemOperations("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations");
+    BUILD_LAYOUT("org.gradle.api.file.BuildLayout", "getBuildLayout"),
+    PROJECT_LAYOUT("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
+    FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations");
 
     private final Supplier<Type> type;
     private final String fullyQualifiedName;
