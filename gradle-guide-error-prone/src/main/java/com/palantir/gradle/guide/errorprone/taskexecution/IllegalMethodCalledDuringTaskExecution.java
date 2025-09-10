@@ -22,10 +22,19 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
+import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
+import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
+import com.palantir.gradle.guide.errorprone.utils.Tasks;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
+import one.util.streamex.StreamEx;
 
 @AutoService(BugChecker.class)
 @BugPattern(
@@ -60,12 +69,42 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
-        for (TaskExecutionViolation violation : violationsInOrderOfSpecificity) {
-            // Take the most specific fix/report, if any
-            if (violation.fixOrReport(tree, state, this)) {
-                return Description.NO_MATCH;
-            }
+        Optional<TaskExecutionViolation> violationMaybe = violationsInOrderOfSpecificity.stream()
+                .filter(violation -> violation.matches(tree, state))
+                .findFirst();
+
+        if (violationMaybe.isEmpty()) {
+            return Description.NO_MATCH;
         }
+
+        CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
+        MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
+
+        Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
+        if (enclosingMethodMaybe.isEmpty()) {
+            return Description.NO_MATCH; // We can't do anything here
+        }
+        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
+
+        // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
+        // Gradle source, not the source file this BugChecker is running on.
+        // If we included methods defined externally into the illegalCall graph,
+        // GetProjectTest#getProject_in_constructor_should_pass will fail.
+        Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
+        boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
+                .append(enclosingMethod)
+                .anyMatch(caller -> {
+                    MethodTree callerTree = ASTHelpers.findMethod(caller, state);
+                    return Tasks.isTaskAction(callerTree, state) || Tasks.overridesExecute(callerTree, state);
+                });
+        if (!isInvokedAtTaskExecution) {
+            // We're not sure whether the call is done during task execution.
+            // So let's be conservative.
+            return Description.NO_MATCH;
+        }
+
+        TaskExecutionViolation violation = violationMaybe.get();
+        violation.fixOrReport(tree, state, this);
 
         return Description.NO_MATCH;
     }

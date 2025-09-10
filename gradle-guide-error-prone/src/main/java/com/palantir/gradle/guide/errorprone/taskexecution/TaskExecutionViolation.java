@@ -19,18 +19,11 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.taskexecution.GradleFix.GradleFixContext;
-import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction;
-import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import java.util.Optional;
-import java.util.Set;
-import one.util.streamex.StreamEx;
 
 /**
  * Represents strategies to report or auto-fix illegal methods and methods chained to it.
@@ -52,49 +45,18 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
         return this.violation.chainLength() - other.violation.chainLength();
     }
 
+    public boolean matches(MethodInvocationTree call, VisitorState state) {
+        return violation.matches(call, state);
+    }
+
     /**
      * Returns {@code true} if a fix or report was done for {@code illegalCall}.
      * Note that this is called on every method invocation, so performance matters.
      */
-    public boolean fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugChecker) {
-        boolean callMatchesViolation = violation.matches(illegalCall, state);
-        if (!callMatchesViolation) {
-            return false; // Prune most true negatives
-        }
-
-        // Now, we have to prune cases where illegalCall matches the violating chained call,
-        // but are done outside of execution time.
-        // There will only be a few such cases. So, we now use the (quite expensive) method call graph.
-        CompilationUnitTree compilationUnit = state.getPath().getCompilationUnit();
-        MethodCallGraph callGraph = MethodCallGraph.getOrBuild(compilationUnit);
-
-        Optional<MethodTree> enclosingMethodMaybe = Optional.ofNullable(ASTHelpers.findEnclosingMethod(state));
-        if (enclosingMethodMaybe.isEmpty()) {
-            return false; // We can't do anything here
-        }
-        MethodSymbol enclosingMethod = ASTHelpers.getSymbol(enclosingMethodMaybe.get());
-
-        // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
-        // Gradle source, not the source file this BugChecker is running on.
-        // If we included methods defined externally into the illegalCall graph,
-        // IllegalMethodCalledDuringTaskExecutionTest#getProject_in_constructor_ok will fail.
-        Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
-
-        boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
-                .append(enclosingMethod)
-                .anyMatch(caller -> {
-                    MethodTree callerTree = ASTHelpers.findMethod(caller, state);
-                    return Tasks.isTaskAction(callerTree, state) || Tasks.overridesExecute(callerTree, state);
-                });
-        if (!isInvokedAtTaskExecution) {
-            // We're not sure whether `illegalCall` is done during task execution.
-            // So let's be conservative.
-            return false;
-        }
-
+    public void fixOrReport(MethodInvocationTree illegalCall, VisitorState state, BugChecker bugChecker) {
         Optional<TaskOrAction> taskOrActionMaybe = Tasks.findFirstEnclosingTaskOrAction(state.getPath(), state);
         if (taskOrActionMaybe.isEmpty()) {
-            return false; // We can't do anything here
+            return; // We can't do anything here
         }
 
         TaskOrAction taskOrAction = taskOrActionMaybe.get();
@@ -115,6 +77,5 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
         }
 
         state.reportMatch(descriptionBuilder.build());
-        return true;
     }
 }
