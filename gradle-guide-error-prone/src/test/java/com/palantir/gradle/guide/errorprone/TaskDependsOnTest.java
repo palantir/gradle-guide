@@ -20,12 +20,13 @@ import com.google.errorprone.CompilationTestHelper;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("LineLength")
 class TaskDependsOnTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(TaskDependsOn.class, getClass());
 
     // language=Java
-    private final String TEST_SETUP =
+    private final String testSetup =
             """
             import java.io.File;
             import org.gradle.api.*;
@@ -98,9 +99,9 @@ class TaskDependsOnTest {
                     });
 
                     TaskProvider<Task> consumingTask = project.getTasks().named("consumingTask");
-                    consumingTask.configure(task -> {
-                        // Ideally we'd catch this case, but we don't know whether producingTask is actually a custom task or not, so be conservative
-                        task.dependsOn(producingTask);
+                    consumingTask.configure(genericTask -> {
+                        // Ideally we'd catch this case, but we don't know whether consumingTask is actually a custom task or not, so be conservative
+                        genericTask.dependsOn(producingTask);
                     });
                 }
             }
@@ -121,7 +122,7 @@ class TaskDependsOnTest {
 
                     TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
                         task.getOutputFile().set(sharedFile);
-                        // These are okay, as Jar and Test are lifecycle tasks
+                        // These are okay, as Jar, Test, and check are lifecycle tasks
                         jarTask.configure(jar -> jar.dependsOn(task));
                         testTasks.configureEach(test -> test.dependsOn(task));
                         project.getTasks().named("check").configure(check -> check.dependsOn(task));
@@ -132,6 +133,6 @@ class TaskDependsOnTest {
     }
 
     private void test(@Language("Java") String source) {
-        compilationTestHelper.addSourceLines("Test.java", TEST_SETUP + source).doTest();
+        compilationTestHelper.addSourceLines("Test.java", testSetup + source).doTest();
     }
 }

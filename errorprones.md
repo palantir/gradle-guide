@@ -98,5 +98,22 @@ When defining a custom Task or Extension, you should make it an abstract class w
 
 </td>
 </tr>
+
+<tr>
+<td>
+
+<a id="TaskDependsOn" href="guide/diagnosing-build-performance.md#needlessly-included-tasks">`TaskDependsOn`</a>
+
+</td>
+<td>
+<a href="guide/diagnosing-build-performance.md#needlessly-included-tasks">Please read</a>
+</td>
+<td>
+
+Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers.
+
+
+</td>
+</tr>
 </tbody>
 </table>

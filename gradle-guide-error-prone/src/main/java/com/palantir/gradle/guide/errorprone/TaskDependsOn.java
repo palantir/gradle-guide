@@ -39,7 +39,7 @@ import java.util.Set;
                 """
         Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers.
         """)
-public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
+public final class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
 
     private static final Set<String> KNOWN_LIFECYCLE_TASKS = Set.of(
             // Core bundling tasks
@@ -94,8 +94,8 @@ public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.M
         }
 
         return buildDescription(tree)
-                .setMessage(
-                        "Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers")
+                .setMessage("Instead of `task1.dependsOn(task2)`, "
+                        + "wire up the outputs of task2 to the inputs of task1 using providers")
                 .build();
     }
 
@@ -132,6 +132,6 @@ public class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.M
 
     @Override
     public MoreInfoLink moreInfoLink() {
-        return null;
+        return new MoreInfoHeadingLink("diagnosing-build-performance.md", "Needlessly included tasks");
     }
 }
