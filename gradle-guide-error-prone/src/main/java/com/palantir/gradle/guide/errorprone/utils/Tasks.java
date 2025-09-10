@@ -21,6 +21,7 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction.Variant;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
@@ -32,7 +33,7 @@ import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
 
-public class Tasks {
+public final class Tasks {
     public static boolean isTask(ClassTree tree, VisitorState state) {
         return Matchers.isSubtypeOf("org.gradle.api.Task").matches(tree, state);
     }
@@ -68,8 +69,8 @@ public class Tasks {
                 .findAny());
     };
 
-    public record TaskOrAction(ClassTree tree, Type type) {
-        public enum Type {
+    public record TaskOrAction(ClassTree tree, Variant type) {
+        public enum Variant {
             TASK,
             ACTION
         }
@@ -82,10 +83,10 @@ public class Tasks {
         TreePath curr = path;
         while (curr.getParentPath() != null) {
             if (curr.getLeaf() instanceof ClassTree classTree) {
-                if (TASK.matches(classTree, state)) {
-                    return Optional.of(new TaskOrAction(classTree, TaskOrAction.Type.TASK));
+                if (isTask(classTree, state)) {
+                    return Optional.of(new TaskOrAction(classTree, Variant.TASK));
                 } else if (implementsActionOfTask(ASTHelpers.getSymbol(classTree), state)) {
-                    return Optional.of(new TaskOrAction(classTree, TaskOrAction.Type.ACTION));
+                    return Optional.of(new TaskOrAction(classTree, Variant.ACTION));
                 }
             }
             curr = curr.getParentPath();

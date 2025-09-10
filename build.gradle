@@ -54,6 +54,7 @@ allprojects {
         configureEachErrorProneOptions {
             disable("StrictUnusedVariable")
             disable("PreferSafeLoggableExceptions")
+            disable("PreferSafeLoggingPreconditions")
         }
     }
 }

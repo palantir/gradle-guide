@@ -47,9 +47,9 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
     }
 
     @Override
-    public int compareTo(TaskExecutionViolation o) {
+    public int compareTo(TaskExecutionViolation other) {
         // More specific violations come before less specific violations
-        return this.violation.chainLength() - o.violation.chainLength();
+        return this.violation.chainLength() - other.violation.chainLength();
     }
 
     /**
@@ -103,16 +103,15 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
 
         GradleFixContext context = new GradleFixContext(illegalCall, violation.chainLength(), taskOrAction);
         switch (taskOrAction.type()) {
-            case ACTION:
+            case ACTION -> {
                 // We can't inject stuff into `Action<Task>`s, as `Action`s can't be made abstract
                 boolean canFix = fix.map(gradleFix -> !gradleFix.requiresServiceInjection())
                         .orElse(false);
                 if (canFix) {
                     descriptionBuilder.addFix(fix.get().render(context, state));
                 }
-                break;
-            case TASK:
-                fix.ifPresent(gradleFix -> descriptionBuilder.addFix(gradleFix.render(context, state)));
+            }
+            case TASK -> fix.ifPresent(gradleFix -> descriptionBuilder.addFix(gradleFix.render(context, state)));
         }
 
         state.reportMatch(descriptionBuilder.build());

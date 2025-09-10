@@ -24,7 +24,7 @@ import com.google.errorprone.fixes.SuggestedFixes.AdditionPosition;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.NonAbstractGradleType;
 import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction;
-import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction.Type;
+import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction.Variant;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.tools.javac.code.Symbol;
@@ -56,7 +56,7 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
 
     public SuggestedFix render(GradleFixContext context, VisitorState state) {
         Preconditions.checkArgument(
-                context.enclosingClass.type() == Type.TASK || !requiresServiceInjection(),
+                context.enclosingClass.type() == Variant.TASK || !requiresServiceInjection(),
                 "Only Tasks can be fixed with service injection");
 
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
@@ -99,6 +99,7 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
         return fixBuilder.build();
     }
 
+    @SuppressWarnings("ASTHelpersSuggestions")
     private boolean alreadyInjected(GradleService service, ClassTree classTree, VisitorState state) {
         return ASTHelpers.getSymbol(classTree).getEnclosedElements().stream()
                 .filter(symbol -> symbol instanceof MethodSymbol)

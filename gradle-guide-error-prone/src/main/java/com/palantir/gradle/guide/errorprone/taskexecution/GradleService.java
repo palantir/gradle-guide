@@ -23,6 +23,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Represents a gradle service to be injected as part of an autofix.
  */
+@SuppressWarnings("ImmutableEnumChecker")
 public enum GradleService {
     BuildLayout("org.gradle.api.file.BuildLayout", "getBuildLayout"),
     ProjectLayout("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
@@ -33,6 +34,7 @@ public enum GradleService {
     private final String getterName;
 
     /**
+     * Create a gradle service.
      * @param fullyQualifiedName The fully qualified class name of the Gradle service, e.g.
      *      {@code org.gradle.api.file.ProjectLayout}
      * @param getterName The name of the injected getter, e.g. {@code getProjectLayout}

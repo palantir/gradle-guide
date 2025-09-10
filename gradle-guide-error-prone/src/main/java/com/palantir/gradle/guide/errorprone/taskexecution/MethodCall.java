@@ -22,10 +22,7 @@ import com.google.errorprone.matchers.method.MethodMatchers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
-/**
- * Identifies a method call
- */
-public class MethodCall {
+public final class MethodCall {
     private Matcher<ExpressionTree> matcher;
 
     public MethodCall(String className, String name) {
