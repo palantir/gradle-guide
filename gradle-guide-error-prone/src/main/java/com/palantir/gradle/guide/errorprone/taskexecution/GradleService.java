@@ -23,7 +23,11 @@ import com.sun.tools.javac.code.Type;
 /**
  * Represents a gradle service to be injected as part of an autofix.
  */
-public class GradleService {
+public enum GradleService {
+    BuildLayout("org.gradle.api.file.BuildLayout", "getBuildLayout"),
+    ProjectLayout("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
+    FileSystemOperations("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations");
+
     private final Supplier<Type> type;
     private final String fullyQualifiedName;
     private final String getterName;
@@ -33,7 +37,7 @@ public class GradleService {
      *      {@code org.gradle.api.file.ProjectLayout}
      * @param getterName The name of the injected getter, e.g. {@code getProjectLayout}
      */
-    public GradleService(String fullyQualifiedName, String getterName) {
+    GradleService(String fullyQualifiedName, String getterName) {
         // Ideally, we check whether `fullyQualifiedName` corresponds to an actual Gradle class here,
         // But that'd require adding gradleApi() to errorprone's runtime classpath, which is impossible
         this.type = VisitorState.memoize(state -> state.getTypeFromString(fullyQualifiedName));
