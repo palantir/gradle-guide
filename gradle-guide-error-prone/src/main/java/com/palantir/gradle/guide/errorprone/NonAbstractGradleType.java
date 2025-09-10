@@ -24,8 +24,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.fixes.SuggestedFixes;
 import com.google.errorprone.matchers.Description;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
+import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree.Kind;
@@ -46,8 +45,6 @@ import javax.lang.model.element.Modifier;
                 + "make the `foo = 3` groovy syntax work of the box.")
 public final class NonAbstractGradleType extends GradleGuideBugChecker
         implements BugChecker.ClassTreeMatcher, ExtensionClassMatcher {
-    private static final Matcher<ClassTree> IS_TASK = Matchers.isSubtypeOf("org.gradle.api.Task");
-
     @Override
     public Description matchClass(ClassTree tree, VisitorState state) {
         if (tree.getKind().equals(Kind.INTERFACE)) {
@@ -58,7 +55,7 @@ public final class NonAbstractGradleType extends GradleGuideBugChecker
             return Description.NO_MATCH;
         }
 
-        if (IS_TASK.matches(tree, state)) {
+        if (Tasks.isTask(tree, state)) {
             Description.Builder builder = buildDescription(tree).setMessage("Gradle Tasks should be abstract");
 
             Optional<SuggestedFix> fix = maybeTurnClassAbstract(tree, state);
