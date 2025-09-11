@@ -21,9 +21,11 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers;
 import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
+import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction.Variant;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
@@ -31,7 +33,7 @@ import com.sun.tools.javac.code.Type.ClassType;
 import java.util.List;
 import java.util.Optional;
 
-public class Tasks {
+public final class Tasks {
     public static boolean isTask(ClassTree tree, VisitorState state) {
         return Matchers.isSubtypeOf("org.gradle.api.Task").matches(tree, state);
     }
@@ -66,6 +68,31 @@ public class Tasks {
                 .map(execute -> (MethodSymbol) execute)
                 .findAny());
     };
+
+    public record TaskOrAction(ClassTree tree, Variant type) {
+        public enum Variant {
+            TASK,
+            ACTION
+        }
+    }
+
+    /**
+     * Finds the first enclosing {@code Task} or {@code Action<Task>}.
+     */
+    public static Optional<TaskOrAction> findFirstEnclosingTaskOrAction(TreePath path, VisitorState state) {
+        TreePath curr = path;
+        while (curr.getParentPath() != null) {
+            if (curr.getLeaf() instanceof ClassTree classTree) {
+                if (isTask(classTree, state)) {
+                    return Optional.of(new TaskOrAction(classTree, Variant.TASK));
+                } else if (implementsActionOfTask(ASTHelpers.getSymbol(classTree), state)) {
+                    return Optional.of(new TaskOrAction(classTree, Variant.ACTION));
+                }
+            }
+            curr = curr.getParentPath();
+        }
+        return Optional.empty();
+    }
 
     public static boolean isTaskAction(MethodTree tree, VisitorState state) {
         return Matchers.hasAnnotation("org.gradle.api.tasks.TaskAction").matches(tree, state);
