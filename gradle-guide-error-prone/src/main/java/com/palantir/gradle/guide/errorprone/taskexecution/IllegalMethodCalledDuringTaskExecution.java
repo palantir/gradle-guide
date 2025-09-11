@@ -88,7 +88,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
         // Find transitive callers of enclosing method first, as the illegal method e.g. getProject() is defined in
         // Gradle source, not the source file this BugChecker is running on.
-        // If we included methods defined externally into the illegalCall graph,
+        // If we included methods defined externally into the call graph,
         // GetProjectTest#getProject_in_constructor_should_pass will fail.
         Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
         boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
