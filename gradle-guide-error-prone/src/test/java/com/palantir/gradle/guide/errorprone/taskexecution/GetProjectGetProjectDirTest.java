@@ -146,4 +146,28 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                 }
             """);
     }
+
+    @Test
+    void transitive_calls_to_getProject_getProjectDir_should_fail_in_taskActions() {
+        test(
+                """
+        import org.gradle.api.Action;
+        import org.gradle.api.Task;
+
+        abstract class CustomTaskAction implements Action<Task> {
+            @Override
+            public void execute(Task task) {
+                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                task.getProject().getProjectDir();
+                bad_helper(task);
+            }
+
+            public void bad_helper(Task task) {
+                System.out.println("I am a happy squirrel");
+                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                task.getProject().getProjectDir();
+            }
+        }
+        """);
+    }
 }
