@@ -88,8 +88,14 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
             return Description.NO_MATCH;
         }
         ExpressionTree receiver = receiverMaybe.get();
+        Type taskType = ASTHelpers.getType(receiver);
 
-        if (isKnownLifecycleTask(receiver, state)) {
+        // It's alright to wire up lifecycle tasks with dependsOn
+        if (isKnownLifecycleTask(taskType, state)) {
+            return Description.NO_MATCH;
+        }
+        // We assume people don't write custom types for lifecycle tasks
+        if (!isCustomTask(taskType, state)) {
             return Description.NO_MATCH;
         }
 
@@ -99,22 +105,11 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
                 .build();
     }
 
-    private static boolean isKnownLifecycleTask(ExpressionTree task, VisitorState state) {
-        Type taskType = ASTHelpers.getType(task);
-
-        // We assume people don't write custom types for lifecycle tasks
-        if (!isCustomTask(taskType, state)) {
-            return true;
-        }
-
-        for (String lifecycleType : KNOWN_LIFECYCLE_TASKS) {
-            Type knownType = state.getTypeFromString(lifecycleType);
-            if (ASTHelpers.isSameType(taskType, knownType, state)) {
-                return true;
-            }
-        }
-
-        return false;
+    private static boolean isKnownLifecycleTask(Type task, VisitorState state) {
+        return KNOWN_LIFECYCLE_TASKS.stream().anyMatch(lifecycle -> {
+            Type knownLifecycletask = state.getTypeFromString(lifecycle);
+            return ASTHelpers.isSameType(task, knownLifecycletask, state);
+        });
     }
 
     private static boolean isCustomTask(Type task, VisitorState state) {
