@@ -18,6 +18,7 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("LineLength")
 public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void projectLayout_not_injected_should_fix_and_inject() {
