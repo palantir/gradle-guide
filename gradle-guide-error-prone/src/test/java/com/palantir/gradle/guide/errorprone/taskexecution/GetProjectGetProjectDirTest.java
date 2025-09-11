@@ -111,7 +111,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
     @Test
     void concrete_task_should_fix() {
         testFix(
-                "CustomTask.java",
+                "ConcreteTask.java",
                 """
                 import java.io.File;
                 import org.gradle.api.DefaultTask;
@@ -119,7 +119,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                 import org.gradle.api.Project;
                 import org.gradle.api.tasks.TaskAction;
 
-                class CustomTask extends DefaultTask {
+                class ConcreteTask extends DefaultTask {
                     @TaskAction
                     final void action() {
                         File projectDir = getProject().getProjectDir();
@@ -135,7 +135,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                 import org.gradle.api.file.ProjectLayout;
                 import org.gradle.api.tasks.TaskAction;
 
-                abstract class CustomTask extends DefaultTask {
+                abstract class ConcreteTask extends DefaultTask {
                     @Inject
                     protected abstract ProjectLayout getProjectLayout();
 
