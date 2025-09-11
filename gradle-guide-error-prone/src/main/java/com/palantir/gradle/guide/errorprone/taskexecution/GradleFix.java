@@ -81,20 +81,19 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
         }
 
         // Inject services
-        for (GradleService service : servicesRequired) {
-            if (!alreadyInjected(service, context.enclosingClass.tree(), state)) {
-                fixBuilder
-                        .addImport(service.fullyQualifiedName())
-                        .addImport("javax.inject.Inject")
-                        .merge(SuggestedFixes.addMembers(
-                                context.enclosingClass.tree(),
-                                state,
-                                AdditionPosition.FIRST,
-                                String.format(
-                                        "@Inject\nprotected abstract %s %s();",
-                                        service.className(), service.getterName())));
-            }
-        }
+        servicesRequired.stream()
+                .filter(service -> !alreadyInjected(service, context.enclosingClass.tree(), state))
+                .forEach(service -> {
+                    fixBuilder.addImport(service.fullyQualifiedName());
+                    fixBuilder.addImport("javax.inject.Inject");
+                    SuggestedFix serviceGetter = SuggestedFixes.addMembers(
+                            context.enclosingClass.tree(),
+                            state,
+                            AdditionPosition.FIRST,
+                            String.format(
+                                    "@Inject\nprotected abstract %s %s();", service.className(), service.getterName()));
+                    fixBuilder.merge(serviceGetter);
+                });
 
         return fixBuilder.build();
     }
