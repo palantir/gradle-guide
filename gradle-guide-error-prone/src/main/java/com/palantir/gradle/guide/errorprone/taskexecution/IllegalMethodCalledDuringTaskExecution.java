@@ -56,6 +56,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         implements BugChecker.MethodInvocationTreeMatcher {
     private static final MethodCall getProject = new MethodCall("org.gradle.api.Task", "getProject");
     private static final MethodCall getLogger = new MethodCall("org.gradle.api.Project", "getLogger");
+    private static final MethodCall getProjectDir = new MethodCall("org.gradle.api.Project", "getProjectDir");
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT =
             TaskExecutionViolation.report(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
@@ -64,8 +65,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
             GradleFix.of("getLogger()"));
 
-    private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity =
-            Stream.of(FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT).sorted().toList();
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
+            ChainedCall.of(getProject, getProjectDir),
+            "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
+            GradleFix.of(GradleService.PROJECT_LAYOUT, "getProjectLayout().getProjectDirectory().getAsFile()"));
+
+    private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
+                    FIX_GET_PROJECT_GET_PROJECT_DIR, FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT)
+            .sorted()
+            .toList();
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
