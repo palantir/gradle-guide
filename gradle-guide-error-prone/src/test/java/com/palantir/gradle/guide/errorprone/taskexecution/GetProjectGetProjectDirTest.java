@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
-    void already_abstract() {
+    void projectLayout_not_injected_should_fix_and_inject() {
         testFix(
                 "AlreadyAbstractTask.java",
                 """
@@ -59,7 +59,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
     }
 
     @Test
-    void already_injected() {
+    void projectLayout_already_injected_should_fix_without_injecting_again() {
         testFix(
                 "AlreadyInjectedTask.java",
                 """
@@ -109,7 +109,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
     }
 
     @Test
-    void fix_everything() {
+    void concrete_task_should_fix() {
         testFix(
                 "CustomTask.java",
                 """
