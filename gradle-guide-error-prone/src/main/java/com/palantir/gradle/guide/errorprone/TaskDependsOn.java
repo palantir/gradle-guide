@@ -77,6 +77,9 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
             .onDescendantOf("org.gradle.api.Task")
             .named("dependsOn");
 
+    /**
+     * FELIX's SUGGESTION — MAKE @LifecycleTask an annotation
+     */
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!TASK_DEPENDS_ON.matches(tree, state)) {
