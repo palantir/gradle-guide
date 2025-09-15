@@ -18,7 +18,7 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.common.base.Preconditions;
 
-public class FixTemplate {
+public final class FixTemplate {
 
     private String unformatted;
     private int numFormatArgs;
