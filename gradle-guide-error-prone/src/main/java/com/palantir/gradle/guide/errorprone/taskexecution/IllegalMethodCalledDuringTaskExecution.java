@@ -69,10 +69,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("getProjectDir")
             .withNoParameters();
-    private static final Matcher<ExpressionTree> copy = Matchers.instanceMethod()
-            .onDescendantOf("org.gradle.api.Project")
-            .named("copy")
-            .withParameters("org.gradle.api.Action");
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT = TaskExecutionViolation.report(
             ChainedCallMatcher.of(getProject), "Don't call `getProject()` in task actions");
@@ -88,17 +84,8 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     GradleService.PROJECT_LAYOUT,
                     FixTemplate.nullary("getProjectLayout().getProjectDirectory().getAsFile()")));
 
-    private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
-            ChainedCallMatcher.of(getProject, copy),
-            "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
-            GradleFix.of(
-                    GradleService.FILE_SYSTEMS_OPERATIONS, FixTemplate.unary("getFileSystemOperations().copy(%s)")));
-
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
-                    FIX_GET_PROJECT_COPY,
-                    FIX_GET_PROJECT_GET_PROJECT_DIR,
-                    FIX_GET_PROJECT_GET_LOGGER,
-                    REPORT_GET_PROJECT)
+                    FIX_GET_PROJECT_GET_PROJECT_DIR, FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT)
             .sorted()
             .toList();
 

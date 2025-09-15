@@ -66,7 +66,9 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
         // Preserve arguments (if any)
         String fixedCallChain;
         if (fixTemplate.numFormatArgs() == 1) {
-            String args = context.illegalCallToReplace.getArguments().stream().map(state::getSourceForNode).collect(Collectors.joining(", "));
+            String args = context.illegalCallToReplace.getArguments().stream()
+                    .map(state::getSourceForNode)
+                    .collect(Collectors.joining(", "));
             fixedCallChain = fixTemplate.render(args);
         } else {
             fixedCallChain = fixTemplate.render();
