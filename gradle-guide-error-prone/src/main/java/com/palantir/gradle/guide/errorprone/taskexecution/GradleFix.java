@@ -17,6 +17,7 @@
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.fixes.SuggestedFixes;
@@ -31,20 +32,21 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * An autofix for a Gradle task. This usually involves injecting a Gradle service, and replacing violating methods
  * with methods from the service.
  * @param servicesRequired The Gradle services required to make this fix
- * @param correctedCall Replaces the violating chained call
+ * @param fixTemplate Replaces the violating chained call
  */
-public record GradleFix(List<GradleService> servicesRequired, String correctedCall) {
-    public static GradleFix of(GradleService service, String correctCall) {
-        return new GradleFix(List.of(service), correctCall);
+public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTemplate) {
+    public static GradleFix of(GradleService service, FixTemplate fixedCall) {
+        return new GradleFix(List.of(service), fixedCall);
     }
 
-    public static GradleFix of(String correctCall) {
-        return new GradleFix(List.of(), correctCall);
+    public static GradleFix of(FixTemplate fixedCall) {
+        return new GradleFix(List.of(), fixedCall);
     }
 
     public boolean requiresServiceInjection() {
@@ -61,16 +63,31 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
 
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
-        // Replace the illegal call, taking care to preserve any receivers
+        // Preserve arguments (if any)
+        String fixedCallChain;
+        if (fixTemplate.numFormatArgs() == 1) {
+            String args = context.illegalCallToReplace.getArguments().stream().map(state::getSourceForNode).collect(Collectors.joining(", "));
+            fixedCallChain = fixTemplate.render(args);
+        } else {
+            fixedCallChain = fixTemplate.render();
+        }
+
+        // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
         for (int i = 0; i < context.violatingChainLength - 1; ++i) {
             innermost = (MethodInvocationTree) ASTHelpers.getReceiver(innermost);
         }
+
         Optional<String> receiverSource =
                 Optional.ofNullable(ASTHelpers.getReceiver(innermost)).map(state::getSourceForNode);
         String correctedCallWithReceiver =
-                receiverSource.map(receiver -> receiver + ".").orElse("") + correctedCall;
+                receiverSource.map(receiver -> receiver + ".").orElse("") + fixedCallChain;
         fixBuilder.replace(context.illegalCallToReplace, correctedCallWithReceiver);
+
+        List<String> args = context.illegalCallToReplace.getArguments().stream()
+                .map(state::getSourceForNode)
+                .filter(Predicates.notNull())
+                .toList();
 
         // Turn class abstract if we need to inject any services
         boolean isAlreadyAbstract =

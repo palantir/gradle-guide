@@ -17,31 +17,32 @@
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.errorprone.VisitorState;
+import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import java.util.List;
 import java.util.Optional;
 
-public final class ChainedCall {
+public final class ChainedCallMatcher {
     /**
      * To represent {@code foo().bar().baz()}, this list will be [baz, bar, foo].
      * This order facilitates matching in {@code matches}
      */
-    private final List<MethodCall> calls;
+    private final List<Matcher<ExpressionTree>> calls;
 
-    private ChainedCall(List<MethodCall> calls) {
+    private ChainedCallMatcher(List<Matcher<ExpressionTree>> calls) {
         this.calls = calls;
     }
 
     /** Creates a two-method chain: {@code call1().call2()}. */
-    public static ChainedCall of(MethodCall call1, MethodCall call2) {
-        return new ChainedCall(List.of(call2, call1));
+    public static ChainedCallMatcher of(Matcher<ExpressionTree> call1, Matcher<ExpressionTree> call2) {
+        return new ChainedCallMatcher(List.of(call2, call1));
     }
 
     /** Creates a single method call. */
-    public static ChainedCall of(MethodCall call) {
-        return new ChainedCall(List.of(call));
+    public static ChainedCallMatcher of(Matcher<ExpressionTree> call) {
+        return new ChainedCallMatcher(List.of(call));
     }
 
     public int chainLength() {
@@ -56,7 +57,7 @@ public final class ChainedCall {
         MethodInvocationTree current = other;
 
         for (int i = 0; i < calls.size(); i++) {
-            MethodCall expected = calls.get(i);
+            Matcher<ExpressionTree> expected = calls.get(i);
             boolean isInnermost = i == calls.size() - 1;
 
             if (!expected.matches(current, state)) {

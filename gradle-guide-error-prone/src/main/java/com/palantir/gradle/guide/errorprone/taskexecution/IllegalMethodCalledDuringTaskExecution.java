@@ -22,11 +22,14 @@ import com.google.errorprone.BugPattern.SeverityLevel;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -54,24 +57,48 @@ import one.util.streamex.StreamEx;
         """)
 public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBugChecker
         implements BugChecker.MethodInvocationTreeMatcher {
-    private static final MethodCall getProject = new MethodCall("org.gradle.api.Task", "getProject");
-    private static final MethodCall getLogger = new MethodCall("org.gradle.api.Project", "getLogger");
-    private static final MethodCall getProjectDir = new MethodCall("org.gradle.api.Project", "getProjectDir");
+    private static final Matcher<ExpressionTree> getProject = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Task")
+            .named("getProject")
+            .withNoParameters();
+    private static final Matcher<ExpressionTree> getLogger = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getLogger")
+            .withNoParameters();
+    private static final Matcher<ExpressionTree> getProjectDir = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getProjectDir")
+            .withNoParameters();
+    private static final Matcher<ExpressionTree> copy = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("copy")
+            .withParameters("org.gradle.api.Action");
 
-    private static final TaskExecutionViolation REPORT_GET_PROJECT =
-            TaskExecutionViolation.report(ChainedCall.of(getProject), "Don't call `getProject()` in task actions");
+    private static final TaskExecutionViolation REPORT_GET_PROJECT = TaskExecutionViolation.report(
+            ChainedCallMatcher.of(getProject), "Don't call `getProject()` in task actions");
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
-            ChainedCall.of(getProject, getLogger),
+            ChainedCallMatcher.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
-            GradleFix.of("getLogger()"));
+            GradleFix.of(FixTemplate.nullary("getLogger()")));
 
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
-            ChainedCall.of(getProject, getProjectDir),
+            ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
-            GradleFix.of(GradleService.PROJECT_LAYOUT, "getProjectLayout().getProjectDirectory().getAsFile()"));
+            GradleFix.of(
+                    GradleService.PROJECT_LAYOUT,
+                    FixTemplate.nullary("getProjectLayout().getProjectDirectory().getAsFile()")));
+
+    private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, copy),
+            "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
+            GradleFix.of(
+                    GradleService.FILE_SYSTEMS_OPERATIONS, FixTemplate.unary("getFileSystemOperations().copy(%s)")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
-                    FIX_GET_PROJECT_GET_PROJECT_DIR, FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT)
+                    FIX_GET_PROJECT_COPY,
+                    FIX_GET_PROJECT_GET_PROJECT_DIR,
+                    FIX_GET_PROJECT_GET_LOGGER,
+                    REPORT_GET_PROJECT)
             .sorted()
             .toList();
 
