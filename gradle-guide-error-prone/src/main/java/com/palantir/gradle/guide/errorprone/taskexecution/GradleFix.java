@@ -17,7 +17,6 @@
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicates;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.fixes.SuggestedFixes;
@@ -64,15 +63,7 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
         // Preserve arguments (if any)
-        String fixedCallChain;
-        if (fixTemplate.numFormatArgs() == 1) {
-            String args = context.illegalCallToReplace.getArguments().stream()
-                    .map(state::getSourceForNode)
-                    .collect(Collectors.joining(", "));
-            fixedCallChain = fixTemplate.render(args);
-        } else {
-            fixedCallChain = fixTemplate.render();
-        }
+        String fixedCallChain = renderFixedCallChain(context.illegalCallToReplace, state);
 
         // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
@@ -85,11 +76,6 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
         String correctedCallWithReceiver =
                 receiverSource.map(receiver -> receiver + ".").orElse("") + fixedCallChain;
         fixBuilder.replace(context.illegalCallToReplace, correctedCallWithReceiver);
-
-        List<String> args = context.illegalCallToReplace.getArguments().stream()
-                .map(state::getSourceForNode)
-                .filter(Predicates.notNull())
-                .toList();
 
         // Turn class abstract if we need to inject any services
         boolean isAlreadyAbstract =
@@ -115,6 +101,23 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
                 });
 
         return fixBuilder.build();
+    }
+
+    private String renderFixedCallChain(MethodInvocationTree illegalCall, VisitorState state) {
+        if (fixTemplate.numReplacements() == 0) {
+            return fixTemplate.render();
+        } else if (fixTemplate.numReplacements() == 1) {
+            String args = illegalCall.getArguments().stream()
+                    .map(state::getSourceForNode)
+                    .collect(Collectors.joining(", "));
+            return fixTemplate.render(args);
+        } else {
+            // Additional logic has to be implemented for >1 argument,
+            // e.g. From which call in the illegal call chain should the arguments be extracted from?
+            // We need something like an ArgumentsMapping — "Arguments for the 2nd call in the illegal chain should
+            // go to the 1st call in the fixed chain, while those of the 3rd call should go to the 2nd in the fix."
+            throw new IllegalStateException("Logic for multiple replacements not yet supported");
+        }
     }
 
     @SuppressWarnings("ASTHelpersSuggestions")

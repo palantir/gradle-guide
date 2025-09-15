@@ -20,15 +20,12 @@ import com.google.common.base.Preconditions;
 
 public final class FixTemplate {
 
-    private String unformatted;
-    private int numFormatArgs;
+    private final String unformatted;
+    private final int numReplacements;
 
-    private FixTemplate(String unformatted, int numFormatArgs) {
-        Preconditions.checkArgument(
-                0 <= numFormatArgs && numFormatArgs <= 1, "Only 0 or 1 arguments supported at the moment.");
-
+    private FixTemplate(String unformatted, int numReplacements) {
         this.unformatted = unformatted;
-        this.numFormatArgs = numFormatArgs;
+        this.numReplacements = numReplacements;
     }
 
     private static int numArgs(String format) {
@@ -39,8 +36,8 @@ public final class FixTemplate {
         return unformatted;
     }
 
-    public int numFormatArgs() {
-        return numFormatArgs;
+    public int numReplacements() {
+        return numReplacements;
     }
 
     public static FixTemplate nullary(String template) {
@@ -57,9 +54,9 @@ public final class FixTemplate {
 
     public String render(String... args) {
         Preconditions.checkArgument(
-                args.length == numFormatArgs,
+                args.length == numReplacements,
                 "FixTemplate has %s args, but render() received %s args",
-                numFormatArgs,
+                numReplacements,
                 args.length);
         return String.format(unformatted, (Object[]) args);
     }
