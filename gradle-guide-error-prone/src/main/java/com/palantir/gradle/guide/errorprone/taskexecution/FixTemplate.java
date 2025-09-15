@@ -43,7 +43,6 @@ public class FixTemplate {
         return numFormatArgs;
     }
 
-    // Static factory methods returning specific interfaces
     public static FixTemplate nullary(String template) {
         int numArgs = numArgs(template);
         Preconditions.checkArgument(numArgs == 0, "Nullary template cannot have %s arguments", numArgs);
