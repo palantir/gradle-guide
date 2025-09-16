@@ -104,19 +104,15 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
     }
 
     private String renderFixedCallChain(MethodInvocationTree illegalCall, VisitorState state) {
-        if (fixTemplate.numReplacements() == 0) {
-            return fixTemplate.render();
-        } else if (fixTemplate.numReplacements() == 1) {
+        if (fixTemplate instanceof FixTemplate.Nullary nullary) {
+            return nullary.fix();
+        } else if (fixTemplate instanceof FixTemplate.Unary unary) {
             String args = illegalCall.getArguments().stream()
                     .map(state::getSourceForNode)
                     .collect(Collectors.joining(", "));
-            return fixTemplate.render(args);
+            return unary.render(args);
         } else {
-            // Additional logic has to be implemented for >1 replacements,
-            // e.g. From which call in the illegal call chain should the arguments be extracted from?
-            // We need something like an ArgumentsMapping — "Arguments for the 2nd call in the illegal chain should
-            // go to the 1st call in the fixed chain, while those of the 3rd call should go to the 2nd in the fix."
-            throw new IllegalStateException("Logic for multiple replacements not yet supported");
+            throw new IllegalStateException("Unknown fix template type: " + fixTemplate);
         }
     }
 

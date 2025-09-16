@@ -17,47 +17,32 @@
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import com.google.common.base.Preconditions;
+import com.palantir.gradle.guide.errorprone.taskexecution.FixTemplate.Nullary;
+import com.palantir.gradle.guide.errorprone.taskexecution.FixTemplate.Unary;
 
-public final class FixTemplate {
+public sealed interface FixTemplate permits Nullary, Unary {
 
-    private final String unformatted;
-    private final int numReplacements;
+    record Nullary(String fix) implements FixTemplate {}
 
-    private FixTemplate(String unformatted, int numReplacements) {
-        this.unformatted = unformatted;
-        this.numReplacements = numReplacements;
+    record Unary(String unformatted) implements FixTemplate {
+        public String render(String replacement) {
+            return String.format(unformatted, replacement);
+        }
     }
 
     private static int numArgs(String format) {
         return format.split("%s", -1).length - 1;
     }
 
-    public String unformatted() {
-        return unformatted;
-    }
-
-    public int numReplacements() {
-        return numReplacements;
-    }
-
-    public static FixTemplate nullary(String template) {
+    static FixTemplate nullary(String template) {
         int numArgs = numArgs(template);
         Preconditions.checkArgument(numArgs == 0, "Nullary template cannot have %s arguments", numArgs);
-        return new FixTemplate(template, 0);
+        return new Nullary(template);
     }
 
-    public static FixTemplate unary(String template) {
+    static FixTemplate unary(String template) {
         int numArgs = numArgs(template);
         Preconditions.checkArgument(numArgs == 1, "Unary template cannot have %s arguments", numArgs);
-        return new FixTemplate(template, 1);
-    }
-
-    public String render(String... args) {
-        Preconditions.checkArgument(
-                args.length == numReplacements,
-                "FixTemplate has %s args, but render() received %s args",
-                numReplacements,
-                args.length);
-        return String.format(unformatted, (Object[]) args);
+        return new Unary(template);
     }
 }
