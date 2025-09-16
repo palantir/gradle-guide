@@ -112,7 +112,7 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
                     .collect(Collectors.joining(", "));
             return fixTemplate.render(args);
         } else {
-            // Additional logic has to be implemented for >1 argument,
+            // Additional logic has to be implemented for >1 replacements,
             // e.g. From which call in the illegal call chain should the arguments be extracted from?
             // We need something like an ArgumentsMapping — "Arguments for the 2nd call in the illegal chain should
             // go to the 1st call in the fixed chain, while those of the 3rd call should go to the 2nd in the fix."
