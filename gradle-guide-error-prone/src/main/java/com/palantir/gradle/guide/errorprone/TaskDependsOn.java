@@ -28,7 +28,6 @@ import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.tools.javac.code.Type;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -38,6 +37,9 @@ import java.util.Set;
         summary =
                 """
         Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers.
+        Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
+        need `classes`. It also doesn't encourage you to write tasks with explicit, fine-grained inputs and outputs.
+        Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.
         """)
 public final class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
 
@@ -119,13 +121,6 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
         Type genericTaskType = state.getTypeFromString("org.gradle.api.Task");
         return ASTHelpers.isSubtype(task, genericTaskType, state)
                 && !ASTHelpers.isSameType(task, genericTaskType, state);
-    }
-
-    private static Type extractTaskType(ExpressionTree taskProvider) {
-        Type taskProviderType = ASTHelpers.getType(taskProvider);
-        Type.ClassType classType = (Type.ClassType) taskProviderType;
-        List<Type> typeArgs = classType.getTypeArguments();
-        return typeArgs.get(0);
     }
 
     @Override
