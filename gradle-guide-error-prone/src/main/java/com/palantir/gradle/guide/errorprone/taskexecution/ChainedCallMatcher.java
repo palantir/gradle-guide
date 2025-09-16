@@ -26,7 +26,7 @@ import java.util.Optional;
 
 public final class ChainedCallMatcher {
     /**
-     * To represent {@code foo().bar().baz()}, this list will be [baz, bar, foo] (in reverse)
+     * To represent {@code foo().bar().baz()}, this list will be in reverse — [baz, bar, foo].
      * This order facilitates matching in {@code ChainedCallMatcher#matches}
      */
     private final List<Matcher<ExpressionTree>> calls;
