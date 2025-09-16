@@ -75,14 +75,14 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
-            GradleFix.of(FixTemplate.nullary("getLogger()")));
+            GradleFix.of(Replacement.literal("getLogger()")));
 
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
             GradleFix.of(
                     GradleService.PROJECT_LAYOUT,
-                    FixTemplate.nullary("getProjectLayout().getProjectDirectory().getAsFile()")));
+                    Replacement.literal("getProjectLayout().getProjectDirectory().getAsFile()")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_GET_PROJECT_DIR, FIX_GET_PROJECT_GET_LOGGER, REPORT_GET_PROJECT)

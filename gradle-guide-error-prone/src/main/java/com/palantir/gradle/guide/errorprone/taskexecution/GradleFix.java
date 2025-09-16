@@ -31,7 +31,6 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * An autofix for a Gradle task. This usually involves injecting a Gradle service, and replacing violating methods
@@ -39,12 +38,12 @@ import java.util.stream.Collectors;
  * @param servicesRequired The Gradle services required to make this fix
  * @param fixTemplate Replaces the violating chained call
  */
-public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTemplate) {
-    public static GradleFix of(GradleService service, FixTemplate fixedCall) {
+public record GradleFix(List<GradleService> servicesRequired, Replacement fixTemplate) {
+    public static GradleFix of(GradleService service, Replacement fixedCall) {
         return new GradleFix(List.of(service), fixedCall);
     }
 
-    public static GradleFix of(FixTemplate fixedCall) {
+    public static GradleFix of(Replacement fixedCall) {
         return new GradleFix(List.of(), fixedCall);
     }
 
@@ -63,7 +62,7 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
         // Preserve arguments (if any)
-        String fixedCallChain = renderFixedCallChain(context.illegalCallToReplace, state);
+        String fixedCallChain = fixTemplate.render(context.illegalCallToReplace, state);
 
         // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
@@ -101,19 +100,6 @@ public record GradleFix(List<GradleService> servicesRequired, FixTemplate fixTem
                 });
 
         return fixBuilder.build();
-    }
-
-    private String renderFixedCallChain(MethodInvocationTree illegalCall, VisitorState state) {
-        if (fixTemplate instanceof FixTemplate.Nullary nullary) {
-            return nullary.fix();
-        } else if (fixTemplate instanceof FixTemplate.Unary unary) {
-            String args = illegalCall.getArguments().stream()
-                    .map(state::getSourceForNode)
-                    .collect(Collectors.joining(", "));
-            return unary.render(args);
-        } else {
-            throw new IllegalStateException("Unknown fix template type: " + fixTemplate);
-        }
     }
 
     @SuppressWarnings("ASTHelpersSuggestions")
