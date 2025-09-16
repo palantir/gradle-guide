@@ -28,7 +28,7 @@ import java.util.Optional;
 /**
  * Represents strategies to report or auto-fix illegal methods and methods chained to it.
  */
-public record TaskExecutionViolation(ChainedCallMatcher chainedCallMatcher, String message, Optional<GradleFix> fix)
+public record TaskExecutionViolation(ChainedCallMatcher violationMatcher, String message, Optional<GradleFix> fix)
         implements Comparable<TaskExecutionViolation> {
 
     public static TaskExecutionViolation fix(ChainedCallMatcher violation, String message, GradleFix fix) {
@@ -42,11 +42,11 @@ public record TaskExecutionViolation(ChainedCallMatcher chainedCallMatcher, Stri
     @Override
     public int compareTo(TaskExecutionViolation other) {
         // More specific violations come before less specific violations
-        return this.chainedCallMatcher.chainLength() - other.chainedCallMatcher.chainLength();
+        return this.violationMatcher.chainLength() - other.violationMatcher.chainLength();
     }
 
     public boolean matches(MethodInvocationTree call, VisitorState state) {
-        return chainedCallMatcher.matches(call, state);
+        return violationMatcher.matches(call, state);
     }
 
     /**
@@ -63,7 +63,7 @@ public record TaskExecutionViolation(ChainedCallMatcher chainedCallMatcher, Stri
         Description.Builder descriptionBuilder =
                 bugChecker.buildDescription(illegalCall).setMessage(message);
 
-        GradleFixContext context = new GradleFixContext(illegalCall, chainedCallMatcher.chainLength(), taskOrAction);
+        GradleFixContext context = new GradleFixContext(illegalCall, violationMatcher.chainLength(), taskOrAction);
         switch (taskOrAction.type()) {
             case ACTION -> {
                 // We can't inject stuff into `Action<Task>`s, as `Action`s can't be made abstract
