@@ -40,6 +40,14 @@ import java.util.Set;
         Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
         need `classes`. It also doesn't encourage you to write tasks with explicit, fine-grained inputs and outputs.
         Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.
+
+        However, there are cases where `dependsOn` is unavoidable:
+        1. Wiring up tasks to lifecycle tasks e.g. `build.dependsOn(myTask)`
+        2. Tasks that do system-wide setup like installing npm. In these cases, we recommended that you specify the
+            installation directory as an `@OutputDirectory` of the task anyways.
+
+        This errorprone tries to detect legitimate uses of `dependsOn`. You can suppress false positives, but we
+        encourage you to do so sparingly, and think about whether something can be improved about your task design.
         """)
 public final class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
 
@@ -79,9 +87,6 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
             .onDescendantOf("org.gradle.api.Task")
             .named("dependsOn");
 
-    /**
-     * FELIX's SUGGESTION — MAKE @LifecycleTask an annotation
-     */
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!TASK_DEPENDS_ON.matches(tree, state)) {
