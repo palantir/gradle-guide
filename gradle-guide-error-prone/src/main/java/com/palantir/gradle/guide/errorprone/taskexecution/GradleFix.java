@@ -36,15 +36,15 @@ import java.util.Optional;
  * An autofix for a Gradle task. This usually involves injecting a Gradle service, and replacing violating methods
  * with methods from the service.
  * @param servicesRequired The Gradle services required to make this fix
- * @param fixTemplate Replaces the violating chained call
+ * @param replacement Replaces the violating chained call
  */
-public record GradleFix(List<GradleService> servicesRequired, Replacement fixTemplate) {
-    public static GradleFix of(GradleService service, Replacement fixedCall) {
-        return new GradleFix(List.of(service), fixedCall);
+public record GradleFix(List<GradleService> servicesRequired, Replacement replacement) {
+    public static GradleFix of(GradleService service, Replacement replacement) {
+        return new GradleFix(List.of(service), replacement);
     }
 
-    public static GradleFix of(Replacement fixedCall) {
-        return new GradleFix(List.of(), fixedCall);
+    public static GradleFix of(Replacement replacement) {
+        return new GradleFix(List.of(), replacement);
     }
 
     public boolean requiresServiceInjection() {
@@ -62,7 +62,7 @@ public record GradleFix(List<GradleService> servicesRequired, Replacement fixTem
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
         // Preserve arguments (if any)
-        String fixedCallChain = fixTemplate.render(context.illegalCallToReplace, state);
+        String fixedCallChain = replacement.render(context.illegalCallToReplace, state);
 
         // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;

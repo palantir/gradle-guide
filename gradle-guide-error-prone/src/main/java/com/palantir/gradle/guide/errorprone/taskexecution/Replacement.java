@@ -25,21 +25,21 @@ import java.util.stream.Collectors;
 
 public sealed interface Replacement permits LiteralReplacement, TemplatedReplacement {
 
-    record LiteralReplacement(String fix) implements Replacement {
+    record LiteralReplacement(String literal) implements Replacement {
         @Override
         public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(tree.getArguments().isEmpty());
-            return fix;
+            return literal;
         }
     }
 
-    record TemplatedReplacement(String unformatted) implements Replacement {
+    record TemplatedReplacement(String template) implements Replacement {
         @Override
         public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(!tree.getArguments().isEmpty());
             String args =
                     tree.getArguments().stream().map(state::getSourceForNode).collect(Collectors.joining(", "));
-            return String.format(unformatted, args);
+            return String.format(template, args);
         }
     }
 
