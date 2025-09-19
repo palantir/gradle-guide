@@ -31,12 +31,12 @@ import java.util.Optional;
 public record TaskExecutionViolation(ChainedCallMatcher violationMatcher, String message, Optional<GradleFix> fix)
         implements Comparable<TaskExecutionViolation> {
 
-    public static TaskExecutionViolation fix(ChainedCallMatcher violation, String message, GradleFix fix) {
-        return new TaskExecutionViolation(violation, message, Optional.of(fix));
+    public static TaskExecutionViolation fix(ChainedCallMatcher violationMatcher, String message, GradleFix fix) {
+        return new TaskExecutionViolation(violationMatcher, message, Optional.of(fix));
     }
 
-    public static TaskExecutionViolation report(ChainedCallMatcher violation, String message) {
-        return new TaskExecutionViolation(violation, message, Optional.empty());
+    public static TaskExecutionViolation report(ChainedCallMatcher violationMatcher, String message) {
+        return new TaskExecutionViolation(violationMatcher, message, Optional.empty());
     }
 
     @Override
