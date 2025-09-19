@@ -28,25 +28,25 @@ import java.util.Optional;
 /**
  * Represents strategies to report or auto-fix illegal methods and methods chained to it.
  */
-public record TaskExecutionViolation(ChainedCall violation, String message, Optional<GradleFix> fix)
+public record TaskExecutionViolation(ChainedCallMatcher violationMatcher, String message, Optional<GradleFix> fix)
         implements Comparable<TaskExecutionViolation> {
 
-    public static TaskExecutionViolation fix(ChainedCall violation, String message, GradleFix fix) {
-        return new TaskExecutionViolation(violation, message, Optional.of(fix));
+    public static TaskExecutionViolation fix(ChainedCallMatcher violationMatcher, String message, GradleFix fix) {
+        return new TaskExecutionViolation(violationMatcher, message, Optional.of(fix));
     }
 
-    public static TaskExecutionViolation report(ChainedCall violation, String message) {
-        return new TaskExecutionViolation(violation, message, Optional.empty());
+    public static TaskExecutionViolation report(ChainedCallMatcher violationMatcher, String message) {
+        return new TaskExecutionViolation(violationMatcher, message, Optional.empty());
     }
 
     @Override
     public int compareTo(TaskExecutionViolation other) {
         // More specific violations come before less specific violations
-        return this.violation.chainLength() - other.violation.chainLength();
+        return this.violationMatcher.chainLength() - other.violationMatcher.chainLength();
     }
 
     public boolean matches(MethodInvocationTree call, VisitorState state) {
-        return violation.matches(call, state);
+        return violationMatcher.matches(call, state);
     }
 
     /**
@@ -63,7 +63,7 @@ public record TaskExecutionViolation(ChainedCall violation, String message, Opti
         Description.Builder descriptionBuilder =
                 bugChecker.buildDescription(illegalCall).setMessage(message);
 
-        GradleFixContext context = new GradleFixContext(illegalCall, violation.chainLength(), taskOrAction);
+        GradleFixContext context = new GradleFixContext(illegalCall, violationMatcher.chainLength(), taskOrAction);
         switch (taskOrAction.type()) {
             case ACTION -> {
                 // We can't inject stuff into `Action<Task>`s, as `Action`s can't be made abstract

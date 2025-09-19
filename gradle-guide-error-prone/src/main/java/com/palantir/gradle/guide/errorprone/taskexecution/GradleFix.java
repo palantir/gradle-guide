@@ -36,15 +36,15 @@ import java.util.Optional;
  * An autofix for a Gradle task. This usually involves injecting a Gradle service, and replacing violating methods
  * with methods from the service.
  * @param servicesRequired The Gradle services required to make this fix
- * @param correctedCall Replaces the violating chained call
+ * @param replacement Replaces the violating chained call
  */
-public record GradleFix(List<GradleService> servicesRequired, String correctedCall) {
-    public static GradleFix of(GradleService service, String correctCall) {
-        return new GradleFix(List.of(service), correctCall);
+public record GradleFix(List<GradleService> servicesRequired, Replacement replacement) {
+    public static GradleFix of(GradleService service, Replacement replacement) {
+        return new GradleFix(List.of(service), replacement);
     }
 
-    public static GradleFix of(String correctCall) {
-        return new GradleFix(List.of(), correctCall);
+    public static GradleFix of(Replacement replacement) {
+        return new GradleFix(List.of(), replacement);
     }
 
     public boolean requiresServiceInjection() {
@@ -61,15 +61,19 @@ public record GradleFix(List<GradleService> servicesRequired, String correctedCa
 
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
-        // Replace the illegal call, taking care to preserve any receivers
+        // Preserve arguments (if any)
+        String fixedCallChain = replacement.render(context.illegalCallToReplace, state);
+
+        // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
         for (int i = 0; i < context.violatingChainLength - 1; ++i) {
             innermost = (MethodInvocationTree) ASTHelpers.getReceiver(innermost);
         }
+
         Optional<String> receiverSource =
                 Optional.ofNullable(ASTHelpers.getReceiver(innermost)).map(state::getSourceForNode);
         String correctedCallWithReceiver =
-                receiverSource.map(receiver -> receiver + ".").orElse("") + correctedCall;
+                receiverSource.map(receiver -> receiver + ".").orElse("") + fixedCallChain;
         fixBuilder.replace(context.illegalCallToReplace, correctedCallWithReceiver);
 
         // Turn class abstract if we need to inject any services
