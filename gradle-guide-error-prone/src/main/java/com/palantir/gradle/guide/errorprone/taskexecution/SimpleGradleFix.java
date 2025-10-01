@@ -27,7 +27,7 @@ import java.util.Optional;
  * @param replacement Replaces the violating chained call
  */
 public record SimpleGradleFix(Replacement replacement) implements GradleFix {
-    public boolean requiresServiceInjection() {
+    public boolean worksWithActions() {
         return false;
     }
 

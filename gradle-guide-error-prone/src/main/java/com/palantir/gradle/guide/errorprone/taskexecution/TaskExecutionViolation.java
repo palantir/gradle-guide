@@ -66,9 +66,7 @@ public record TaskExecutionViolation(ChainedCallMatcher violationMatcher, String
         GradleFixContext context = new GradleFixContext(illegalCall, violationMatcher.chainLength(), taskOrAction);
         switch (taskOrAction.type()) {
             case ACTION -> {
-                // We can't inject stuff into `Action<Task>`s, as `Action`s can't be made abstract
-                boolean canFix = fix.map(gradleFix -> !gradleFix.requiresServiceInjection())
-                        .orElse(false);
+                boolean canFix = fix.map(GradleFix::worksWithActions).orElse(false);
                 if (canFix) {
                     descriptionBuilder.addFix(fix.get().render(context, state));
                 }

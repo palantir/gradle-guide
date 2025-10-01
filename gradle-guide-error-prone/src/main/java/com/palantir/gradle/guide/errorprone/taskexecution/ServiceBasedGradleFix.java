@@ -108,7 +108,7 @@ public abstract class ServiceBasedGradleFix implements GradleFix {
      * All ServiceBasedGradleFixes need service injection.
      */
     @Override
-    public boolean requiresServiceInjection() {
+    public boolean worksWithActions() {
         return true;
     }
 

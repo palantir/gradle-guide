@@ -27,5 +27,5 @@ public interface GradleFix {
 
     SuggestedFix render(GradleFixContext context, VisitorState state);
 
-    boolean requiresServiceInjection();
+    boolean worksWithActions();
 }
