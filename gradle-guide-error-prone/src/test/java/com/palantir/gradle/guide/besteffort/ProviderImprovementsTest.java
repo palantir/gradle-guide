@@ -28,8 +28,7 @@ class ProviderImprovementsTest {
         @Test
         void basic_case() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -38,24 +37,22 @@ class ProviderImprovementsTest {
                         project.provider(() -> provider.get() + " yo");
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
+                """, """
+                    import org.gradle.api.Project;
+                    import org.gradle.api.provider.Provider;
 
-                class Test {
-                    void test(Project project, Provider<String> provider) {
-                        provider.map(providerValue -> providerValue + " yo");
+                    class Test {
+                        void test(Project project, Provider<String> provider) {
+                            provider.map(providerValue -> providerValue + " yo");
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void provider_factory() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.provider.Provider;
                 import org.gradle.api.provider.ProviderFactory;
 
@@ -64,24 +61,22 @@ class ProviderImprovementsTest {
                         providerFactory.provider(() -> provider.get() + " yo");
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.provider.Provider;
-                import org.gradle.api.provider.ProviderFactory;
+                """, """
+                    import org.gradle.api.provider.Provider;
+                    import org.gradle.api.provider.ProviderFactory;
 
-                class Test {
-                    void test(ProviderFactory providerFactory, Provider<String> provider) {
-                        provider.map(providerValue -> providerValue + " yo");
+                    class Test {
+                        void test(ProviderFactory providerFactory, Provider<String> provider) {
+                            provider.map(providerValue -> providerValue + " yo");
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void does_not_change_unrelated_non_provider_factory_method() {
             // language=Java
-            expectUnchanged(
-                    """
+            expectUnchanged("""
                 import com.google.common.base.Suppliers;
                 import org.gradle.api.provider.Provider;
 
@@ -97,8 +92,7 @@ class ProviderImprovementsTest {
         @Test
         void braces_in_lambda() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -110,27 +104,25 @@ class ProviderImprovementsTest {
                         });
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
+                """, """
+                    import org.gradle.api.Project;
+                    import org.gradle.api.provider.Provider;
 
-                class Test {
-                    void test(Project project, Provider<String> provider) {
-                        provider.map(providerValue -> {
-                            String tempVar = providerValue + " blah";
-                            return tempVar + " yo";
-                        });
+                    class Test {
+                        void test(Project project, Provider<String> provider) {
+                            provider.map(providerValue -> {
+                                String tempVar = providerValue + " blah";
+                                return tempVar + " yo";
+                            });
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void multiple_providers_it_will_only_change_the_first_one() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -139,25 +131,23 @@ class ProviderImprovementsTest {
                         project.provider(() -> first.get() + second.get());
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
+                """, """
+                    import org.gradle.api.Project;
+                    import org.gradle.api.provider.Provider;
 
-                class Test {
-                    void test(Project project, Provider<Integer> first, Provider<String> second) {
-                        // BUG: Diagnostic contains: Provider.get
-                        first.map(firstValue -> firstValue + second.get());
+                    class Test {
+                        void test(Project project, Provider<Integer> first, Provider<String> second) {
+                            // BUG: Diagnostic contains: Provider.get
+                            first.map(firstValue -> firstValue + second.get());
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void complex_expression_to_get_provider() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import java.util.List;
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
@@ -167,25 +157,23 @@ class ProviderImprovementsTest {
                         project.provider(() -> providers.get(0).get() + "hi");
                     }
                 }
-                """,
-                    """
-                import java.util.List;
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
+                """, """
+                    import java.util.List;
+                    import org.gradle.api.Project;
+                    import org.gradle.api.provider.Provider;
 
-                class Test {
-                    void test(Project project, List<Provider<Integer>> providers) {
-                        providers.get(0).map(providersGet0Value -> providersGet0Value + "hi");
+                    class Test {
+                        void test(Project project, List<Provider<Integer>> providers) {
+                            providers.get(0).map(providersGet0Value -> providersGet0Value + "hi");
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void doesnt_lift_get_through_multiple_lambdas() {
             // language=Java
-            expectUnchanged(
-                    """
+            expectUnchanged("""
                 import java.util.Optional;
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
@@ -202,8 +190,7 @@ class ProviderImprovementsTest {
         @Test
         void identity_mapping() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -212,17 +199,16 @@ class ProviderImprovementsTest {
                         System.out.println(project.provider(() -> provider.get()));
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Project;
-                import org.gradle.api.provider.Provider;
+                """, """
+                    import org.gradle.api.Project;
+                    import org.gradle.api.provider.Provider;
 
-                class Test {
-                    void test(Project project, Provider<String> provider) {
-                        System.out.println(provider);
+                    class Test {
+                        void test(Project project, Provider<String> provider) {
+                            System.out.println(provider);
+                        }
                     }
-                }
-                """);
+                    """);
         }
     }
 
@@ -231,8 +217,7 @@ class ProviderImprovementsTest {
         @Test
         void depends_on_task_provider_get() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -241,24 +226,22 @@ class ProviderImprovementsTest {
                         task.dependsOn(provider.get());
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Task;
-                import org.gradle.api.tasks.TaskProvider;
+                """, """
+                    import org.gradle.api.Task;
+                    import org.gradle.api.tasks.TaskProvider;
 
-                class Test {
-                    void test(Task task, TaskProvider<?> provider) {
-                        task.dependsOn(provider);
+                    class Test {
+                        void test(Task task, TaskProvider<?> provider) {
+                            task.dependsOn(provider);
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void works_with_custom_task() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -269,26 +252,24 @@ class ProviderImprovementsTest {
                         customTask.dependsOn(provider.get());
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Task;
-                import org.gradle.api.tasks.TaskProvider;
+                """, """
+                    import org.gradle.api.Task;
+                    import org.gradle.api.tasks.TaskProvider;
 
-                class Test {
-                    class CustomTask extends org.gradle.api.DefaultTask {}
+                    class Test {
+                        class CustomTask extends org.gradle.api.DefaultTask {}
 
-                    void test(CustomTask customTask, TaskProvider<?> provider) {
-                        customTask.dependsOn(provider);
+                        void test(CustomTask customTask, TaskProvider<?> provider) {
+                            customTask.dependsOn(provider);
+                        }
                     }
-                }
-                """);
+                    """);
         }
 
         @Test
         void multiple_task_providers_get() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -297,17 +278,16 @@ class ProviderImprovementsTest {
                         task.dependsOn(provider1.get(), provider2.get());
                     }
                 }
-                """,
-                    """
-                import org.gradle.api.Task;
-                import org.gradle.api.tasks.TaskProvider;
+                """, """
+                    import org.gradle.api.Task;
+                    import org.gradle.api.tasks.TaskProvider;
 
-                class Test {
-                    void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
-                        task.dependsOn(provider1, provider2);
+                    class Test {
+                        void test(Task task, TaskProvider<?> provider1, TaskProvider<?> provider2) {
+                            task.dependsOn(provider1, provider2);
+                        }
                     }
-                }
-                """);
+                    """);
         }
     }
 

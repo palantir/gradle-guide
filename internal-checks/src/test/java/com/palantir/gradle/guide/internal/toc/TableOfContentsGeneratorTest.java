@@ -30,9 +30,7 @@ class TableOfContentsGeneratorTest {
         Path guideDir = rootDir.resolve("guide");
         Files.createDirectories(guideDir);
 
-        Files.writeString(
-                guideDir.resolve("starting-stuff.md"),
-                """
+        Files.writeString(guideDir.resolve("starting-stuff.md"), """
             # Starting Stuff
 
             ## Subheading 1
@@ -42,9 +40,7 @@ class TableOfContentsGeneratorTest {
             ## Subheading with `code` elements/slashes <>
             """);
 
-        Files.writeString(
-                guideDir.resolve("more-stuff.md"),
-                """
+        Files.writeString(guideDir.resolve("more-stuff.md"), """
             # More Stuff
 
             ## Subheading 1
@@ -56,9 +52,7 @@ class TableOfContentsGeneratorTest {
 
         // language=markdown
         Path readme = rootDir.resolve("README.md");
-        Files.writeString(
-                readme,
-                """
+        Files.writeString(readme, """
             # Title
 
             <!-- TableOfContentsSource:
@@ -76,9 +70,7 @@ class TableOfContentsGeneratorTest {
         Guide.fromRootDirectory(rootDir).readme().tableOfContents().changeContent();
 
         // language=markdown
-        assertThat(readme)
-                .hasContent(
-                        """
+        assertThat(readme).hasContent("""
             # Title
 
             <!-- TableOfContentsSource:

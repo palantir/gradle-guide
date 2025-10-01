@@ -22,9 +22,7 @@ import org.junit.jupiter.api.Test;
 public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void projectLayout_not_injected_should_fix_and_inject() {
-        testFix(
-                "AlreadyAbstractTask.java",
-                """
+        testFix("AlreadyAbstractTask.java", """
                 import java.io.File;
                 import org.gradle.api.DefaultTask;
                 import org.gradle.api.Plugin;
@@ -37,33 +35,30 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                         File projectDir = getProject().getProjectDir();
                     }
                 }
-            """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ProjectLayout;
-                import org.gradle.api.tasks.TaskAction;
+            """, """
+                    import java.io.File;
+                    import javax.inject.Inject;
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.Plugin;
+                    import org.gradle.api.Project;
+                    import org.gradle.api.file.ProjectLayout;
+                    import org.gradle.api.tasks.TaskAction;
 
-                abstract class AlreadyAbstractTask extends DefaultTask {
-                    @Inject
-                    protected abstract ProjectLayout getProjectLayout();
+                    abstract class AlreadyAbstractTask extends DefaultTask {
+                        @Inject
+                        protected abstract ProjectLayout getProjectLayout();
 
-                    @TaskAction
-                    final void action() {
-                        File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        @TaskAction
+                        final void action() {
+                            File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        }
                     }
-                }
-            """);
+                """);
     }
 
     @Test
     void projectLayout_already_injected_should_fix_without_injecting_again() {
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
+        testFix("AlreadyInjectedTask.java", """
                 import java.io.File;
                 import javax.inject.Inject;
                 import org.gradle.api.DefaultTask;
@@ -84,36 +79,33 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                         File projectDir = getProject().getProjectDir();
                     }
                 }
-            """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ProjectLayout;
-                import org.gradle.api.tasks.TaskAction;
+            """, """
+                    import java.io.File;
+                    import javax.inject.Inject;
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.Plugin;
+                    import org.gradle.api.Project;
+                    import org.gradle.api.file.ProjectLayout;
+                    import org.gradle.api.tasks.TaskAction;
 
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                    abstract class AlreadyInjectedTask extends DefaultTask {
+                        private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
 
-                    @Inject
-                    protected abstract ProjectLayout getProjectLayout();
+                        @Inject
+                        protected abstract ProjectLayout getProjectLayout();
 
-                    @TaskAction
-                    final void action() {
-                        getProjectLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
-                        File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        @TaskAction
+                        final void action() {
+                            getProjectLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
+                            File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        }
                     }
-                }
-            """);
+                """);
     }
 
     @Test
     void concrete_task_should_fix() {
-        testFix(
-                "ConcreteTask.java",
-                """
+        testFix("ConcreteTask.java", """
                 import java.io.File;
                 import org.gradle.api.DefaultTask;
                 import org.gradle.api.Plugin;
@@ -126,49 +118,47 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                         File projectDir = getProject().getProjectDir();
                     }
                 }
-            """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ProjectLayout;
-                import org.gradle.api.tasks.TaskAction;
+            """, """
+                    import java.io.File;
+                    import javax.inject.Inject;
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.Plugin;
+                    import org.gradle.api.Project;
+                    import org.gradle.api.file.ProjectLayout;
+                    import org.gradle.api.tasks.TaskAction;
 
-                abstract class ConcreteTask extends DefaultTask {
-                    @Inject
-                    protected abstract ProjectLayout getProjectLayout();
+                    abstract class ConcreteTask extends DefaultTask {
+                        @Inject
+                        protected abstract ProjectLayout getProjectLayout();
 
-                    @TaskAction
-                    final void action() {
-                        File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        @TaskAction
+                        final void action() {
+                            File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        }
                     }
-                }
-            """);
+                """);
     }
 
     @Test
     void transitive_calls_to_getProject_getProjectDir_should_fail_in_taskActions() {
-        test(
-                """
-        import org.gradle.api.Action;
-        import org.gradle.api.Task;
+        test("""
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
 
-        abstract class CustomTaskAction implements Action<Task> {
-            @Override
-            public void execute(Task task) {
-                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
-                task.getProject().getProjectDir();
-                bad_helper(task);
-            }
+            abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                    task.getProject().getProjectDir();
+                    bad_helper(task);
+                }
 
-            public void bad_helper(Task task) {
-                System.out.println("I am a happy squirrel");
-                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
-                task.getProject().getProjectDir();
+                public void bad_helper(Task task) {
+                    System.out.println("I am a happy squirrel");
+                    // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                    task.getProject().getProjectDir();
+                }
             }
-        }
-        """);
+            """);
     }
 }
