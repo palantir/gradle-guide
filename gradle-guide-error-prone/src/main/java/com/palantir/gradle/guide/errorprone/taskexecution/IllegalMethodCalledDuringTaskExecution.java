@@ -73,27 +73,33 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("copy")
             .withParameters("org.gradle.api.Action");
+    private static final Matcher<ExpressionTree> delete = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("delete")
+            .withParameters("org.gradle.api.Action");
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT = TaskExecutionViolation.report(
             ChainedCallMatcher.of(getProject), "Don't call `getProject()` in task actions");
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
-            GradleFix.of(Replacement.literal("getLogger()")));
+            SimpleGradleFix.of(Replacement.literal("getLogger()")));
 
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
-            GradleFix.of(
-                    GradleService.PROJECT_LAYOUT,
-                    Replacement.literal("getProjectLayout().getProjectDirectory().getAsFile()")));
+            ProjectLayoutFix.PROJECT_DIRECTORY);
     private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
-            GradleFix.of(
-                    GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("getFileSystemOperations().copy(%s)")));
+            FileSystemOperationsFix.COPY);
+    private static final TaskExecutionViolation FIX_GET_PROJECT_DELETE = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, delete),
+            "Instead of `getProject().delete(...)`, do `getFileSystemOperations().delete(...)`",
+            FileSystemOperationsFix.DELETE);
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
+                    FIX_GET_PROJECT_DELETE,
                     FIX_GET_PROJECT_COPY,
                     FIX_GET_PROJECT_GET_PROJECT_DIR,
                     FIX_GET_PROJECT_GET_LOGGER,

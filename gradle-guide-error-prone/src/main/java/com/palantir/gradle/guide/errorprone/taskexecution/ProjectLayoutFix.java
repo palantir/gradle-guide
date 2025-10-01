@@ -16,16 +16,24 @@
 
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
-import com.google.errorprone.VisitorState;
-import com.google.errorprone.fixes.SuggestedFix;
-import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction;
-import com.sun.source.tree.MethodInvocationTree;
+public class ProjectLayoutFix extends ServiceBasedGradleFix {
 
-public interface GradleFix {
-    record GradleFixContext(
-            MethodInvocationTree illegalCallToReplace, int violatingChainLength, TaskOrAction enclosingClass) {}
+    private final String template;
 
-    SuggestedFix render(GradleFixContext context, VisitorState state);
+    private ProjectLayoutFix(String template) {
+        this.template = template;
+    }
 
-    boolean requiresServiceInjection();
+    public static final ProjectLayoutFix BUILD_DIRECTORY = new ProjectLayoutFix("getBuildDirectory().getAsFile()");
+    public static final ProjectLayoutFix PROJECT_DIRECTORY = new ProjectLayoutFix("getProjectDirectory().getAsFile()");
+
+    @Override
+    protected GradleService gradleService() {
+        return GradleService.PROJECT_LAYOUT;
+    }
+
+    @Override
+    protected String fixedMethod() {
+        return template;
+    }
 }

@@ -16,16 +16,24 @@
 
 package com.palantir.gradle.guide.errorprone.taskexecution;
 
-import com.google.errorprone.VisitorState;
-import com.google.errorprone.fixes.SuggestedFix;
-import com.palantir.gradle.guide.errorprone.utils.Tasks.TaskOrAction;
-import com.sun.source.tree.MethodInvocationTree;
+public class FileSystemOperationsFix extends ServiceBasedGradleFix {
 
-public interface GradleFix {
-    record GradleFixContext(
-            MethodInvocationTree illegalCallToReplace, int violatingChainLength, TaskOrAction enclosingClass) {}
+    private final String template;
 
-    SuggestedFix render(GradleFixContext context, VisitorState state);
+    private FileSystemOperationsFix(String template) {
+        this.template = template;
+    }
 
-    boolean requiresServiceInjection();
+    public static final FileSystemOperationsFix COPY = new FileSystemOperationsFix("copy(%s)");
+    public static final FileSystemOperationsFix DELETE = new FileSystemOperationsFix("delete(%s)");
+
+    @Override
+    protected GradleService gradleService() {
+        return GradleService.FILE_SYSTEMS_OPERATIONS;
+    }
+
+    @Override
+    protected String fixedMethod() {
+        return template;
+    }
 }
