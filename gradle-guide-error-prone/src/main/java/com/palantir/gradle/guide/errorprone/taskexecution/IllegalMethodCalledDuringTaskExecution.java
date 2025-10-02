@@ -26,6 +26,10 @@ import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
+import com.palantir.gradle.guide.errorprone.types.GradleFix;
+import com.palantir.gradle.guide.errorprone.types.GradleService;
+import com.palantir.gradle.guide.errorprone.types.Replacement;
+import com.palantir.gradle.guide.errorprone.utils.ChainedCallMatcher;
 import com.palantir.gradle.guide.errorprone.utils.MethodCallGraph;
 import com.palantir.gradle.guide.errorprone.utils.Tasks;
 import com.sun.source.tree.CompilationUnitTree;
@@ -84,14 +88,11 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
-            GradleFix.of(
-                    GradleService.PROJECT_LAYOUT,
-                    Replacement.literal("getProjectLayout().getProjectDirectory().getAsFile()")));
+            GradleFix.of(GradleService.PROJECT_LAYOUT, Replacement.literal("getProjectDirectory().getAsFile()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
-            GradleFix.of(
-                    GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("getFileSystemOperations().copy(%s)")));
+            GradleFix.of(GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("copy(%s)")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_COPY,

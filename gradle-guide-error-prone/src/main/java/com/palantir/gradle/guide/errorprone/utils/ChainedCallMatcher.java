@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone.taskexecution;
+package com.palantir.gradle.guide.errorprone.utils;
 
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.matchers.Matcher;
