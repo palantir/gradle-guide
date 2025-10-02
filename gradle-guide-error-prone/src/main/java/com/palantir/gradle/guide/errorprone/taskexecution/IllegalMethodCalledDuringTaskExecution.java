@@ -83,16 +83,17 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
-            GradleFix.of(Replacement.literal("getLogger()")));
+            GradleFix.onThis(Replacement.literal("getLogger()")));
 
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
-            GradleFix.of(GradleService.PROJECT_LAYOUT, Replacement.literal("getProjectDirectory().getAsFile()")));
+            GradleFix.onService(
+                    GradleService.PROJECT_LAYOUT, Replacement.literal("getProjectDirectory().getAsFile()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
-            GradleFix.of(GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("copy(%s)")));
+            GradleFix.onService(GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("copy(%s)")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_COPY,

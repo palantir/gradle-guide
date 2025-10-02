@@ -43,11 +43,57 @@ import javax.lang.model.element.Name;
  * @param replacement Replaces the violating chained call
  */
 public record GradleFix(Optional<GradleService> service, Replacement replacement) {
-    public static GradleFix of(GradleService service, Replacement replacement) {
+    /**
+     * Create a fix which introduces a method call on the Gradle service.
+     * <p>The service will be injected if no methods returning the service, or fields of that service type exist.
+     *
+     * <p>
+     * Here, {@code FileSystemOperations} has been injected, as {@code getFileSystemOperations} to be used in the task
+     * action body.
+     *
+     * <pre>
+     * abstract class AlreadyAbstractTask extends DefaultTask {
+     *     &#64;Inject
+     *     protected abstract FileSystemOperations getFileSystemOperations();
+     *
+     *     &#64;TaskAction
+     *     final void action() {
+     *         getFileSystemOperations().copy(copySpec -> {
+     *             copySpec.from("src");
+     *             copySpec.into("dest");
+     *         });
+     *     }
+     * }
+     * </pre>
+     */
+    public static GradleFix onService(GradleService service, Replacement replacement) {
         return new GradleFix(Optional.of(service), replacement);
     }
 
-    public static GradleFix of(Replacement replacement) {
+    /**
+     * Create a fix which introduces a method call on {@code this}, and doesn't require any service injection.
+     * <p>This method is used when the fix can be applied directly to the current class instance without
+     * needing to inject additional Gradle services. The replacement will be applied using existing
+     * methods or properties available on the current object.
+     *
+     * <p>
+     * Here, {@code getLogger} is a method on {@code this}, via {@code DefaultTask}:
+     *
+     * <pre>
+     * public class ExistingTask extends DefaultTask {
+     *     &#64;TaskAction
+     *     public void action() {
+     *         // Fix applied directly on 'this' without service injection
+     *         getLogger().info("Task execution started");
+     *     }
+     * }
+     * </pre>
+     *
+     * @param replacement the code replacement to apply on the current instance
+     * @return a {@code GradleFix} that operates on the current object without service injection
+     * @see #onService(GradleService, Replacement) for fixes requiring service injection
+     */
+    public static GradleFix onThis(Replacement replacement) {
         return new GradleFix(Optional.empty(), replacement);
     }
 
