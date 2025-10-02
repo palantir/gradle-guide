@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.fixes.SuggestedFix;
-import com.google.errorprone.fixes.SuggestedFix.Builder;
 import com.google.errorprone.fixes.SuggestedFixes;
 import com.google.errorprone.fixes.SuggestedFixes.AdditionPosition;
 import com.google.errorprone.util.ASTHelpers;
@@ -40,10 +39,10 @@ import javax.lang.model.element.Name;
 /**
  * An autofix for a Gradle task. This usually involves injecting a Gradle service, and replacing violating methods
  * with methods from the service.
- * @param serviceMaybe The Gradle services required to make this fix
+ * @param service The Gradle services required to make this fix
  * @param replacement Replaces the violating chained call
  */
-public record GradleFix(Optional<GradleService> serviceMaybe, Replacement replacement) {
+public record GradleFix(Optional<GradleService> service, Replacement replacement) {
     public static GradleFix of(GradleService service, Replacement replacement) {
         return new GradleFix(Optional.of(service), replacement);
     }
@@ -53,7 +52,7 @@ public record GradleFix(Optional<GradleService> serviceMaybe, Replacement replac
     }
 
     public boolean requiresServiceInjection() {
-        return !serviceMaybe.isEmpty();
+        return service.isPresent();
     }
 
     public record GradleFixContext(
@@ -61,16 +60,16 @@ public record GradleFix(Optional<GradleService> serviceMaybe, Replacement replac
 
     public SuggestedFix render(GradleFixContext context, VisitorState state) {
         Preconditions.checkArgument(
-                context.enclosingClass.type() == Variant.TASK || !requiresServiceInjection(),
+                context.enclosingClass().type() == Variant.TASK || !requiresServiceInjection(),
                 "Only Tasks can be fixed with service injection");
 
         SuggestedFix.Builder fixBuilder = SuggestedFix.builder();
 
-        // Either getService() method or service field
-        String receiver = getServiceReceiver(context, state, fixBuilder);
+        // Either the service method (getFileSystemOperations()) or service field (fileSystemOperations)
+        String serviceReceiver = getServiceReceiver(context, state, fixBuilder);
 
         // Preserve arguments (if any)
-        String fixedCallChain = replacement.render(receiver, context.illegalCallToReplace, state);
+        String fixedCallChain = serviceReceiver + replacement.render(context.illegalCallToReplace, state);
 
         // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
@@ -86,36 +85,41 @@ public record GradleFix(Optional<GradleService> serviceMaybe, Replacement replac
 
         // Turn class abstract if we need to inject any services
         boolean isAlreadyAbstract =
-                ASTHelpers.getSymbol(context.enclosingClass.tree()).isAbstract();
+                ASTHelpers.getSymbol(context.enclosingClass().tree()).isAbstract();
         if (requiresServiceInjection() && !isAlreadyAbstract) {
-            NonAbstractGradleType.maybeTurnClassAbstract(context.enclosingClass.tree(), state)
+            NonAbstractGradleType.maybeTurnClassAbstract(
+                            context.enclosingClass().tree(), state)
                     .ifPresent(fixBuilder::merge);
         }
         return fixBuilder.build();
     }
 
-    private String getServiceReceiver(GradleFixContext context, VisitorState state, Builder fixBuilder) {
-        if (serviceMaybe.isEmpty()) {
+    private String getServiceReceiver(GradleFixContext context, VisitorState state, SuggestedFix.Builder fixBuilder) {
+        if (service.isEmpty()) {
             // This means the method is on DefaultTask (i.e. `this`). No receiver needed.
             return "";
         }
-        GradleService service = serviceMaybe.get();
-        return findServiceReceiver(service, context.enclosingClass.tree(), state)
-                .orElseGet(() -> {
-                    injectService(context, state, service, fixBuilder);
-                    return service.getterName() + "()";
-                });
+        GradleService gradleService = service.get();
+        Optional<String> serviceReceiverMaybe =
+                findServiceReceiver(gradleService, context.enclosingClass().tree(), state);
+        if (serviceReceiverMaybe.isPresent()) {
+            return serviceReceiverMaybe.get() + ".";
+        }
+
+        injectService(context, state, gradleService, fixBuilder);
+        return gradleService.defaultGetterName() + "().";
     }
 
     private static void injectService(
-            GradleFixContext context, VisitorState state, GradleService service, Builder fixBuilder) {
+            GradleFixContext context, VisitorState state, GradleService service, SuggestedFix.Builder fixBuilder) {
         fixBuilder.addImport(service.fullyQualifiedName());
         fixBuilder.addImport("javax.inject.Inject");
         SuggestedFix serviceGetter = SuggestedFixes.addMembers(
-                context.enclosingClass.tree(),
+                context.enclosingClass().tree(),
                 state,
                 AdditionPosition.FIRST,
-                String.format("@Inject\nprotected abstract %s %s();", service.className(), service.getterName()));
+                String.format(
+                        "@Inject\nprotected abstract %s %s();", service.className(), service.defaultGetterName()));
         fixBuilder.merge(serviceGetter);
     }
 
@@ -124,7 +128,7 @@ public record GradleFix(Optional<GradleService> serviceMaybe, Replacement replac
         List<Symbol> enclosedElements = ASTHelpers.getSymbol(classTree).getEnclosedElements();
         Stream<String> fields = enclosedElements.stream()
                 .filter(symbol -> symbol.getKind().equals(ElementKind.FIELD))
-                .filter(symbol -> ASTHelpers.isSameType(symbol.type, service.getType(state), state))
+                .filter(symbol -> ASTHelpers.isSameType(symbol.asType(), service.getType(state), state))
                 .map(Symbol::getSimpleName)
                 .map(Name::toString);
         Stream<String> methodsReturningService = ASTHelpers.getSymbol(classTree).getEnclosedElements().stream()

@@ -33,7 +33,7 @@ public abstract sealed class Replacement permits LiteralReplacement, TemplatedRe
         }
 
         @Override
-        public String renderCall(MethodInvocationTree tree, VisitorState state) {
+        public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(tree.getArguments().isEmpty());
             return literal;
         }
@@ -47,7 +47,7 @@ public abstract sealed class Replacement permits LiteralReplacement, TemplatedRe
         }
 
         @Override
-        public String renderCall(MethodInvocationTree tree, VisitorState state) {
+        public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(!tree.getArguments().isEmpty());
             String args =
                     tree.getArguments().stream().map(state::getSourceForNode).collect(Collectors.joining(", "));
@@ -55,14 +55,7 @@ public abstract sealed class Replacement permits LiteralReplacement, TemplatedRe
         }
     }
 
-    protected abstract String renderCall(MethodInvocationTree tree, VisitorState state);
-
-    final String render(String receiver, MethodInvocationTree tree, VisitorState state) {
-        if (receiver.isEmpty()) {
-            return renderCall(tree, state);
-        }
-        return receiver + "." + renderCall(tree, state);
-    }
+    protected abstract String render(MethodInvocationTree tree, VisitorState state);
 
     private static int numReplacements(String format) {
         return format.split("%s", -1).length - 1;
