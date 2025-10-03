@@ -170,17 +170,17 @@ public record GradleFix(Optional<GradleService> service, Replacement replacement
     }
 
     @SuppressWarnings("ASTHelpersSuggestions")
-    private Optional<String> findServiceReceiver(GradleService service, ClassTree classTree, VisitorState state) {
+    private Optional<String> findServiceReceiver(GradleService gradleService, ClassTree classTree, VisitorState state) {
         List<Symbol> enclosedElements = ASTHelpers.getSymbol(classTree).getEnclosedElements();
         Stream<String> fields = enclosedElements.stream()
                 .filter(symbol -> symbol.getKind().equals(ElementKind.FIELD))
-                .filter(symbol -> ASTHelpers.isSameType(symbol.asType(), service.getType(state), state))
+                .filter(symbol -> ASTHelpers.isSameType(symbol.asType(), gradleService.getType(state), state))
                 .map(Symbol::getSimpleName)
                 .map(Name::toString);
         Stream<String> methodsReturningService = ASTHelpers.getSymbol(classTree).getEnclosedElements().stream()
                 .filter(symbol -> symbol instanceof MethodSymbol)
                 .map(symbol -> (MethodSymbol) symbol)
-                .filter(symbol -> ASTHelpers.isSameType(symbol.getReturnType(), service.getType(state), state))
+                .filter(symbol -> ASTHelpers.isSameType(symbol.getReturnType(), gradleService.getType(state), state))
                 .map(symbol -> symbol.getSimpleName() + "()");
         return Streams.concat(fields, methodsReturningService).findFirst();
     }
