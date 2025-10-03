@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone.taskexecution;
+package com.palantir.gradle.guide.errorprone.types;
 
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.suppliers.Supplier;
@@ -31,20 +31,21 @@ public enum GradleService {
 
     private final Supplier<Type> type;
     private final String fullyQualifiedName;
-    private final String getterName;
+    private final String defaultGetterName;
 
     /**
      * Create a gradle service.
      * @param fullyQualifiedName The fully qualified class name of the Gradle service, e.g.
      *      {@code org.gradle.api.file.ProjectLayout}
-     * @param getterName The name of the injected getter, e.g. {@code getProjectLayout}
+     * @param defaultGetterName The name of the getter which will be injected if the service is not available, e.g.
+     *      {@code getProjectLayout}
      */
-    GradleService(String fullyQualifiedName, String getterName) {
+    GradleService(String fullyQualifiedName, String defaultGetterName) {
         // Ideally, we check whether `fullyQualifiedName` corresponds to an actual Gradle class here,
         // But that'd require adding gradleApi() to errorprone's runtime classpath, which is impossible
         this.type = VisitorState.memoize(state -> state.getTypeFromString(fullyQualifiedName));
         this.fullyQualifiedName = fullyQualifiedName;
-        this.getterName = getterName;
+        this.defaultGetterName = defaultGetterName;
     }
 
     public Type getType(VisitorState state) {
@@ -59,7 +60,7 @@ public enum GradleService {
         return fullyQualifiedName.substring(fullyQualifiedName.lastIndexOf('.') + 1);
     }
 
-    public String getterName() {
-        return getterName;
+    public String defaultGetterName() {
+        return defaultGetterName;
     }
 }

@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone.taskexecution;
+package com.palantir.gradle.guide.errorprone.types;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.VisitorState;
-import com.palantir.gradle.guide.errorprone.taskexecution.Replacement.LiteralReplacement;
-import com.palantir.gradle.guide.errorprone.taskexecution.Replacement.TemplatedReplacement;
+import com.palantir.gradle.guide.errorprone.types.Replacement.LiteralReplacement;
+import com.palantir.gradle.guide.errorprone.types.Replacement.TemplatedReplacement;
 import com.sun.source.tree.MethodInvocationTree;
 import java.util.stream.Collectors;
 
-public sealed interface Replacement permits LiteralReplacement, TemplatedReplacement {
+public abstract sealed class Replacement permits LiteralReplacement, TemplatedReplacement {
 
-    record LiteralReplacement(String literal) implements Replacement {
+    static final class LiteralReplacement extends Replacement {
+        private final String literal;
+
+        LiteralReplacement(String literal) {
+            this.literal = literal;
+        }
+
         @Override
         public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(tree.getArguments().isEmpty());
@@ -33,7 +39,13 @@ public sealed interface Replacement permits LiteralReplacement, TemplatedReplace
         }
     }
 
-    record TemplatedReplacement(String template) implements Replacement {
+    static final class TemplatedReplacement extends Replacement {
+        private final String template;
+
+        TemplatedReplacement(String template) {
+            this.template = template;
+        }
+
         @Override
         public String render(MethodInvocationTree tree, VisitorState state) {
             Preconditions.checkArgument(!tree.getArguments().isEmpty());
@@ -43,19 +55,19 @@ public sealed interface Replacement permits LiteralReplacement, TemplatedReplace
         }
     }
 
-    String render(MethodInvocationTree tree, VisitorState state);
+    protected abstract String render(MethodInvocationTree tree, VisitorState state);
 
     private static int numReplacements(String format) {
         return format.split("%s", -1).length - 1;
     }
 
-    static Replacement literal(String template) {
+    public static Replacement literal(String template) {
         int numArgs = numReplacements(template);
         Preconditions.checkArgument(numArgs == 0, "LiteralReplacement template cannot have %s arguments", numArgs);
         return new LiteralReplacement(template);
     }
 
-    static Replacement template(String template) {
+    public static Replacement template(String template) {
         int numArgs = numReplacements(template);
         Preconditions.checkArgument(numArgs == 1, "TemplatedReplacement template cannot have %s arguments", numArgs);
         return new TemplatedReplacement(template);
