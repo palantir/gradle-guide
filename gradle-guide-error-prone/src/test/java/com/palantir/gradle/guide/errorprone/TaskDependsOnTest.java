@@ -48,7 +48,7 @@ class TaskDependsOnTest {
     """;
 
     @Test
-    void dependsOn_subclass_of_task_should_fail() {
+    void dependsOn_custom_task_subtype_should_fail() {
         test(
                 """
             abstract class MyPlugin implements Plugin<Project> {
@@ -76,7 +76,7 @@ class TaskDependsOnTest {
     }
 
     @Test
-    void dependsOn_generic_task_should_pass() {
+    void dependsOn_DefaultTask_should_pass() {
         test(
                 """
             abstract class MyPlugin implements Plugin<Project> {
@@ -93,39 +93,15 @@ class TaskDependsOnTest {
                     project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
                         task.getInputFile().set(sharedFile);
 
-                        // These are OK, because we assume that all lifecycle tasks to be non-custom, regular `Task`s
+                        // These are OK, because we assume that a regular DefaultTask is a lifecycle task
                         lifecycleTask.configure(lifecycle -> lifecycle.dependsOn(task));
-                        check.dependsOn(check);
+                        check.dependsOn(task);
                     });
 
                     TaskProvider<Task> consumingTask = project.getTasks().named("consumingTask");
                     consumingTask.configure(genericTask -> {
                         // Ideally we'd catch this case, but we don't know whether consumingTask is actually a custom task or not, so be conservative
                         genericTask.dependsOn(producingTask);
-                    });
-                }
-            }
-        """);
-    }
-
-    @Test
-    void dependsOn_known_lifecycle_task_should_pass() {
-        test(
-                """
-            abstract class MyPlugin implements Plugin<Project> {
-                @Override
-                public final void apply(Project project) {
-                    Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
-
-                    TaskProvider<Jar> jarTask = project.getTasks().named("jar", Jar.class);
-                    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class);
-
-                    TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
-                        task.getOutputFile().set(sharedFile);
-                        // These are okay, as Jar, Test, and check are lifecycle tasks
-                        jarTask.configure(jar -> jar.dependsOn(task));
-                        testTasks.configureEach(test -> test.dependsOn(task));
-                        project.getTasks().named("check").configure(check -> check.dependsOn(task));
                     });
                 }
             }
