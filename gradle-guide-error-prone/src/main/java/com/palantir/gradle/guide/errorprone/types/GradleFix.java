@@ -66,8 +66,8 @@ public record GradleFix(Optional<GradleService> service, Replacement replacement
      * }
      * </pre>
      */
-    public static GradleFix onService(GradleService service, Replacement replacement) {
-        return new GradleFix(Optional.of(service), replacement);
+    public static GradleFix onService(GradleService serviceUsedToFix, Replacement replacement) {
+        return new GradleFix(Optional.of(serviceUsedToFix), replacement);
     }
 
     /**
