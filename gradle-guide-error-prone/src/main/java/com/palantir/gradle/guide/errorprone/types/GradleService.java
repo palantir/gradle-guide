@@ -28,6 +28,7 @@ public enum GradleService {
     BUILD_LAYOUT("org.gradle.api.file.BuildLayout", "getBuildLayout"),
     PROJECT_LAYOUT("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
     FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations"),
+    OBJECT_FACTORY("org.gradle.api.model.ObjectFactory", "getObjectFactory"),
     ARCHIVE_OPERATIONS("org.gradle.api.file.ArchiveOperations", "getArchiveOperations"),
     PROVIDER_FACTORY("org.gradle.api.provider.ProviderFactory", "getProviderFactory"),
     EXEC_OPERATIONS("org.gradle.process.ExecOperations", "getExecOperations");
