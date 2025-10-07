@@ -235,13 +235,13 @@ public class ArchiveOperationsFixesTest extends IllegalMethodCalledDuringTaskExe
                 abstract class CustomTaskAction implements Action<Task> {
                     @Override
                     public void execute(Task task) {
-                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `getArchiveOperations().tarTree(...)`
+                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
                         task.getProject().tarTree("happy-squirrel.tar");
                         bad_helper(task);
                     }
                     public void bad_helper(Task task) {
                         System.out.println("I am a happy squirrel");
-                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `getArchiveOperations().tarTree(...)`
+                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
                         task.getProject().tarTree("happy-squirrel.tar");
                     }
                 }
