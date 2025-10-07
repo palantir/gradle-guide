@@ -19,7 +19,7 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("LineLength")
-public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTest {
+public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void projectLayout_not_injected_should_fix_and_inject() {
         testFix(
@@ -33,6 +33,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                 abstract class AlreadyAbstractTask extends DefaultTask {
                     @TaskAction
                     final void action() {
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("delete");
+                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("src");
                             copySpec.into("dest");
@@ -53,6 +56,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFileSystemOperations();
                     @TaskAction
                     final void action() {
+                        getFileSystemOperations().delete(deleteSpec -> {
+                            deleteSpec.delete("delete");
+                        });
                         getFileSystemOperations().copy(copySpec -> {
                             copySpec.from("src");
                             copySpec.into("dest");
@@ -80,7 +86,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFileSystemOperations();
                     @TaskAction
                     final void action() {
-                        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("temp"));
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("src");
                         });
@@ -101,7 +109,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFileSystemOperations();
                     @TaskAction
                     final void action() {
-                        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("temp"));
+                        getFileSystemOperations().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getFileSystemOperations().copy(copySpec -> {
                             copySpec.from("src");
                         });
@@ -129,10 +139,13 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
 
                     @TaskAction
                     final void action() {
-                        fsOps.delete(deleteSpec -> deleteSpec.delete("temp"));
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("src");
                         });
+
                     }
                 }
                 """,
@@ -154,7 +167,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
 
                     @TaskAction
                     final void action() {
-                        fsOps.delete(deleteSpec -> deleteSpec.delete("temp"));
+                        fsOps.delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         fsOps.copy(copySpec -> {
                             copySpec.from("src");
                         });
@@ -178,7 +193,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFSOps();
                     @TaskAction
                     final void action() {
-                        getFSOps().delete(deleteSpec -> deleteSpec.delete("temp"));
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("src");
                         });
@@ -199,7 +216,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFSOps();
                     @TaskAction
                     final void action() {
-                        getFSOps().delete(deleteSpec -> deleteSpec.delete("temp"));
+                        getFSOps().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getFSOps().copy(copySpec -> {
                             copySpec.from("src");
                         });
@@ -221,6 +240,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                 class ConcreteTask extends DefaultTask {
                     @TaskAction
                     final void action() {
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("input");
                             copySpec.into("output");
@@ -241,6 +263,9 @@ public class GetProjectCopyTest extends IllegalMethodCalledDuringTaskExecutionTe
                     protected abstract FileSystemOperations getFileSystemOperations();
                     @TaskAction
                     final void action() {
+                        getFileSystemOperations().delete(deleteSpec -> {
+                            deleteSpec.delete("temp");
+                        });
                         getFileSystemOperations().copy(copySpec -> {
                             copySpec.from("input");
                             copySpec.into("output");
