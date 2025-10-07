@@ -35,6 +35,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     @TaskAction
                     final void action() {
                         File projectDir = getProject().getProjectDir();
+                        File buildDir = getProject().getBuildDir();
                     }
                 }
             """,
@@ -54,6 +55,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     @TaskAction
                     final void action() {
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
                     }
                 }
             """);
@@ -81,7 +83,9 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     @TaskAction
                     final void action() {
                         getProjectLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
+                        ProjectLayout projectLayout = getProject().getLayout();
                         File projectDir = getProject().getProjectDir();
+                        File buildDir = getProject().getBuildDir();
                     }
                 }
             """,
@@ -103,7 +107,9 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     @TaskAction
                     final void action() {
                         getProjectLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
+                        ProjectLayout projectLayout = getProjectLayout();
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
                     }
                 }
             """);
@@ -118,12 +124,15 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                 import org.gradle.api.DefaultTask;
                 import org.gradle.api.Plugin;
                 import org.gradle.api.Project;
+                import org.gradle.api.file.ProjectLayout;
                 import org.gradle.api.tasks.TaskAction;
 
                 class ConcreteTask extends DefaultTask {
                     @TaskAction
                     final void action() {
+                        ProjectLayout projectLayout = getProject().getLayout();
                         File projectDir = getProject().getProjectDir();
+                        File buildDir = getProject().getBuildDir();
                     }
                 }
             """,
@@ -142,7 +151,9 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
 
                     @TaskAction
                     final void action() {
+                        ProjectLayout projectLayout = getProjectLayout();
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
                     }
                 }
             """);
@@ -160,13 +171,19 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
             public void execute(Task task) {
                 // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
                 task.getProject().getProjectDir();
-                bad_helper(task);
+                badHelper(task);
             }
 
-            public void bad_helper(Task task) {
+            public void badHelper(Task task) {
                 System.out.println("I am a happy squirrel");
                 // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
                 task.getProject().getProjectDir();
+                badHelper2(task);
+            }
+
+            public void badHelper2(Task task) {
+                // BUG: Diagnostic contains: Instead of `getProject().getLayout()`, do `getProjectLayout()`
+                task.getProject().getLayout();
             }
         }
         """);

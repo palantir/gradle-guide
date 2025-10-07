@@ -104,6 +104,16 @@ public record GradleFix(Optional<GradleService> service, Replacement replacement
     public record GradleFixContext(
             MethodInvocationTree illegalCallToReplace, int violatingChainLength, TaskOrAction enclosingClass) {}
 
+    private static String chain(String expr1, String expr2) {
+        if (expr1.isEmpty()) {
+            return expr2;
+        } else if (expr2.isEmpty()) {
+            return expr1;
+        } else {
+            return expr1 + "." + expr2;
+        }
+    }
+
     public SuggestedFix render(GradleFixContext context, VisitorState state) {
         Preconditions.checkArgument(
                 context.enclosingClass().type() == Variant.TASK || !requiresServiceInjection(),
@@ -115,7 +125,7 @@ public record GradleFix(Optional<GradleService> service, Replacement replacement
         String serviceReceiver = getServiceReceiver(context, state, fixBuilder);
 
         // Preserve arguments (if any)
-        String fixedCallChain = serviceReceiver + replacement.render(context.illegalCallToReplace, state);
+        String fixedCallChain = chain(serviceReceiver, replacement.render(context.illegalCallToReplace, state));
 
         // Preserve receiver
         MethodInvocationTree innermost = context.illegalCallToReplace;
@@ -149,11 +159,11 @@ public record GradleFix(Optional<GradleService> service, Replacement replacement
         Optional<String> serviceReceiverMaybe =
                 findServiceReceiver(gradleService, context.enclosingClass().tree(), state);
         if (serviceReceiverMaybe.isPresent()) {
-            return serviceReceiverMaybe.get() + ".";
+            return serviceReceiverMaybe.get();
         }
 
         injectService(context, state, gradleService, fixBuilder);
-        return gradleService.defaultGetterName() + "().";
+        return gradleService.defaultGetterName() + "()";
     }
 
     private static void injectService(
