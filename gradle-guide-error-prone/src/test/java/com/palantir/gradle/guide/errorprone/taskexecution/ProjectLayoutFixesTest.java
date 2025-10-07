@@ -19,7 +19,7 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("LineLength")
-public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskExecutionTest {
+public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void projectLayout_not_injected_should_fix_and_inject() {
         testFix(
@@ -55,7 +55,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     @TaskAction
                     final void action() {
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
-                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().getAsFile().get();
                     }
                 }
             """);
@@ -109,7 +109,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                         getProjectLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
                         ProjectLayout projectLayout = getProjectLayout();
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
-                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().getAsFile().get();
                     }
                 }
             """);
@@ -153,7 +153,7 @@ public class GetProjectGetProjectDirTest extends IllegalMethodCalledDuringTaskEx
                     final void action() {
                         ProjectLayout projectLayout = getProjectLayout();
                         File projectDir = getProjectLayout().getProjectDirectory().getAsFile();
-                        File buildDir = getProjectLayout().getBuildDirectory().file(".").get().getAsFile();
+                        File buildDir = getProjectLayout().getBuildDirectory().getAsFile().get();
                     }
                 }
             """);

@@ -103,10 +103,9 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     GradleService.PROJECT_LAYOUT, Replacement.literal("getProjectDirectory().getAsFile()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_BUILD_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getBuildDir),
-            "Instead of `getProject().getBuildDir()`, do `getProjectLayout().getBuildDirectory().file('.').get().getAsFile()`",
+            "Instead of `getProject().getBuildDir()`, do `getProjectLayout().getBuildDirectory().getAsFile().get()`",
             GradleFix.onService(
-                    GradleService.PROJECT_LAYOUT,
-                    Replacement.literal("getBuildDirectory().file(\".\").get().getAsFile()")));
+                    GradleService.PROJECT_LAYOUT, Replacement.literal("getBuildDirectory().getAsFile().get()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
