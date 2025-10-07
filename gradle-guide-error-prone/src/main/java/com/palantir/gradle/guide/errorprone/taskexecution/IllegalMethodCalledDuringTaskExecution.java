@@ -89,6 +89,14 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("exec")
             .withParameters("org.gradle.api.Action");
+    private static final Matcher<ExpressionTree> provider = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("provider")
+            .withParameters("java.util.concurrent.Callable");
+    private static final Matcher<ExpressionTree> getProviders = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getProviders")
+            .withNoParameters();
 
     private static final TaskExecutionViolation REPORT_GET_PROJECT = TaskExecutionViolation.report(
             ChainedCallMatcher.of(getProject), "Don't call `getProject()` in task actions");
@@ -118,9 +126,19 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             ChainedCallMatcher.of(getProject, exec),
             "Instead of `getProject().exec(...)`, do `ExecOperations#(...)`",
             GradleFix.onService(GradleService.EXEC_OPERATIONS, Replacement.template("exec(%s)")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_PROVIDER = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, provider),
+            "Instead of `getProject().provider(...)`, do `ProviderFactory#provider(...)`",
+            GradleFix.onService(GradleService.PROVIDER_FACTORY, Replacement.template("provider(%s)")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROVIDERS = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, getProviders),
+            "Instead of `getProject().getProviders`, do `getProviderFactory()`",
+            GradleFix.onService(GradleService.PROVIDER_FACTORY, Replacement.literal("")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_EXEC,
+                    FIX_GET_PROJECT_PROVIDER,
+                    FIX_GET_PROJECT_GET_PROVIDERS,
                     FIX_GET_PROJECT_COPY,
                     FIX_GET_PROJECT_GET_BUILD_DIR,
                     FIX_GET_PROJECT_GET_PROJECT_DIR,
