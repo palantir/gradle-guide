@@ -81,6 +81,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("getBuildDir")
             .withNoParameters();
+    private static final Matcher<ExpressionTree> getRootDir = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getRootDir")
+            .withNoParameters();
     private static final Matcher<ExpressionTree> copy = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("copy")
@@ -134,6 +138,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             ChainedCallMatcher.of(getProject, exec),
             "Instead of `getProject().exec(...)`, do `ExecOperations#(...)`",
             GradleFix.onService(GradleService.EXEC_OPERATIONS, Replacement.template("exec(%s)")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_ROOT_DIR = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, getRootDir),
+            "Instead of `getProject().getRootDir()`, do `getBuildLayout().getRootDirectory().getAsFile()`",
+            GradleFix.onService(GradleService.BUILD_LAYOUT, Replacement.literal("getRootDirectory().getAsFile()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_PROVIDER = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, provider),
             "Instead of `getProject().provider(...)`, do `ProviderFactory#provider(...)`",
@@ -153,6 +161,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     FIX_GET_PROJECT_GET_PROJECT_DIR,
                     FIX_GET_PROJECT_GET_LAYOUT,
                     FIX_GET_PROJECT_GET_LOGGER,
+                    FIX_GET_PROJECT_GET_ROOT_DIR,
                     REPORT_GET_PROJECT)
             .sorted()
             .toList();
