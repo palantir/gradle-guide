@@ -172,5 +172,49 @@ public class BuildLayoutFixesTest extends IllegalMethodCalledDuringTaskExecution
             }
         }
         """);
+
+        testFix(
+                "AlreadyAbstractTask.java",
+                """
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    private void helper() {
+                        File rootDir = getProject().getRootDir();
+                    }
+                }
+            """,
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    private void helper() {
+                        File rootDir = getBuildLayout().getRootDirectory().getAsFile();
+                    }
+                }
+            """);
     }
 }
