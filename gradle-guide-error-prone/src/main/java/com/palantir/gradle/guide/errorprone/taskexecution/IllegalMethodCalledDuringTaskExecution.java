@@ -85,6 +85,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("copy")
             .withParameters("org.gradle.api.Action");
+    private static final Matcher<ExpressionTree> tarTree = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("tarTree")
+            .withParameters("java.lang.Object");
     private static final Matcher<ExpressionTree> exec = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("exec")
@@ -122,6 +126,10 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
             GradleFix.onService(GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("copy(%s)")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_TAR_TREE = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, tarTree),
+            "Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`",
+            GradleFix.onService(GradleService.ARCHIVE_OPERATIONS, Replacement.template("tarTree(%s)")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_EXEC = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, exec),
             "Instead of `getProject().exec(...)`, do `ExecOperations#(...)`",
@@ -136,6 +144,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             GradleFix.onService(GradleService.PROVIDER_FACTORY, Replacement.literal("")));
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
+                    FIX_GET_PROJECT_TAR_TREE,
                     FIX_GET_PROJECT_EXEC,
                     FIX_GET_PROJECT_PROVIDER,
                     FIX_GET_PROJECT_GET_PROVIDERS,
