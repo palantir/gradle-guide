@@ -27,6 +27,7 @@ import com.sun.tools.javac.code.Type;
 public enum GradleService {
     BUILD_LAYOUT("org.gradle.api.file.BuildLayout", "getBuildLayout"),
     PROJECT_LAYOUT("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
+    PROVIDER_FACTORY("org.gradle.api.provider.ProviderFactory", "getProviderFactory"),
     FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations"),
     EXEC_OPERATIONS("org.gradle.process.ExecOperations", "getExecOperations");
 
