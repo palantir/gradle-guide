@@ -69,9 +69,17 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .onDescendantOf("org.gradle.api.Project")
             .named("getLogger")
             .withNoParameters();
+    private static final Matcher<ExpressionTree> getLayout = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getLayout")
+            .withNoParameters();
     private static final Matcher<ExpressionTree> getProjectDir = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
             .named("getProjectDir")
+            .withNoParameters();
+    private static final Matcher<ExpressionTree> getBuildDir = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("getBuildDir")
             .withNoParameters();
     private static final Matcher<ExpressionTree> copy = Matchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Project")
@@ -84,12 +92,20 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             ChainedCallMatcher.of(getProject, getLogger),
             "Instead of `getProject().getLogger()`, just do `getLogger()`",
             GradleFix.onThis(Replacement.literal("getLogger()")));
-
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LAYOUT = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, getLayout),
+            "Instead of `getProject().getLayout()`, do `getProjectLayout()`",
+            GradleFix.onService(GradleService.PROJECT_LAYOUT, Replacement.literal("")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_PROJECT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getProjectDir),
             "Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`",
             GradleFix.onService(
                     GradleService.PROJECT_LAYOUT, Replacement.literal("getProjectDirectory().getAsFile()")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_BUILD_DIR = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, getBuildDir),
+            "Instead of `getProject().getBuildDir()`, do `getProjectLayout().getBuildDirectory().getAsFile().get()`",
+            GradleFix.onService(
+                    GradleService.PROJECT_LAYOUT, Replacement.literal("getBuildDirectory().getAsFile().get()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_COPY = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, copy),
             "Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`",
@@ -97,7 +113,9 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
 
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_COPY,
+                    FIX_GET_PROJECT_GET_BUILD_DIR,
                     FIX_GET_PROJECT_GET_PROJECT_DIR,
+                    FIX_GET_PROJECT_GET_LAYOUT,
                     FIX_GET_PROJECT_GET_LOGGER,
                     REPORT_GET_PROJECT)
             .sorted()
