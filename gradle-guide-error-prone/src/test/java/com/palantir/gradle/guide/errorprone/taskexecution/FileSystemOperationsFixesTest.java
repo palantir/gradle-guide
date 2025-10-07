@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("LineLength")
 public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
-    void projectLayout_not_injected_should_fix_and_inject() {
+    void fileSystemOperations_not_injected_should_fix_and_inject() {
         testFix(
                 "AlreadyAbstractTask.java",
                 """
@@ -33,13 +33,19 @@ public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTask
                 abstract class AlreadyAbstractTask extends DefaultTask {
                     @TaskAction
                     final void action() {
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("delete");
-                        });
                         getProject().copy(copySpec -> {
                             copySpec.from("src");
                             copySpec.into("dest");
                         });
+
+                        // delete with deleteSpec
+                        getProject().delete(deleteSpec -> {
+                            deleteSpec.delete("delete");
+                        });
+
+                        // delete with varargs
+                        getProject().delete("happy");
+                        boolean deleted = getProject().delete("happy", "squirrel");
                     }
                 }
                 """,
@@ -56,18 +62,25 @@ public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTask
                     protected abstract FileSystemOperations getFileSystemOperations();
                     @TaskAction
                     final void action() {
-                        getFileSystemOperations().delete(deleteSpec -> {
-                            deleteSpec.delete("delete");
-                        });
                         getFileSystemOperations().copy(copySpec -> {
                             copySpec.from("src");
                             copySpec.into("dest");
                         });
+
+                        // delete with deleteSpec
+                        getFileSystemOperations().delete(deleteSpec -> {
+                            deleteSpec.delete("delete");
+                        });
+
+                        // delete with varargs
+                        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy").setFollowSymlinks(false)).getDidWork();
+                        boolean deleted = getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy", "squirrel").setFollowSymlinks(false)).getDidWork();
                     }
                 }
                 """);
     }
 
+    @SuppressWarnings("MethodLength")
     @Test
     void fileSystemOperations_already_injected_should_fix_without_injecting_again() {
         testFix(
@@ -276,7 +289,7 @@ public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTask
     }
 
     @Test
-    void transitive_calls_to_getProject_copy_should_fail_in_taskActions() {
+    void transitive_calls_to_getProject_copy_should_fail_in_taskactions() {
         test(
                 """
                 import org.gradle.api.Action;
