@@ -1,0 +1,220 @@
+/*
+ * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.gradle.guide.errorprone.taskexecution;
+
+import org.junit.jupiter.api.Test;
+
+@SuppressWarnings("LineLength")
+public class BuildLayoutFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
+    @Test
+    void buildLayout_not_injected_should_fix_and_inject() {
+        testFix(
+                "AlreadyAbstractTask.java",
+                """
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        File rootDir = getProject().getRootDir();
+                    }
+                }
+            """,
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        File rootDir = getBuildLayout().getRootDirectory().getAsFile();
+                    }
+                }
+            """);
+    }
+
+    @Test
+    void buildLayout_already_injected_should_fix_without_injecting_again() {
+        testFix(
+                "AlreadyInjectedTask.java",
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyInjectedTask extends DefaultTask {
+                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        getBuildLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
+                        File rootDir = getProject().getRootDir();
+                    }
+                }
+            """,
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyInjectedTask extends DefaultTask {
+                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        getBuildLayout().getSettingsDirectory().file(IM_AT_THE_TOP_OF_THE_CLASS);
+                        File rootDir = getBuildLayout().getRootDirectory().getAsFile();
+                    }
+                }
+            """);
+    }
+
+    @Test
+    void concrete_task_should_fix() {
+        testFix(
+                "ConcreteTask.java",
+                """
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                class ConcreteTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        File rootDir = getProject().getRootDir();
+                    }
+                }
+            """,
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class ConcreteTask extends DefaultTask {
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        File rootDir = getBuildLayout().getRootDirectory().getAsFile();
+                    }
+                }
+            """);
+    }
+
+    @Test
+    void transitive_calls_to_violations_should_fail_in_taskActions() {
+        test(
+                """
+        import org.gradle.api.Action;
+        import org.gradle.api.Task;
+        import java.io.File;
+
+
+        abstract class CustomTaskAction implements Action<Task> {
+            @Override
+            public void execute(Task task) {
+                // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, do `getBuildLayout().getRootDirectory().getAsFile()`
+                File rootDir = task.getProject().getRootDir();
+                bad_helper(task);
+            }
+
+            public void bad_helper(Task task) {
+                System.out.println("I am a happy squirrel");
+                // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, do `getBuildLayout().getRootDirectory().getAsFile()`
+                File rootDir = task.getProject().getRootDir();
+            }
+        }
+        """);
+
+        testFix(
+                "AlreadyAbstractTask.java",
+                """
+                import java.io.File;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    private void helper() {
+                        File rootDir = getProject().getRootDir();
+                    }
+                }
+            """,
+                """
+                import java.io.File;
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.Plugin;
+                import org.gradle.api.Project;
+                import org.gradle.api.file.BuildLayout;
+                import org.gradle.api.tasks.TaskAction;
+
+                abstract class AlreadyAbstractTask extends DefaultTask {
+                    @Inject
+                    protected abstract BuildLayout getBuildLayout();
+
+                    @TaskAction
+                    final void action() {
+                        helper();
+                    }
+
+                    private void helper() {
+                        File rootDir = getBuildLayout().getRootDirectory().getAsFile();
+                    }
+                }
+            """);
+    }
+}
