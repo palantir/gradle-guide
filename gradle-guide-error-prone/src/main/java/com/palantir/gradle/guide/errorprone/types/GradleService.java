@@ -27,7 +27,8 @@ import com.sun.tools.javac.code.Type;
 public enum GradleService {
     BUILD_LAYOUT("org.gradle.api.file.BuildLayout", "getBuildLayout"),
     PROJECT_LAYOUT("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
-    FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations");
+    FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations"),
+    EXEC_OPERATIONS("org.gradle.process.ExecOperations", "getExecOperations");
 
     private final Supplier<Type> type;
     private final String fullyQualifiedName;
