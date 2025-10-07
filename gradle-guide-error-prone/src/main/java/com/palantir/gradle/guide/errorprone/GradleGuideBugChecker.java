@@ -32,7 +32,7 @@ public abstract class GradleGuideBugChecker extends BugChecker {
         return canonicalName();
     }
 
-    protected final boolean bestEffortModeEnabled(VisitorState state) {
+    protected static boolean bestEffortModeEnabled(VisitorState state) {
         return state.errorProneOptions()
                 .getFlags()
                 .getBoolean("GradleGuide:BestEffortMode")

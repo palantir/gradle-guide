@@ -78,7 +78,7 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         def stderr = runTasksWithFailure(':gradleApi:compileJava').standardError
 
         then:
-        stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
+        stderr.contains 'error: [ConfigurationAvoidance]'
     }
 
     def 'registers errorprones correctly in subproject that uses java gradle plugin'() {
@@ -105,6 +105,6 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         def stderr = runTasksWithFailure(':javaGradlePlugin:compileJava').standardError
 
         then:
-        stderr.contains 'error: [ConfigurationAvoidanceRegistration]'
+        stderr.contains 'error: [ConfigurationAvoidance]'
     }
 }

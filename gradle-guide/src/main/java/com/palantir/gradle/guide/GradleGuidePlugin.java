@@ -25,10 +25,7 @@ import org.gradle.api.Project;
 
 public class GradleGuidePlugin implements Plugin<Project> {
     private static final Set<String> PATCH_CHECKS = Set.of(
-            "ConfigurationAvoidanceRegistration",
-            "ProviderGet",
-            "NonAbstractGradleType",
-            "IllegalMethodCalledDuringTaskExecution");
+            "ConfigurationAvoidance", "ProviderGet", "NonAbstractGradleType", "IllegalMethodCalledDuringTaskExecution");
 
     @Override
     public final void apply(Project rootProject) {

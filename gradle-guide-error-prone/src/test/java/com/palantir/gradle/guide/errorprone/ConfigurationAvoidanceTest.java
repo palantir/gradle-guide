@@ -16,13 +16,14 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
+import com.palantir.gradle.guide.errorprone.laziness.ConfigurationAvoidance;
 import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class ConfigurationAvoidanceRegistrationTest {
+class ConfigurationAvoidanceTest {
     private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(ConfigurationAvoidanceRegistration.class, getClass());
+            CompilationTestHelper.newInstance(ConfigurationAvoidance.class, getClass());
 
     @SuppressWarnings("for-rollout:MisformattedTestData")
     @Test
@@ -38,19 +39,19 @@ class ConfigurationAvoidanceRegistrationTest {
 
             class Test {
                 static void test(TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class));
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create("lol", Task.class);
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create("lol", Task.class, new Object());
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     tasks.create("lol", Task.class, task -> {});
                 }
             }
@@ -71,11 +72,11 @@ class ConfigurationAvoidanceRegistrationTest {
 
             class Test {
                 static void test(ConfigurationContainer configurations) {
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     configurations.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     configurations.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     configurations.create("lol", conf -> {});
                 }
             }
@@ -96,12 +97,119 @@ class ConfigurationAvoidanceRegistrationTest {
 
             class Test {
                 static void test(SourceSetContainer sourceSets) {
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     sourceSets.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     sourceSets.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
+                    // BUG: Diagnostic contains: Use `.register`
                     sourceSets.create("lol", conf -> {});
+                }
+            }
+            """);
+
+        compilationTestHelper.doTest();
+    }
+
+    @SuppressWarnings("for-rollout:MisformattedTestData")
+    @Test
+    void matches_eager_task_container_apis() {
+        compilationTestHelper.addSourceLines(
+                "Test.java",
+                // language=java
+                """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskContainer;
+
+            class Test {
+                static void test(TaskContainer tasks) {
+                    // BUG: Diagnostic contains: Use `.register`
+                    tasks.create("foo");
+                    // BUG: Diagnostic contains: Use `tasks.named(...)` instead of `tasks.getByName(...)`
+                    tasks.getByName("foo");
+                    // BUG: Diagnostic contains: Use `tasks.named(...)` instead of `tasks.findByName(...)`
+                    tasks.findByName("foo");
+                    // BUG: Diagnostic contains: Use `tasks.named(...)` instead of `tasks.getByPath(...)`
+                    tasks.getByPath(":foo");
+                    // BUG: Diagnostic contains: Use `tasks.named(...)` instead of `tasks.findByPath(...)`
+                    tasks.findByPath(":foo");
+                    // BUG: Diagnostic contains: Avoid `replace()` - forces eager resolution and behavior may change
+                    tasks.replace("foo", Task.class);
+                    // BUG: Diagnostic contains: Use `tasks.configureEach(...)` instead of `tasks.whenTaskAdded(...)`
+                    tasks.whenTaskAdded(task -> {});
+                }
+            }
+            """);
+
+        compilationTestHelper.doTest();
+    }
+
+    @SuppressWarnings("for-rollout:MisformattedTestData")
+    @Test
+    void matches_eager_task_collection_apis() {
+        compilationTestHelper.addSourceLines(
+                "Test.java",
+                // language=java
+                """
+            import org.gradle.api.Task;
+            import org.gradle.api.tasks.TaskCollection;
+
+            class Test {
+                static void test(TaskCollection<Task> tasks) {
+                    // BUG: Diagnostic contains: Use `configureEach(...)` with conditional logic instead of `matching(...)`
+                    tasks.matching(task -> true);
+                    // BUG: Diagnostic contains: Use `named(...)` instead of `getAt(...)`
+                    tasks.getAt("foo");
+                    // BUG: Diagnostic contains: Use `configureEach(...)` instead of `all(...)`
+                    tasks.all(task -> {});
+                }
+            }
+            """);
+
+        compilationTestHelper.doTest();
+    }
+
+    @SuppressWarnings("for-rollout:MisformattedTestData")
+    @Test
+    void matches_eager_domain_object_collection_apis() {
+        compilationTestHelper.addSourceLines(
+                "Test.java",
+                // language=java
+                """
+            import org.gradle.api.DomainObjectCollection;
+
+            class Test {
+                static void test(DomainObjectCollection<Object> objects) {
+                    // BUG: Diagnostic contains: Use `configureEach(...)` instead of `whenObjectAdded(...)`
+                    objects.whenObjectAdded(obj -> {});
+                    // BUG: Diagnostic contains:Use `configureEach(...)` instead of `all(...)`
+                    objects.all(obj -> {});
+                    // BUG: Diagnostic contains: Use `configureEach(...)` with conditional logic instead of `matching(...)`
+                    objects.matching(obj -> true);
+                    // BUG: Diagnostic contains: Use `named(...).configureEach(...)` instead of `withType(...)`
+                    objects.withType(String.class);
+                }
+            }
+            """);
+
+        compilationTestHelper.doTest();
+    }
+
+    @SuppressWarnings("for-rollout:MisformattedTestData")
+    @Test
+    void matches_eager_named_domain_object_set_apis() {
+        compilationTestHelper.addSourceLines(
+                "Test.java",
+                // language=java
+                """
+            import org.gradle.api.NamedDomainObjectSet;
+            import groovy.lang.Closure;
+
+            class Test {
+                static void test(NamedDomainObjectSet<Object> objects) {
+                    // BUG: Diagnostic contains: Avoid `findAll()` - use `matching(...)` and `configureEach(...)` instead
+                    objects.findAll(Closure.IDENTITY);
+                    // BUG: Diagnostic contains: Use `named()` to avoid eager configuration. Note that it fails if the task does not exist
+                    objects.findByName("foo");
                 }
             }
             """);
@@ -163,11 +271,11 @@ class ConfigurationAvoidanceRegistrationTest {
 
                     class Test {
                         static Task test(TaskContainer tasks) {
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             Task task = tasks.create("lol");
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             System.out.println(tasks.create("lol", Task.class, t -> {}));
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             return tasks.create("lol", Task.class);
                         }
                     }
@@ -205,11 +313,11 @@ class ConfigurationAvoidanceRegistrationTest {
 
                     class Test {
                         static void test(TaskContainer tasks) {
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             tasks.create("lol", Closure.IDENTITY);
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             tasks.create(Map.of("name", "lol", "type", Task.class));
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
                         }
                     }
@@ -304,11 +412,11 @@ class ConfigurationAvoidanceRegistrationTest {
 
                     class Test {
                         static Configuration test(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             Configuration configuration = configurations.create("lol");
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             System.out.println(configurations.create("lol", conf -> {}));
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             return configurations.create("lol", conf -> {});
                         }
                     }
@@ -344,7 +452,7 @@ class ConfigurationAvoidanceRegistrationTest {
 
                     class Test {
                         static void test(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
+                            // BUG: Diagnostic contains: Use `.register`
                             configurations.create("lol", Closure.IDENTITY);
                         }
                     }
@@ -360,6 +468,6 @@ class ConfigurationAvoidanceRegistrationTest {
     }
 
     private RefactoringValidator refactoringValidator(String... args) {
-        return RefactoringValidator.of(ConfigurationAvoidanceRegistration.class, getClass(), args);
+        return RefactoringValidator.of(ConfigurationAvoidance.class, getClass(), args);
     }
 }

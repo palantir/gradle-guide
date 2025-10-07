@@ -12,7 +12,7 @@
 <tr>
 <td>
 
-<a id="ConfigurationAvoidanceRegistration" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`ConfigurationAvoidanceRegistration`</a>
+<a id="ConfigurationAvoidance" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`ConfigurationAvoidance`</a>
 
 </td>
 <td>
@@ -20,7 +20,7 @@
 </td>
 <td>
 
-When registering a new `Task`, `Configuration` or other Gradle domain type, use `.register` instead of `.create` to avoid realising the object eagerly and performing unnecessary work which will slow down the build.
+Avoid eager API methods, which force tasks to be realized. 
 
 </td>
 </tr>
