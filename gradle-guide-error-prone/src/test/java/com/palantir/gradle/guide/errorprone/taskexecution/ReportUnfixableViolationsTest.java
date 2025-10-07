@@ -18,7 +18,7 @@ package com.palantir.gradle.guide.errorprone.taskexecution;
 
 import org.junit.jupiter.api.Test;
 
-public class GetProjectTest extends IllegalMethodCalledDuringTaskExecutionTest {
+public class ReportUnfixableViolationsTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void getProject_within_TaskAction_should_fail() {
         test(
@@ -36,6 +36,25 @@ public class GetProjectTest extends IllegalMethodCalledDuringTaskExecutionTest {
 
                     // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                     String projectPath = getProject().getPath();
+                }
+            }
+        """);
+    }
+
+    @Test
+    void getProject_delete_within_TaskAction_should_fail() {
+        test(
+                """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+
+            abstract class CustomTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    // BUG: Diagnostic contains: Instead of `getProject().delete(...)`, do `getFileSystemOperations().delete(...)`
+                    getProject().delete("myfile");
                 }
             }
         """);

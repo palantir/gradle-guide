@@ -24,6 +24,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.suppliers.Suppliers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.types.GradleFix;
@@ -106,6 +107,15 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             .named("getProviders")
             .withNoParameters();
 
+    private static final Matcher<ExpressionTree> deleteAction = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("delete")
+            .withParameters("org.gradle.api.Action");
+
+    private static final Matcher<ExpressionTree> deletePaths = Matchers.instanceMethod()
+            .onDescendantOf("org.gradle.api.Project")
+            .named("delete")
+            .withParametersOfType(List.of(Suppliers.arrayOf(Suppliers.OBJECT_TYPE)));
     private static final TaskExecutionViolation REPORT_GET_PROJECT = TaskExecutionViolation.report(
             ChainedCallMatcher.of(getProject), "Don't call `getProject()` in task actions");
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_LOGGER = TaskExecutionViolation.fix(
@@ -138,6 +148,17 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
             ChainedCallMatcher.of(getProject, exec),
             "Instead of `getProject().exec(...)`, do `ExecOperations#(...)`",
             GradleFix.onService(GradleService.EXEC_OPERATIONS, Replacement.template("exec(%s)")));
+    private static final TaskExecutionViolation FIX_GET_PROJECT_DELETE_ACTION = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, deleteAction),
+            "Instead of `getProject().delete(...)`, do `getFileSystemOperations().delete(...)`",
+            GradleFix.onService(GradleService.FILE_SYSTEMS_OPERATIONS, Replacement.template("delete(%s)")));
+    private static final TaskExecutionViolation REPORT_GET_PROJECT_DELETE_PATHS = TaskExecutionViolation.fix(
+            ChainedCallMatcher.of(getProject, deletePaths),
+            "Instead of `getProject().delete(...)`, do `getFileSystemOperations().delete(...)`",
+            GradleFix.onService(
+                    GradleService.FILE_SYSTEMS_OPERATIONS,
+                    Replacement.template(
+                            "delete(deleteSpec -> deleteSpec.delete(%s).setFollowSymlinks(false)).getDidWork()")));
     private static final TaskExecutionViolation FIX_GET_PROJECT_GET_ROOT_DIR = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, getRootDir),
             "Instead of `getProject().getRootDir()`, do `getBuildLayout().getRootDirectory().getAsFile()`",
@@ -154,6 +175,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
     private static final List<TaskExecutionViolation> violationsInOrderOfSpecificity = Stream.of(
                     FIX_GET_PROJECT_TAR_TREE,
                     FIX_GET_PROJECT_EXEC,
+                    FIX_GET_PROJECT_DELETE_ACTION,
                     FIX_GET_PROJECT_PROVIDER,
                     FIX_GET_PROJECT_GET_PROVIDERS,
                     FIX_GET_PROJECT_COPY,
@@ -161,6 +183,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     FIX_GET_PROJECT_GET_PROJECT_DIR,
                     FIX_GET_PROJECT_GET_LAYOUT,
                     FIX_GET_PROJECT_GET_LOGGER,
+                    REPORT_GET_PROJECT_DELETE_PATHS,
                     FIX_GET_PROJECT_GET_ROOT_DIR,
                     REPORT_GET_PROJECT)
             .sorted()
