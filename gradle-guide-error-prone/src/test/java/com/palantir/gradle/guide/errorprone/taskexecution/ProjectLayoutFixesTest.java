@@ -22,9 +22,7 @@ import org.junit.jupiter.api.Test;
 public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void projectLayout_not_injected_should_fix_and_inject() {
-        testFix(
-                "AlreadyAbstractTask.java",
-                """
+        testFix("AlreadyAbstractTask.java", """
                 import java.io.File;
                 import org.gradle.api.DefaultTask;
                 import org.gradle.api.Plugin;
@@ -38,8 +36,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
                         File buildDir = getProject().getBuildDir();
                     }
                 }
-            """,
-                """
+            """, """
                 import java.io.File;
                 import javax.inject.Inject;
                 import org.gradle.api.DefaultTask;
@@ -63,9 +60,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
 
     @Test
     void projectLayout_already_injected_should_fix_without_injecting_again() {
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
+        testFix("AlreadyInjectedTask.java", """
                 import java.io.File;
                 import javax.inject.Inject;
                 import org.gradle.api.DefaultTask;
@@ -88,8 +83,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
                         File buildDir = getProject().getBuildDir();
                     }
                 }
-            """,
-                """
+            """, """
                 import java.io.File;
                 import javax.inject.Inject;
                 import org.gradle.api.DefaultTask;
@@ -117,9 +111,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
 
     @Test
     void concrete_task_should_fix() {
-        testFix(
-                "ConcreteTask.java",
-                """
+        testFix("ConcreteTask.java", """
                 import java.io.File;
                 import org.gradle.api.DefaultTask;
                 import org.gradle.api.Plugin;
@@ -135,8 +127,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
                         File buildDir = getProject().getBuildDir();
                     }
                 }
-            """,
-                """
+            """, """
                 import java.io.File;
                 import javax.inject.Inject;
                 import org.gradle.api.DefaultTask;
@@ -161,31 +152,30 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
 
     @Test
     void transitive_calls_to_getProject_getProjectDir_should_fail_in_taskActions() {
-        test(
-                """
-        import org.gradle.api.Action;
-        import org.gradle.api.Task;
+        test("""
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
 
-        abstract class CustomTaskAction implements Action<Task> {
-            @Override
-            public void execute(Task task) {
-                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
-                task.getProject().getProjectDir();
-                badHelper(task);
-            }
+            abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                    task.getProject().getProjectDir();
+                    badHelper(task);
+                }
 
-            public void badHelper(Task task) {
-                System.out.println("I am a happy squirrel");
-                // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
-                task.getProject().getProjectDir();
-                badHelper2(task);
-            }
+                public void badHelper(Task task) {
+                    System.out.println("I am a happy squirrel");
+                    // BUG: Diagnostic contains: Instead of `getProject().getProjectDir()`, do `getProjectLayout().getProjectDirectory().getAsFile()`
+                    task.getProject().getProjectDir();
+                    badHelper2(task);
+                }
 
-            public void badHelper2(Task task) {
-                // BUG: Diagnostic contains: Instead of `getProject().getLayout()`, do `getProjectLayout()`
-                task.getProject().getLayout();
+                public void badHelper2(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().getLayout()`, do `getProjectLayout()`
+                    task.getProject().getLayout();
+                }
             }
-        }
-        """);
+            """);
     }
 }

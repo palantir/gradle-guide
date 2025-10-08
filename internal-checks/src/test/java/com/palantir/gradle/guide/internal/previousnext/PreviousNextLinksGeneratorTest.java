@@ -29,9 +29,7 @@ final class PreviousNextLinksGeneratorTest {
     @SuppressWarnings("checkstyle:RegexpMultiline")
     @Test
     void generates_previous_next_buttons_at_top_and_bottom(@TempDir Path rootDir) throws IOException {
-        Files.writeString(
-                rootDir.resolve("README.md"),
-                """
+        Files.writeString(rootDir.resolve("README.md"), """
             # Readme
             ## Table of Contents
             <!-- TableOfContentsSource:
@@ -45,9 +43,7 @@ final class PreviousNextLinksGeneratorTest {
         Files.createDirectories(guideDir);
 
         Path firstMd = guideDir.resolve("first.md");
-        Files.writeString(
-                firstMd,
-                """
+        Files.writeString(firstMd, """
             # First
 
             <!-- PreviousNext:START -->
@@ -56,9 +52,7 @@ final class PreviousNextLinksGeneratorTest {
             """);
 
         Path secondMd = guideDir.resolve("second.md");
-        Files.writeString(
-                secondMd,
-                """
+        Files.writeString(secondMd, """
             <!-- PreviousNext:START -->
             Some old stuff with lots of whitespace after
             <!-- PreviousNext:END -->
@@ -76,9 +70,7 @@ final class PreviousNextLinksGeneratorTest {
 
         Guide.fromRootDirectory(rootDir).previousNextLinks().changeContent();
 
-        assertThat(firstMd)
-                .hasContent(
-                        """
+        assertThat(firstMd).hasContent("""
             <!-- PreviousNext:START -->
             <table><tr>
               <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
@@ -97,9 +89,7 @@ final class PreviousNextLinksGeneratorTest {
             <!-- PreviousNext:END -->
             """);
 
-        assertThat(secondMd)
-                .hasContent(
-                        """
+        assertThat(secondMd).hasContent("""
             <!-- PreviousNext:START -->
             <table><tr>
               <td>Previous: <a href="first.md">First</a></td>
@@ -121,9 +111,7 @@ final class PreviousNextLinksGeneratorTest {
             <!-- PreviousNext:END -->
             """);
 
-        assertThat(thirdMd)
-                .hasContent(
-                        """
+        assertThat(thirdMd).hasContent("""
             <!-- PreviousNext:START -->
             <table><tr>
               <td>Previous: <a href="second.md">Second</a></td>

@@ -37,8 +37,7 @@ class ErrorpronePermalinksGeneratorTest {
     @Test
     void check_a_correct_errorprones_md_is_created() {
         assertThat(ErrorpronePermalinksGenerator.generate(Set.of(new TestErrorProne())))
-                .isEqualTo(
-                        """
+                .isEqualTo("""
                 # gradle-guide Error Prone Permalinks
 
                 <table>
