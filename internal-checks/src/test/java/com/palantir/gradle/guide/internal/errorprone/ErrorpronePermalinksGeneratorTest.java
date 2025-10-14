@@ -37,36 +37,35 @@ class ErrorpronePermalinksGeneratorTest {
     @Test
     void check_a_correct_errorprones_md_is_created() {
         assertThat(ErrorpronePermalinksGenerator.generate(Set.of(new TestErrorProne())))
-                .isEqualTo(
-                        """
-                # gradle-guide Error Prone Permalinks
+                .isEqualTo("""
+                    # gradle-guide Error Prone Permalinks
 
-                <table>
-                <thead>
-                <tr>
-                <td>Name</td>
-                <td>Detailed Link</td>
-                <td>Description</td>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                <td>
+                    <table>
+                    <thead>
+                    <tr>
+                    <td>Name</td>
+                    <td>Detailed Link</td>
+                    <td>Description</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                    <td>
 
-                <a id="TestErrorProne" href="guide/test.md#test-heading">`TestErrorProne`</a>
+                    <a id="TestErrorProne" href="guide/test.md#test-heading">`TestErrorProne`</a>
 
-                </td>
-                <td>
-                <a href="guide/test.md#test-heading">Please read</a>
-                </td>
-                <td>
+                    </td>
+                    <td>
+                    <a href="guide/test.md#test-heading">Please read</a>
+                    </td>
+                    <td>
 
-                Summary
+                    Summary
 
-                </td>
-                </tr>
-                </tbody>
-                </table>
-                """);
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                    """);
     }
 }

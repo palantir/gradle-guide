@@ -22,229 +22,213 @@ import org.junit.jupiter.api.Test;
 public class ArchiveOperationsFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void archiveOperations_not_injected_should_fix_and_inject() {
-        testFix(
-                "AlreadyAbstractTask.java",
-                """
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyAbstractTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
-                    }
+        testFix("AlreadyAbstractTask.java", """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyAbstractTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
                 }
-                """,
-                """
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyAbstractTask extends DefaultTask {
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOperations();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
-                    }
+            }
+            """, """
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyAbstractTask extends DefaultTask {
+                @Inject
+                protected abstract ArchiveOperations getArchiveOperations();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
                 }
-                """);
+            }
+            """);
     }
 
     @Test
     void archiveOperations_already_injected_should_fix_without_injecting_again() {
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOperations();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
-                    }
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract ArchiveOperations getArchiveOperations();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOperations();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
-                    }
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract ArchiveOperations getArchiveOperations();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
                 }
-                """);
+            }
+            """);
 
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    private final ArchiveOperations archiveOps;
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                private final ArchiveOperations archiveOps;
 
-                    AlreadyInjectedTask(ArchiveOperations archiveOps) {
-                        this.archiveOps = archiveOps;
-                    }
-
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
-                    }
+                AlreadyInjectedTask(ArchiveOperations archiveOps) {
+                    this.archiveOps = archiveOps;
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    private final ArchiveOperations archiveOps;
 
-                    AlreadyInjectedTask(ArchiveOperations archiveOps) {
-                        this.archiveOps = archiveOps;
-                    }
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
+                }
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                private final ArchiveOperations archiveOps;
 
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = archiveOps.tarTree("happy-squirrel.tar");
-                    }
+                AlreadyInjectedTask(ArchiveOperations archiveOps) {
+                    this.archiveOps = archiveOps;
                 }
-                """);
 
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOps();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
-                    }
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = archiveOps.tarTree("happy-squirrel.tar");
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOps();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getArchiveOps().tarTree("happy-squirrel.tar");
-                    }
+            }
+            """);
+
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract ArchiveOperations getArchiveOps();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
                 }
-                """);
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract ArchiveOperations getArchiveOps();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getArchiveOps().tarTree("happy-squirrel.tar");
+                }
+            }
+            """);
     }
 
     @Test
     void concrete_task_should_fix() {
-        testFix(
-                "ConcreteTask.java",
-                """
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                class ConcreteTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
-                    }
+        testFix("ConcreteTask.java", """
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            class ConcreteTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getProject().tarTree("happy-squirrel.tar");
                 }
-                """,
-                """
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.ArchiveOperations;
-                import org.gradle.api.file.FileTree;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class ConcreteTask extends DefaultTask {
-                    @Inject
-                    protected abstract ArchiveOperations getArchiveOperations();
-                    @TaskAction
-                    final void action() {
-                        FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
-                    }
+            }
+            """, """
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.ArchiveOperations;
+            import org.gradle.api.file.FileTree;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class ConcreteTask extends DefaultTask {
+                @Inject
+                protected abstract ArchiveOperations getArchiveOperations();
+                @TaskAction
+                final void action() {
+                    FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
                 }
-                """);
+            }
+            """);
     }
 
     @Test
     void transitive_calls_to_getProject_copy_should_fail_in_taskActions() {
-        test(
-                """
-                import org.gradle.api.Action;
-                import org.gradle.api.Task;
-                abstract class CustomTaskAction implements Action<Task> {
-                    @Override
-                    public void execute(Task task) {
-                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
-                        task.getProject().tarTree("happy-squirrel.tar");
-                        bad_helper(task);
-                    }
-                    public void bad_helper(Task task) {
-                        System.out.println("I am a happy squirrel");
-                        // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
-                        task.getProject().tarTree("happy-squirrel.tar");
-                    }
+        test("""
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+            abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
+                    task.getProject().tarTree("happy-squirrel.tar");
+                    bad_helper(task);
                 }
-                """);
+                public void bad_helper(Task task) {
+                    System.out.println("I am a happy squirrel");
+                    // BUG: Diagnostic contains: Instead of `getProject().tarTree(...)`, do `ArchiveOperations#tarTree`
+                    task.getProject().tarTree("happy-squirrel.tar");
+                }
+            }
+            """);
     }
 }

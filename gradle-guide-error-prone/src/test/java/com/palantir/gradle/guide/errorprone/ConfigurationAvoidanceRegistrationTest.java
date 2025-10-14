@@ -31,30 +31,30 @@ class ConfigurationAvoidanceRegistrationTest {
                 "Test.java",
                 // language=java
                 """
-            import groovy.lang.Closure;
-            import java.util.Map;
-            import org.gradle.api.Task;
-            import org.gradle.api.tasks.TaskContainer;
+                import groovy.lang.Closure;
+                import java.util.Map;
+                import org.gradle.api.Task;
+                import org.gradle.api.tasks.TaskContainer;
 
-            class Test {
-                static void test(TaskContainer tasks) {
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create(Map.of("name", "lol", "type", Task.class));
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Task.class);
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Task.class, new Object());
-                    // BUG: Diagnostic contains: use `.register`
-                    tasks.create("lol", Task.class, task -> {});
+                class Test {
+                    static void test(TaskContainer tasks) {
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create(Map.of("name", "lol", "type", Task.class));
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create("lol", Closure.IDENTITY);
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create("lol");
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create("lol", Task.class);
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create("lol", Task.class, new Object());
+                        // BUG: Diagnostic contains: use `.register`
+                        tasks.create("lol", Task.class, task -> {});
+                    }
                 }
-            }
-            """);
+                """);
 
         compilationTestHelper.doTest();
     }
@@ -66,20 +66,20 @@ class ConfigurationAvoidanceRegistrationTest {
                 "Test.java",
                 // language=java
                 """
-            import groovy.lang.Closure;
-            import org.gradle.api.artifacts.ConfigurationContainer;
+                import groovy.lang.Closure;
+                import org.gradle.api.artifacts.ConfigurationContainer;
 
-            class Test {
-                static void test(ConfigurationContainer configurations) {
-                    // BUG: Diagnostic contains: use `.register`
-                    configurations.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    configurations.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
-                    configurations.create("lol", conf -> {});
+                class Test {
+                    static void test(ConfigurationContainer configurations) {
+                        // BUG: Diagnostic contains: use `.register`
+                        configurations.create("lol");
+                        // BUG: Diagnostic contains: use `.register`
+                        configurations.create("lol", Closure.IDENTITY);
+                        // BUG: Diagnostic contains: use `.register`
+                        configurations.create("lol", conf -> {});
+                    }
                 }
-            }
-            """);
+                """);
 
         compilationTestHelper.doTest();
     }
@@ -91,20 +91,20 @@ class ConfigurationAvoidanceRegistrationTest {
                 "Test.java",
                 // language=java
                 """
-            import groovy.lang.Closure;
-            import org.gradle.api.tasks.SourceSetContainer;
+                import groovy.lang.Closure;
+                import org.gradle.api.tasks.SourceSetContainer;
 
-            class Test {
-                static void test(SourceSetContainer sourceSets) {
-                    // BUG: Diagnostic contains: use `.register`
-                    sourceSets.create("lol");
-                    // BUG: Diagnostic contains: use `.register`
-                    sourceSets.create("lol", Closure.IDENTITY);
-                    // BUG: Diagnostic contains: use `.register`
-                    sourceSets.create("lol", conf -> {});
+                class Test {
+                    static void test(SourceSetContainer sourceSets) {
+                        // BUG: Diagnostic contains: use `.register`
+                        sourceSets.create("lol");
+                        // BUG: Diagnostic contains: use `.register`
+                        sourceSets.create("lol", Closure.IDENTITY);
+                        // BUG: Diagnostic contains: use `.register`
+                        sourceSets.create("lol", conf -> {});
+                    }
                 }
-            }
-            """);
+                """);
 
         compilationTestHelper.doTest();
     }
@@ -120,34 +120,34 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.Task;
-                    import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.Task;
+                                import org.gradle.api.tasks.TaskContainer;
 
-                    class Test {
-                        static void test(TaskContainer tasks) {
-                            tasks.create("lol");
-                            tasks.create("lol", Task.class);
-                            tasks.create("lol", Task.class, new Object());
-                            tasks.create("lol", Task.class, task -> {});
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(TaskContainer tasks) {
+                                        tasks.create("lol");
+                                        tasks.create("lol", Task.class);
+                                        tasks.create("lol", Task.class, new Object());
+                                        tasks.create("lol", Task.class, task -> {});
+                                    }
+                                }
+                                """)
                         .addOutputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.Task;
-                    import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.Task;
+                                import org.gradle.api.tasks.TaskContainer;
 
-                    class Test {
-                        static void test(TaskContainer tasks) {
-                            tasks.register("lol");
-                            tasks.register("lol", Task.class);
-                            tasks.register("lol", Task.class, new Object());
-                            tasks.register("lol", Task.class, task -> {});
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(TaskContainer tasks) {
+                                        tasks.register("lol");
+                                        tasks.register("lol", Task.class);
+                                        tasks.register("lol", Task.class, new Object());
+                                        tasks.register("lol", Task.class, task -> {});
+                                    }
+                                }
+                                """)
                         .doTest();
             }
 
@@ -158,36 +158,36 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.Task;
-                    import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.Task;
+                                import org.gradle.api.tasks.TaskContainer;
 
-                    class Test {
-                        static Task test(TaskContainer tasks) {
-                            // BUG: Diagnostic contains: use `.register`
-                            Task task = tasks.create("lol");
-                            // BUG: Diagnostic contains: use `.register`
-                            System.out.println(tasks.create("lol", Task.class, t -> {}));
-                            // BUG: Diagnostic contains: use `.register`
-                            return tasks.create("lol", Task.class);
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static Task test(TaskContainer tasks) {
+                                        // BUG: Diagnostic contains: use `.register`
+                                        Task task = tasks.create("lol");
+                                        // BUG: Diagnostic contains: use `.register`
+                                        System.out.println(tasks.create("lol", Task.class, t -> {}));
+                                        // BUG: Diagnostic contains: use `.register`
+                                        return tasks.create("lol", Task.class);
+                                    }
+                                }
+                                """)
                         .addOutputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.Task;
-                    import org.gradle.api.tasks.TaskContainer;
-                    import org.gradle.api.tasks.TaskProvider;
+                                import org.gradle.api.Task;
+                                import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.tasks.TaskProvider;
 
-                    class Test {
-                        static Task test(TaskContainer tasks) {
-                            TaskProvider<Task> task = tasks.register("lol");
-                            System.out.println(tasks.register("lol", Task.class, t -> {}).get());
-                            return tasks.register("lol", Task.class).get();
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static Task test(TaskContainer tasks) {
+                                        TaskProvider<Task> task = tasks.register("lol");
+                                        System.out.println(tasks.register("lol", Task.class, t -> {}).get());
+                                        return tasks.register("lol", Task.class).get();
+                                    }
+                                }
+                                """)
                         .doTest();
             }
 
@@ -198,22 +198,22 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import groovy.lang.Closure;
-                    import java.util.Map;
-                    import org.gradle.api.Task;
-                    import org.gradle.api.tasks.TaskContainer;
+                                import groovy.lang.Closure;
+                                import java.util.Map;
+                                import org.gradle.api.Task;
+                                import org.gradle.api.tasks.TaskContainer;
 
-                    class Test {
-                        static void test(TaskContainer tasks) {
-                            // BUG: Diagnostic contains: use `.register`
-                            tasks.create("lol", Closure.IDENTITY);
-                            // BUG: Diagnostic contains: use `.register`
-                            tasks.create(Map.of("name", "lol", "type", Task.class));
-                            // BUG: Diagnostic contains: use `.register`
-                            tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(TaskContainer tasks) {
+                                        // BUG: Diagnostic contains: use `.register`
+                                        tasks.create("lol", Closure.IDENTITY);
+                                        // BUG: Diagnostic contains: use `.register`
+                                        tasks.create(Map.of("name", "lol", "type", Task.class));
+                                        // BUG: Diagnostic contains: use `.register`
+                                        tasks.create(Map.of("name", "lol", "type", Task.class), Closure.IDENTITY);
+                                    }
+                                }
+                                """)
                         .expectUnchanged()
                         .doTest();
             }
@@ -225,35 +225,35 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.DefaultTask;
+                                import org.gradle.api.tasks.TaskContainer;
 
-                    class Test {
-                        class CustomTask extends DefaultTask {}
-                        static CustomTask test(TaskContainer tasks) {
-                            CustomTask task = tasks.create("lol", CustomTask.class);
-                            String description = task.getDescription();
-                            return task;
-                        }
-                    }
-                    """)
+                                class Test {
+                                    class CustomTask extends DefaultTask {}
+                                    static CustomTask test(TaskContainer tasks) {
+                                        CustomTask task = tasks.create("lol", CustomTask.class);
+                                        String description = task.getDescription();
+                                        return task;
+                                    }
+                                }
+                                """)
                         .addOutputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.tasks.TaskContainer;
-                    import org.gradle.api.tasks.TaskProvider;
+                                import org.gradle.api.DefaultTask;
+                                import org.gradle.api.tasks.TaskContainer;
+                                import org.gradle.api.tasks.TaskProvider;
 
-                    class Test {
-                        class CustomTask extends DefaultTask {}
-                        static CustomTask test(TaskContainer tasks) {
-                            TaskProvider<CustomTask> task = tasks.register("lol", CustomTask.class);
-                            String description = task.get().getDescription();
-                            return task.get();
-                        }
-                    }
-                    """)
+                                class Test {
+                                    class CustomTask extends DefaultTask {}
+                                    static CustomTask test(TaskContainer tasks) {
+                                        TaskProvider<CustomTask> task = tasks.register("lol", CustomTask.class);
+                                        String description = task.get().getDescription();
+                                        return task.get();
+                                    }
+                                }
+                                """)
                         .doTest();
             }
         }
@@ -267,28 +267,28 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.artifacts.ConfigurationContainer;
+                                import org.gradle.api.artifacts.ConfigurationContainer;
 
-                    class Test {
-                        static void test(ConfigurationContainer configurations) {
-                            configurations.create("lol");
-                            configurations.create("lol", conf -> {});
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(ConfigurationContainer configurations) {
+                                        configurations.create("lol");
+                                        configurations.create("lol", conf -> {});
+                                    }
+                                }
+                                """)
                         .addOutputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.artifacts.ConfigurationContainer;
+                                import org.gradle.api.artifacts.ConfigurationContainer;
 
-                    class Test {
-                        static void test(ConfigurationContainer configurations) {
-                            configurations.register("lol");
-                            configurations.register("lol", conf -> {});
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(ConfigurationContainer configurations) {
+                                        configurations.register("lol");
+                                        configurations.register("lol", conf -> {});
+                                    }
+                                }
+                                """)
                         .doTest();
             }
 
@@ -299,36 +299,36 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.artifacts.Configuration;
-                    import org.gradle.api.artifacts.ConfigurationContainer;
+                                import org.gradle.api.artifacts.Configuration;
+                                import org.gradle.api.artifacts.ConfigurationContainer;
 
-                    class Test {
-                        static Configuration test(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
-                            Configuration configuration = configurations.create("lol");
-                            // BUG: Diagnostic contains: use `.register`
-                            System.out.println(configurations.create("lol", conf -> {}));
-                            // BUG: Diagnostic contains: use `.register`
-                            return configurations.create("lol", conf -> {});
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static Configuration test(ConfigurationContainer configurations) {
+                                        // BUG: Diagnostic contains: use `.register`
+                                        Configuration configuration = configurations.create("lol");
+                                        // BUG: Diagnostic contains: use `.register`
+                                        System.out.println(configurations.create("lol", conf -> {}));
+                                        // BUG: Diagnostic contains: use `.register`
+                                        return configurations.create("lol", conf -> {});
+                                    }
+                                }
+                                """)
                         .addOutputLines(
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.NamedDomainObjectProvider;
-                    import org.gradle.api.artifacts.Configuration;
-                    import org.gradle.api.artifacts.ConfigurationContainer;
+                                import org.gradle.api.NamedDomainObjectProvider;
+                                import org.gradle.api.artifacts.Configuration;
+                                import org.gradle.api.artifacts.ConfigurationContainer;
 
-                    class Test {
-                        static Configuration test(ConfigurationContainer configurations) {
-                            NamedDomainObjectProvider<Configuration> configuration = configurations.register("lol");
-                            System.out.println(configurations.register("lol", conf -> {}).get());
-                            return configurations.register("lol", conf -> {}).get();
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static Configuration test(ConfigurationContainer configurations) {
+                                        NamedDomainObjectProvider<Configuration> configuration = configurations.register("lol");
+                                        System.out.println(configurations.register("lol", conf -> {}).get());
+                                        return configurations.register("lol", conf -> {}).get();
+                                    }
+                                }
+                                """)
                         .doTest();
             }
 
@@ -339,16 +339,16 @@ class ConfigurationAvoidanceRegistrationTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import groovy.lang.Closure;
-                    import org.gradle.api.artifacts.ConfigurationContainer;
+                                import groovy.lang.Closure;
+                                import org.gradle.api.artifacts.ConfigurationContainer;
 
-                    class Test {
-                        static void test(ConfigurationContainer configurations) {
-                            // BUG: Diagnostic contains: use `.register`
-                            configurations.create("lol", Closure.IDENTITY);
-                        }
-                    }
-                    """)
+                                class Test {
+                                    static void test(ConfigurationContainer configurations) {
+                                        // BUG: Diagnostic contains: use `.register`
+                                        configurations.create("lol", Closure.IDENTITY);
+                                    }
+                                }
+                                """)
                         .expectUnchanged()
                         .doTest();
             }
