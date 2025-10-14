@@ -25,7 +25,6 @@ import com.sun.tools.javac.code.Type;
  */
 @SuppressWarnings("ImmutableEnumChecker")
 public enum GradleService {
-    BUILD_LAYOUT("org.gradle.api.file.BuildLayout", "getBuildLayout"),
     PROJECT_LAYOUT("org.gradle.api.file.ProjectLayout", "getProjectLayout"),
     FILE_SYSTEMS_OPERATIONS("org.gradle.api.file.FileSystemOperations", "getFileSystemOperations"),
     OBJECT_FACTORY("org.gradle.api.model.ObjectFactory", "getObjectFactory"),

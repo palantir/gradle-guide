@@ -167,10 +167,9 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     GradleService.FILE_SYSTEMS_OPERATIONS,
                     Replacement.template(
                             "delete(deleteSpec -> deleteSpec.delete(%s).setFollowSymlinks(false)).getDidWork()")));
-    private static final TaskExecutionViolation FIX_GET_PROJECT_GET_ROOT_DIR = TaskExecutionViolation.fix(
+    private static final TaskExecutionViolation REPORT_GET_PROJECT_GET_ROOT_DIR = TaskExecutionViolation.report(
             ChainedCallMatcher.of(getProject, getRootDir),
-            "Instead of `getProject().getRootDir()`, do `getBuildLayout().getRootDirectory().getAsFile()`",
-            GradleFix.onService(GradleService.BUILD_LAYOUT, Replacement.literal("getRootDirectory().getAsFile()")));
+            "Instead of `getProject().getRootDir()`, the task should take the root directory as a task input");
     private static final TaskExecutionViolation FIX_GET_PROJECT_PROVIDER = TaskExecutionViolation.fix(
             ChainedCallMatcher.of(getProject, provider),
             "Instead of `getProject().provider(...)`, do `ProviderFactory#provider(...)`",
@@ -193,7 +192,7 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
                     FIX_GET_PROJECT_GET_LAYOUT,
                     FIX_GET_PROJECT_GET_LOGGER,
                     REPORT_GET_PROJECT_DELETE_PATHS,
-                    FIX_GET_PROJECT_GET_ROOT_DIR,
+                    REPORT_GET_PROJECT_GET_ROOT_DIR,
                     REPORT_GET_PROJECT)
             .sorted()
             .toList();
