@@ -22,27 +22,26 @@ import org.junit.jupiter.api.Test;
 public class BuildLayoutFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void transitive_calls_to_violations_should_fail_in_taskActions() {
-        test(
-                """
-        import org.gradle.api.Action;
-        import org.gradle.api.Task;
-        import java.io.File;
+        test("""
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+            import java.io.File;
 
 
-        abstract class CustomTaskAction implements Action<Task> {
-            @Override
-            public void execute(Task task) {
-                // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, the task should take the root directory as a task input
-                File rootDir = task.getProject().getRootDir();
-                bad_helper(task);
+            abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, the task should take the root directory as a task input
+                    File rootDir = task.getProject().getRootDir();
+                    bad_helper(task);
+                }
+
+                public void bad_helper(Task task) {
+                    System.out.println("I am a happy squirrel");
+                    // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, the task should take the root directory as a task input
+                    File rootDir = task.getProject().getRootDir();
+                }
             }
-
-            public void bad_helper(Task task) {
-                System.out.println("I am a happy squirrel");
-                // BUG: Diagnostic contains: Instead of `getProject().getRootDir()`, the task should take the root directory as a task input
-                File rootDir = task.getProject().getRootDir();
-            }
-        }
-        """);
+            """);
     }
 }
