@@ -29,134 +29,125 @@ class GradleTypesAsFieldsTest {
     class Tasks {
         @Test
         void provider_field_in_constructor_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare an abstract getter method,
-                        private final Property<String> foo;
-                        public Test() {
-                            this.foo = getProject().getObjects().property(String.class);
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: declare an abstract getter method,
+                    private final Property<String> foo;
+                    public Test() {
+                        this.foo = getProject().getObjects().property(String.class);
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void named_domain_container_field_in_constructor_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.NamedDomainObjectContainer;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare an abstract getter method,
-                        private final NamedDomainObjectContainer<String> foo;
-                        public Test() {
-                            this.foo = getProject().container(String.class);
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.NamedDomainObjectContainer;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: declare an abstract getter method,
+                    private final NamedDomainObjectContainer<String> foo;
+                    public Test() {
+                        this.foo = getProject().container(String.class);
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void file_collection_field_in_constructor_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.file.FileCollection;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare an abstract getter method,
-                        private final FileCollection foo;
-                        public Test() {
-                            this.foo = getProject().files("somefile.txt");
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.file.FileCollection;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: declare an abstract getter method,
+                    private final FileCollection foo;
+                    public Test() {
+                        this.foo = getProject().files("somefile.txt");
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void provider_field_directly_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: declare an abstract getter method,
-                        private final Property<String> foo = getProject().getObjects().property(String.class);
-                        public Test() {}
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: declare an abstract getter method,
+                    private final Property<String> foo = getProject().getObjects().property(String.class);
+                    public Test() {}
+                }
+                """);
         }
 
         @Test
         void provider_internal_field_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Provider;
-                    abstract class Test extends DefaultTask {
-                        public Test() {}
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Provider;
+                abstract class Test extends DefaultTask {
+                    public Test() {}
 
-                        private Provider<String> foo() {
-                            Provider<String> bar = getProject().getObjects().property(String.class);
-                            return null;
-                        }
+                    private Provider<String> foo() {
+                        Provider<String> bar = getProject().getObjects().property(String.class);
+                        return null;
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void provider_local_variable_in_method_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public Test() {
-                            Property<String> bar = getProject().getObjects().property(String.class);
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    public Test() {
+                        Property<String> bar = getProject().getObjects().property(String.class);
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void provider_method_parameter_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public Test(Property<String> bar) {}
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    public Test(Property<String> bar) {}
+                }
+                """);
         }
 
         @Test
         void provider_field_on_inner_class_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public Test() {}
-                        class Inner {
-                            private final Property<String> bar = null;
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    public Test() {}
+                    class Inner {
+                        private final Property<String> bar = null;
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void unrelated_field_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    abstract class Test extends DefaultTask {
-                        private final String bar = "hello";
-                        public Test() {}
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                abstract class Test extends DefaultTask {
+                    private final String bar = "hello";
+                    public Test() {}
+                }
+                """);
         }
     }
 
@@ -164,141 +155,124 @@ class GradleTypesAsFieldsTest {
     class Extensions {
 
         @Language("Java")
-        private static final String PLUGIN_CODE_BUG =
-                """
-        import org.gradle.api.Plugin;
-        import org.gradle.api.Project;
-        public class FooPlugin implements Plugin<Project> {
-            @Override
-            public void apply(Project project) {
-                // BUG: Diagnostic contains: declare an abstract getter method,
-                project.getExtensions().create("foo", FooExtension.class);
+        private static final String PLUGIN_CODE_BUG = """
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            public class FooPlugin implements Plugin<Project> {
+                @Override
+                public void apply(Project project) {
+                    // BUG: Diagnostic contains: declare an abstract getter method,
+                    project.getExtensions().create("foo", FooExtension.class);
+                }
             }
-        }
-        """;
+            """;
 
         @Language("Java")
-        private static final String PLUGIN_CODE_NO_BUG =
-                """
-        import org.gradle.api.Plugin;
-        import org.gradle.api.Project;
-        public class FooPlugin implements Plugin<Project> {
-            @Override
-            public void apply(Project project) {
-                project.getExtensions().create("foo", FooExtension.class);
+        private static final String PLUGIN_CODE_NO_BUG = """
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            public class FooPlugin implements Plugin<Project> {
+                @Override
+                public void apply(Project project) {
+                    project.getExtensions().create("foo", FooExtension.class);
+                }
             }
-        }
-        """;
+            """;
 
         @Test
         void provider_field_in_constructor_should_fail() {
-            testExtension(
-                    """
-            import org.gradle.api.provider.Property;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                private final Property<String> property;
-                public FooExtension(Project project) {
-                    this.property = project.getObjects().property(String.class);
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    private final Property<String> property;
+                    public FooExtension(Project project) {
+                        this.property = project.getObjects().property(String.class);
+                    }
                 }
-            }
-            """,
-                    PLUGIN_CODE_BUG);
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void file_collection_field_in_constructor_should_fail() {
-            testExtension(
-                    """
-            import org.gradle.api.file.FileCollection;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                private final FileCollection files;
-                public FooExtension(Project project) {
-                    this.files = project.files("somefile.txt");
+            testExtension("""
+                import org.gradle.api.file.FileCollection;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    private final FileCollection files;
+                    public FooExtension(Project project) {
+                        this.files = project.files("somefile.txt");
+                    }
                 }
-            }
-            """,
-                    PLUGIN_CODE_BUG);
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void named_domain_container_field_in_constructor_should_fail() {
-            testExtension(
-                    """
-            import org.gradle.api.NamedDomainObjectContainer;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                private final NamedDomainObjectContainer<String> container;
-                public FooExtension(Project project) {
-                    this.container = project.container(String.class);
+            testExtension("""
+                import org.gradle.api.NamedDomainObjectContainer;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    private final NamedDomainObjectContainer<String> container;
+                    public FooExtension(Project project) {
+                        this.container = project.container(String.class);
+                    }
                 }
-            }
-            """,
-                    PLUGIN_CODE_BUG);
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void provider_local_variable_in_method_should_be_fine() {
-            testExtension(
-                    """
-            import org.gradle.api.provider.Property;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                public FooExtension(Project project) {
-                    Property<String> bar = project.getObjects().property(String.class);
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    public FooExtension(Project project) {
+                        Property<String> bar = project.getObjects().property(String.class);
+                    }
                 }
-            }
-            """,
-                    PLUGIN_CODE_NO_BUG);
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void provider_method_parameter_should_be_fine() {
-            testExtension(
-                    """
-            import org.gradle.api.provider.Property;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                public FooExtension(Property<String> bar) {}
-            }
-            """,
-                    PLUGIN_CODE_NO_BUG);
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    public FooExtension(Property<String> bar) {}
+                }
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void provider_field_on_inner_class_should_be_fine() {
-            testExtension(
-                    """
-            import org.gradle.api.provider.Property;
-            import org.gradle.api.Project;
-            abstract class FooExtension {
-                public FooExtension(Project project) {}
-                class Inner {
-                    private final Property<String> bar = null;
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                import org.gradle.api.Project;
+                abstract class FooExtension {
+                    public FooExtension(Project project) {}
+                    class Inner {
+                        private final Property<String> bar = null;
+                    }
                 }
-            }
-            """,
-                    PLUGIN_CODE_NO_BUG);
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void unrelated_field_should_be_fine() {
-            testExtension(
-                    """
-            abstract class FooExtension {
-                private final String bar = "hello";
-                public FooExtension() {}
-            }
-            """,
-                    PLUGIN_CODE_NO_BUG);
+            testExtension("""
+                abstract class FooExtension {
+                    private final String bar = "hello";
+                    public FooExtension() {}
+                }
+                """, PLUGIN_CODE_NO_BUG);
         }
     }
 
     @Test
     void non_abstract_other_type_is_fine() {
-        test(
-                """
+        test("""
             import org.gradle.api.provider.Property;
             class NotATaskOrExtension {
                 private final Property<String> foo = null;

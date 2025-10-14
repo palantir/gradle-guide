@@ -42,8 +42,7 @@ class MethodCallGraphTest {
 
     @Test
     void captures_direct_callers_but_not_transitive_callers() {
-        test(
-                """
+        test("""
             class TestClass {
                 // BUG: Diagnostic contains: CallGraph: TestClass.f1 --> [ , ]
                 public void f1() {
@@ -65,8 +64,7 @@ class MethodCallGraphTest {
 
     @Test
     void captures_multiple_callers() {
-        test(
-                """
+        test("""
             class TestClass {
                 // BUG: Diagnostic contains: CallGraph: TestClass.caller --> [ , ]
                 public void caller() {
@@ -94,8 +92,7 @@ class MethodCallGraphTest {
 
     @Test
     void captures_first_and_second_level_callers() {
-        test(
-                """
+        test("""
             class TestClass {
                 // BUG: Diagnostic contains: CallGraph: TestClass.caller --> [ , ]
                 public void caller() {
@@ -118,8 +115,7 @@ class MethodCallGraphTest {
 
     @Test
     void correctly_represents_no_method_calls() {
-        test(
-                """
+        test("""
             class TestClass {
                 // BUG: Diagnostic contains: CallGraph: TestClass.standalone --> [ , ]
                 public void standalone() {
@@ -131,8 +127,7 @@ class MethodCallGraphTest {
 
     @Test
     void captures_recursive_calls() {
-        test(
-                """
+        test("""
             class TestClass {
                 // BUG: Diagnostic contains: CallGraph: TestClass.recursive --> [ TestClass.recursive, ]
                 public void recursive(int n) {
@@ -146,8 +141,7 @@ class MethodCallGraphTest {
 
     @Test
     void captures_chained_calls() {
-        test(
-                """
+        test("""
             import java.util.ArrayList;
             import java.util.List;
 
@@ -174,13 +168,12 @@ class MethodCallGraphTest {
 
     @Test
     void works_with_abstract_methods() {
-        test(
-                """
-            abstract class TestClass {
-                // BUG: Diagnostic contains: CallGraph: TestClass.action --> [ , ]
-                public abstract void action();
-                }
-        """);
+        test("""
+                abstract class TestClass {
+                    // BUG: Diagnostic contains: CallGraph: TestClass.action --> [ , ]
+                    public abstract void action();
+                    }
+            """);
     }
 
     @SuppressWarnings("BugCheckerAutoService") // We load the BugChecker directly here, rather than via service loading

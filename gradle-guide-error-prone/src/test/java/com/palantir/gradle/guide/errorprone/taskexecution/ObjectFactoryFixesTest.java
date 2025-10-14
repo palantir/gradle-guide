@@ -37,35 +37,32 @@ import org.junit.jupiter.api.Test;
 public class ObjectFactoryFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void should_fix() {
-        testFix(
-                "CustomTask.java",
-                """
-            import org.gradle.api.DefaultTask;
-            import org.gradle.api.tasks.TaskAction;
-            import org.gradle.api.logging.Logger;
+        testFix("CustomTask.java", """
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.tasks.TaskAction;
+                import org.gradle.api.logging.Logger;
 
-            abstract class CustomTask extends DefaultTask {
-                @TaskAction
-                final void action() {
-                    getProject().getObjects().setProperty(String.class);
+                abstract class CustomTask extends DefaultTask {
+                    @TaskAction
+                    final void action() {
+                        getProject().getObjects().setProperty(String.class);
+                    }
                 }
-            }
-        """,
-                """
-            import javax.inject.Inject;
-            import org.gradle.api.DefaultTask;
-            import org.gradle.api.logging.Logger;
-            import org.gradle.api.model.ObjectFactory;
-            import org.gradle.api.tasks.TaskAction;
+            """, """
+                import javax.inject.Inject;
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.logging.Logger;
+                import org.gradle.api.model.ObjectFactory;
+                import org.gradle.api.tasks.TaskAction;
 
-            abstract class CustomTask extends DefaultTask {
-                @Inject
-                protected abstract ObjectFactory getObjectFactory();
-                @TaskAction
-                final void action() {
-                    getObjectFactory().setProperty(String.class);
+                abstract class CustomTask extends DefaultTask {
+                    @Inject
+                    protected abstract ObjectFactory getObjectFactory();
+                    @TaskAction
+                    final void action() {
+                        getObjectFactory().setProperty(String.class);
+                    }
                 }
-            }
-        """);
+            """);
     }
 }
