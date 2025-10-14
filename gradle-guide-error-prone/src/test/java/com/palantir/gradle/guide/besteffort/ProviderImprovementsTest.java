@@ -28,8 +28,7 @@ class ProviderImprovementsTest {
         @Test
         void basic_case() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -38,8 +37,7 @@ class ProviderImprovementsTest {
                         project.provider(() -> provider.get() + " yo");
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -54,8 +52,7 @@ class ProviderImprovementsTest {
         @Test
         void provider_factory() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.provider.Provider;
                 import org.gradle.api.provider.ProviderFactory;
 
@@ -64,8 +61,7 @@ class ProviderImprovementsTest {
                         providerFactory.provider(() -> provider.get() + " yo");
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.provider.Provider;
                 import org.gradle.api.provider.ProviderFactory;
 
@@ -80,8 +76,7 @@ class ProviderImprovementsTest {
         @Test
         void does_not_change_unrelated_non_provider_factory_method() {
             // language=Java
-            expectUnchanged(
-                    """
+            expectUnchanged("""
                 import com.google.common.base.Suppliers;
                 import org.gradle.api.provider.Provider;
 
@@ -97,8 +92,7 @@ class ProviderImprovementsTest {
         @Test
         void braces_in_lambda() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -110,8 +104,7 @@ class ProviderImprovementsTest {
                         });
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -129,8 +122,7 @@ class ProviderImprovementsTest {
         @Test
         void multiple_providers_it_will_only_change_the_first_one() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -139,8 +131,7 @@ class ProviderImprovementsTest {
                         project.provider(() -> first.get() + second.get());
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -156,8 +147,7 @@ class ProviderImprovementsTest {
         @Test
         void complex_expression_to_get_provider() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import java.util.List;
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
@@ -167,8 +157,7 @@ class ProviderImprovementsTest {
                         project.provider(() -> providers.get(0).get() + "hi");
                     }
                 }
-                """,
-                    """
+                """, """
                 import java.util.List;
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
@@ -184,8 +173,7 @@ class ProviderImprovementsTest {
         @Test
         void doesnt_lift_get_through_multiple_lambdas() {
             // language=Java
-            expectUnchanged(
-                    """
+            expectUnchanged("""
                 import java.util.Optional;
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
@@ -202,8 +190,7 @@ class ProviderImprovementsTest {
         @Test
         void identity_mapping() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -212,8 +199,7 @@ class ProviderImprovementsTest {
                         System.out.println(project.provider(() -> provider.get()));
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Project;
                 import org.gradle.api.provider.Provider;
 
@@ -231,8 +217,7 @@ class ProviderImprovementsTest {
         @Test
         void depends_on_task_provider_get() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -241,8 +226,7 @@ class ProviderImprovementsTest {
                         task.dependsOn(provider.get());
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -257,8 +241,7 @@ class ProviderImprovementsTest {
         @Test
         void works_with_custom_task() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -269,8 +252,7 @@ class ProviderImprovementsTest {
                         customTask.dependsOn(provider.get());
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -287,8 +269,7 @@ class ProviderImprovementsTest {
         @Test
         void multiple_task_providers_get() {
             // language=Java
-            refactorFromTo(
-                    """
+            refactorFromTo("""
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 
@@ -297,8 +278,7 @@ class ProviderImprovementsTest {
                         task.dependsOn(provider1.get(), provider2.get());
                     }
                 }
-                """,
-                    """
+                """, """
                 import org.gradle.api.Task;
                 import org.gradle.api.tasks.TaskProvider;
 

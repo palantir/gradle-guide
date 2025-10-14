@@ -22,291 +22,275 @@ import org.junit.jupiter.api.Test;
 public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void fileSystemOperations_not_injected_should_fix_and_inject() {
-        testFix(
-                "AlreadyAbstractTask.java",
-                """
-                import java.io.File;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyAbstractTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        getProject().copy(copySpec -> {
-                            copySpec.from("src");
-                            copySpec.into("dest");
-                        });
+        testFix("AlreadyAbstractTask.java", """
+            import java.io.File;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyAbstractTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    getProject().copy(copySpec -> {
+                        copySpec.from("src");
+                        copySpec.into("dest");
+                    });
 
-                        // delete with deleteSpec
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("delete");
-                        });
+                    // delete with deleteSpec
+                    getProject().delete(deleteSpec -> {
+                        deleteSpec.delete("delete");
+                    });
 
-                        // delete with varargs
-                        getProject().delete("happy");
-                        boolean deleted = getProject().delete("happy", "squirrel");
-                    }
+                    // delete with varargs
+                    getProject().delete("happy");
+                    boolean deleted = getProject().delete("happy", "squirrel");
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyAbstractTask extends DefaultTask {
-                    @Inject
-                    protected abstract FileSystemOperations getFileSystemOperations();
-                    @TaskAction
-                    final void action() {
-                        getFileSystemOperations().copy(copySpec -> {
-                            copySpec.from("src");
-                            copySpec.into("dest");
-                        });
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyAbstractTask extends DefaultTask {
+                @Inject
+                protected abstract FileSystemOperations getFileSystemOperations();
+                @TaskAction
+                final void action() {
+                    getFileSystemOperations().copy(copySpec -> {
+                        copySpec.from("src");
+                        copySpec.into("dest");
+                    });
 
-                        // delete with deleteSpec
-                        getFileSystemOperations().delete(deleteSpec -> {
-                            deleteSpec.delete("delete");
-                        });
+                    // delete with deleteSpec
+                    getFileSystemOperations().delete(deleteSpec -> {
+                        deleteSpec.delete("delete");
+                    });
 
-                        // delete with varargs
-                        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy").setFollowSymlinks(false)).getDidWork();
-                        boolean deleted = getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy", "squirrel").setFollowSymlinks(false)).getDidWork();
-                    }
+                    // delete with varargs
+                    getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy").setFollowSymlinks(false)).getDidWork();
+                    boolean deleted = getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete("happy", "squirrel").setFollowSymlinks(false)).getDidWork();
                 }
-                """);
+            }
+            """);
     }
 
     @SuppressWarnings("MethodLength")
     @Test
     void fileSystemOperations_already_injected_should_fix_without_injecting_again() {
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract FileSystemOperations getFileSystemOperations();
-                    @TaskAction
-                    final void action() {
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getProject().copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-                    }
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract FileSystemOperations getFileSystemOperations();
+                @TaskAction
+                final void action() {
+                    getProject().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getProject().copy(copySpec -> {
+                        copySpec.from("src");
+                    });
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract FileSystemOperations getFileSystemOperations();
-                    @TaskAction
-                    final void action() {
-                        getFileSystemOperations().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getFileSystemOperations().copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-                    }
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract FileSystemOperations getFileSystemOperations();
+                @TaskAction
+                final void action() {
+                    getFileSystemOperations().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getFileSystemOperations().copy(copySpec -> {
+                        copySpec.from("src");
+                    });
                 }
-                """);
+            }
+            """);
 
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    private final FileSystemOperations fsOps;
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                private final FileSystemOperations fsOps;
 
-                    AlreadyInjectedTask(FileSystemOperations fsOps) {
-                        this.fsOps = fsOps;
-                    }
-
-                    @TaskAction
-                    final void action() {
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getProject().copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-
-                    }
+                AlreadyInjectedTask(FileSystemOperations fsOps) {
+                    this.fsOps = fsOps;
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    private final FileSystemOperations fsOps;
 
-                    AlreadyInjectedTask(FileSystemOperations fsOps) {
-                        this.fsOps = fsOps;
-                    }
+                @TaskAction
+                final void action() {
+                    getProject().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getProject().copy(copySpec -> {
+                        copySpec.from("src");
+                    });
 
-                    @TaskAction
-                    final void action() {
-                        fsOps.delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        fsOps.copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-                    }
                 }
-                """);
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                private final FileSystemOperations fsOps;
 
-        testFix(
-                "AlreadyInjectedTask.java",
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract FileSystemOperations getFSOps();
-                    @TaskAction
-                    final void action() {
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getProject().copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-                    }
+                AlreadyInjectedTask(FileSystemOperations fsOps) {
+                    this.fsOps = fsOps;
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class AlreadyInjectedTask extends DefaultTask {
-                    private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
-                    @Inject
-                    protected abstract FileSystemOperations getFSOps();
-                    @TaskAction
-                    final void action() {
-                        getFSOps().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getFSOps().copy(copySpec -> {
-                            copySpec.from("src");
-                        });
-                    }
+
+                @TaskAction
+                final void action() {
+                    fsOps.delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    fsOps.copy(copySpec -> {
+                        copySpec.from("src");
+                    });
                 }
-                """);
+            }
+            """);
+
+        testFix("AlreadyInjectedTask.java", """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract FileSystemOperations getFSOps();
+                @TaskAction
+                final void action() {
+                    getProject().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getProject().copy(copySpec -> {
+                        copySpec.from("src");
+                    });
+                }
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class AlreadyInjectedTask extends DefaultTask {
+                private static final String IM_AT_THE_TOP_OF_THE_CLASS = "happy_squirrel.txt";
+                @Inject
+                protected abstract FileSystemOperations getFSOps();
+                @TaskAction
+                final void action() {
+                    getFSOps().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getFSOps().copy(copySpec -> {
+                        copySpec.from("src");
+                    });
+                }
+            }
+            """);
     }
 
     @Test
     void concrete_task_should_fix() {
-        testFix(
-                "ConcreteTask.java",
-                """
-                import java.io.File;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.tasks.TaskAction;
-                class ConcreteTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        getProject().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getProject().copy(copySpec -> {
-                            copySpec.from("input");
-                            copySpec.into("output");
-                        });
-                    }
+        testFix("ConcreteTask.java", """
+            import java.io.File;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+            class ConcreteTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    getProject().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getProject().copy(copySpec -> {
+                        copySpec.from("input");
+                        copySpec.into("output");
+                    });
                 }
-                """,
-                """
-                import java.io.File;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.file.FileSystemOperations;
-                import org.gradle.api.tasks.TaskAction;
-                abstract class ConcreteTask extends DefaultTask {
-                    @Inject
-                    protected abstract FileSystemOperations getFileSystemOperations();
-                    @TaskAction
-                    final void action() {
-                        getFileSystemOperations().delete(deleteSpec -> {
-                            deleteSpec.delete("temp");
-                        });
-                        getFileSystemOperations().copy(copySpec -> {
-                            copySpec.from("input");
-                            copySpec.into("output");
-                        });
-                    }
+            }
+            """, """
+            import java.io.File;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.file.FileSystemOperations;
+            import org.gradle.api.tasks.TaskAction;
+            abstract class ConcreteTask extends DefaultTask {
+                @Inject
+                protected abstract FileSystemOperations getFileSystemOperations();
+                @TaskAction
+                final void action() {
+                    getFileSystemOperations().delete(deleteSpec -> {
+                        deleteSpec.delete("temp");
+                    });
+                    getFileSystemOperations().copy(copySpec -> {
+                        copySpec.from("input");
+                        copySpec.into("output");
+                    });
                 }
-                """);
+            }
+            """);
     }
 
     @Test
     void transitive_calls_to_getProject_copy_should_fail_in_taskactions() {
-        test(
-                """
-                import org.gradle.api.Action;
-                import org.gradle.api.Task;
-                abstract class CustomTaskAction implements Action<Task> {
-                    @Override
-                    public void execute(Task task) {
-                        // BUG: Diagnostic contains: Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`
-                        task.getProject().copy(copySpec -> copySpec.from("src"));
-                        bad_helper(task);
-                    }
-                    public void bad_helper(Task task) {
-                        System.out.println("I am a happy squirrel");
-                        // BUG: Diagnostic contains: Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`
-                        task.getProject().copy(copySpec -> copySpec.into("dest"));
-                    }
+        test("""
+            import org.gradle.api.Action;
+            import org.gradle.api.Task;
+            abstract class CustomTaskAction implements Action<Task> {
+                @Override
+                public void execute(Task task) {
+                    // BUG: Diagnostic contains: Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`
+                    task.getProject().copy(copySpec -> copySpec.from("src"));
+                    bad_helper(task);
                 }
-                """);
+                public void bad_helper(Task task) {
+                    System.out.println("I am a happy squirrel");
+                    // BUG: Diagnostic contains: Instead of `getProject().copy(...)`, do `getFileSystemOperations().copy(...)`
+                    task.getProject().copy(copySpec -> copySpec.into("dest"));
+                }
+            }
+            """);
     }
 }

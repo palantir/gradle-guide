@@ -29,8 +29,7 @@ import java.util.stream.Collectors;
 
 final class ErrorpronePermalinksGenerator {
     public static String generate(Set<GradleGuideBugChecker> gradleGuideBugCheckers) {
-        String prefix =
-                """
+        String prefix = """
             # gradle-guide Error Prone Permalinks
 
             <table>
@@ -50,23 +49,22 @@ final class ErrorpronePermalinksGenerator {
                 .sorted(Comparator.comparing(GradleGuideBugChecker::canonicalName))
                 .map(bugChecker -> {
                     return """
-                            <tr>
-                            <td>
+                        <tr>
+                        <td>
 
-                            <a id="$NAME" href="guide/$LINK">`$NAME`</a>
+                        <a id="$NAME" href="guide/$LINK">`$NAME`</a>
 
-                            </td>
-                            <td>
-                            <a href="guide/$LINK">Please read</a>
-                            </td>
-                            <td>
+                        </td>
+                        <td>
+                        <a href="guide/$LINK">Please read</a>
+                        </td>
+                        <td>
 
-                            $MESSAGE
+                        $MESSAGE
 
-                            </td>
-                            </tr>
-                            """
-                            .replace("$NAME", bugChecker.canonicalName())
+                        </td>
+                        </tr>
+                        """.replace("$NAME", bugChecker.canonicalName())
                             .replace("$MESSAGE", bugChecker.message())
                             .replace("$LINK", renderMoreInfoLink(bugChecker.moreInfoLink()));
                 })

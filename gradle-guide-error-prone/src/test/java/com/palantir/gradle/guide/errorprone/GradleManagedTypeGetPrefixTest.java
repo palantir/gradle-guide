@@ -29,78 +29,72 @@ class GradleManagedTypeGetPrefixTest {
     class Tasks {
         @Test
         void abstract_method_without_get_prefix_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: should start with 'get'
-                        public abstract Property<String> foo();
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: should start with 'get'
+                    public abstract Property<String> foo();
+                }
+                """);
         }
 
         @Test
         void named_domain_abstract_method_without_get_prefix_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.NamedDomainObjectContainer;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: should start with 'get'
-                        public abstract NamedDomainObjectContainer<String> foo();
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.NamedDomainObjectContainer;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: should start with 'get'
+                    public abstract NamedDomainObjectContainer<String> foo();
+                }
+                """);
         }
 
         @Test
         void file_collection_abstract_method_without_get_prefix_should_fail() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.file.FileCollection;
-                    abstract class Test extends DefaultTask {
-                        // BUG: Diagnostic contains: should start with 'get'
-                        public abstract FileCollection foo();
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.file.FileCollection;
+                abstract class Test extends DefaultTask {
+                    // BUG: Diagnostic contains: should start with 'get'
+                    public abstract FileCollection foo();
+                }
+                """);
         }
 
         @Test
         void abstract_method_with_get_prefix_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public abstract Property<String> getFoo();
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    public abstract Property<String> getFoo();
+                }
+                """);
         }
 
         @Test
         void non_abstract_method_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.provider.Property;
-                    abstract class Test extends DefaultTask {
-                        public Property<String> foo() {
-                            return getProject().getObjects().property(String.class);
-                        }
+            test("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.provider.Property;
+                abstract class Test extends DefaultTask {
+                    public Property<String> foo() {
+                        return getProject().getObjects().property(String.class);
                     }
-                    """);
+                }
+                """);
         }
 
         @Test
         void method_returning_non_managed_type_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    abstract class Test extends DefaultTask {
-                        public abstract String foo();
-                    }
-                    """);
+            test("""
+                import org.gradle.api.DefaultTask;
+                abstract class Test extends DefaultTask {
+                    public abstract String foo();
+                }
+                """);
         }
     }
 
@@ -108,111 +102,96 @@ class GradleManagedTypeGetPrefixTest {
     class Extensions {
         @Test
         void abstract_method_without_get_prefix_should_fail() {
-            testExtension(
-                    """
-                    import org.gradle.api.provider.Property;
-                    abstract class FooExtension {
-                        public abstract Property<String> foo();
-                    }
-                    """,
-                    PLUGIN_CODE_BUG);
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                abstract class FooExtension {
+                    public abstract Property<String> foo();
+                }
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void named_domain_abstract_method_without_get_prefix_should_fail() {
-            testExtension(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.NamedDomainObjectContainer;
-                    abstract class FooExtension {
-                        public abstract NamedDomainObjectContainer<String> foo();
-                    }
-                    """,
-                    PLUGIN_CODE_BUG);
+            testExtension("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.NamedDomainObjectContainer;
+                abstract class FooExtension {
+                    public abstract NamedDomainObjectContainer<String> foo();
+                }
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void file_collection_abstract_method_without_get_prefix_should_fail() {
-            testExtension(
-                    """
-                    import org.gradle.api.DefaultTask;
-                    import org.gradle.api.file.FileCollection;
-                    abstract class FooExtension {
-                        public abstract FileCollection foo();
-                    }
-                    """,
-                    PLUGIN_CODE_BUG);
+            testExtension("""
+                import org.gradle.api.DefaultTask;
+                import org.gradle.api.file.FileCollection;
+                abstract class FooExtension {
+                    public abstract FileCollection foo();
+                }
+                """, PLUGIN_CODE_BUG);
         }
 
         @Test
         void abstract_method_with_get_prefix_should_be_fine() {
-            testExtension(
-                    """
-                    import org.gradle.api.provider.Property;
-                    abstract class FooExtension {
-                        public abstract Property<String> getFoo();
-                    }
-                    """,
-                    PLUGIN_CODE_NO_BUG);
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                abstract class FooExtension {
+                    public abstract Property<String> getFoo();
+                }
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void non_abstract_method_should_be_fine() {
-            testExtension(
-                    """
-                    import org.gradle.api.provider.Property;
-                    abstract class FooExtension {
-                        public Property<String> foo() {
-                            return null;
-                        }
+            testExtension("""
+                import org.gradle.api.provider.Property;
+                abstract class FooExtension {
+                    public Property<String> foo() {
+                        return null;
                     }
-                    """,
-                    PLUGIN_CODE_NO_BUG);
+                }
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Test
         void method_returning_non_managed_type_should_be_fine() {
-            testExtension(
-                    """
-                    abstract class FooExtension {
-                        public abstract String foo();
-                    }
-                    """,
-                    PLUGIN_CODE_NO_BUG);
+            testExtension("""
+                abstract class FooExtension {
+                    public abstract String foo();
+                }
+                """, PLUGIN_CODE_NO_BUG);
         }
 
         @Language("Java")
-        private static final String PLUGIN_CODE_BUG =
-                """
-        import org.gradle.api.Plugin;
-        import org.gradle.api.Project;
-        public class FooPlugin implements Plugin<Project> {
-            @Override
-            public void apply(Project project) {
-                // BUG: Diagnostic contains: should start with 'get'
-                project.getExtensions().create("foo", FooExtension.class);
+        private static final String PLUGIN_CODE_BUG = """
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            public class FooPlugin implements Plugin<Project> {
+                @Override
+                public void apply(Project project) {
+                    // BUG: Diagnostic contains: should start with 'get'
+                    project.getExtensions().create("foo", FooExtension.class);
+                }
             }
-        }
-        """;
+            """;
 
         @Language("Java")
-        private static final String PLUGIN_CODE_NO_BUG =
-                """
-        import org.gradle.api.Plugin;
-        import org.gradle.api.Project;
-        public class FooPlugin implements Plugin<Project> {
-            @Override
-            public void apply(Project project) {
-                project.getExtensions().create("foo", FooExtension.class);
+        private static final String PLUGIN_CODE_NO_BUG = """
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            public class FooPlugin implements Plugin<Project> {
+                @Override
+                public void apply(Project project) {
+                    project.getExtensions().create("foo", FooExtension.class);
+                }
             }
-        }
-        """;
+            """;
     }
 
     @Test
     void non_abstract_other_type_is_fine() {
-        test(
-                """
+        test("""
             import org.gradle.api.provider.Property;
             abstract class NotATaskOrExtension {
                 private final Property<String> foo = null;

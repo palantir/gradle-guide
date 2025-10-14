@@ -22,43 +22,40 @@ import org.junit.jupiter.api.Test;
 public class ExecOperationsFixesTest extends IllegalMethodCalledDuringTaskExecutionTest {
     @Test
     void should_fix() {
-        testFix(
-                "ConcreteTask.java",
-                """
-                import java.io.File;
-                import java.util.List;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.tasks.TaskAction;
-                class ConcreteTask extends DefaultTask {
-                    @TaskAction
-                    final void action() {
-                        getProject().exec(execSpec -> {
-                            execSpec.setCommandLine(List.of("cat", "happy-squirrel.txt"));
-                        });
-                    }
+        testFix("ConcreteTask.java", """
+            import java.io.File;
+            import java.util.List;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+            class ConcreteTask extends DefaultTask {
+                @TaskAction
+                final void action() {
+                    getProject().exec(execSpec -> {
+                        execSpec.setCommandLine(List.of("cat", "happy-squirrel.txt"));
+                    });
                 }
-                """,
-                """
-                import java.io.File;
-                import java.util.List;
-                import javax.inject.Inject;
-                import org.gradle.api.DefaultTask;
-                import org.gradle.api.Plugin;
-                import org.gradle.api.Project;
-                import org.gradle.api.tasks.TaskAction;
-                import org.gradle.process.ExecOperations;
-                abstract class ConcreteTask extends DefaultTask {
-                    @Inject
-                    protected abstract ExecOperations getExecOperations();
-                    @TaskAction
-                    final void action() {
-                        getExecOperations().exec(execSpec -> {
-                            execSpec.setCommandLine(List.of("cat", "happy-squirrel.txt"));
-                        });
-                    }
+            }
+            """, """
+            import java.io.File;
+            import java.util.List;
+            import javax.inject.Inject;
+            import org.gradle.api.DefaultTask;
+            import org.gradle.api.Plugin;
+            import org.gradle.api.Project;
+            import org.gradle.api.tasks.TaskAction;
+            import org.gradle.process.ExecOperations;
+            abstract class ConcreteTask extends DefaultTask {
+                @Inject
+                protected abstract ExecOperations getExecOperations();
+                @TaskAction
+                final void action() {
+                    getExecOperations().exec(execSpec -> {
+                        execSpec.setCommandLine(List.of("cat", "happy-squirrel.txt"));
+                    });
                 }
-                """);
+            }
+            """);
     }
 }

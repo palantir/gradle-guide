@@ -30,60 +30,52 @@ class NonAbstractGradleTypeTest {
     class Tasks {
         @Test
         void non_abstract_task_should_autofix() {
-            testFix(
-                    "Test",
-                    """
-                    import org.gradle.api.DefaultTask;
+            testFix("Test", """
+                import org.gradle.api.DefaultTask;
 
-                    class Test extends DefaultTask {}
-                    """,
-                    """
-                    import org.gradle.api.DefaultTask;
+                class Test extends DefaultTask {}
+                """, """
+                import org.gradle.api.DefaultTask;
 
-                    abstract class Test extends DefaultTask {}
-                    """);
+                abstract class Test extends DefaultTask {}
+                """);
         }
 
         @Test
         void non_abstract_task_subtype_should_autofix() {
-            testFix(
-                    "Test",
-                    """
-                    import org.gradle.api.DefaultTask;
+            testFix("Test", """
+                import org.gradle.api.DefaultTask;
 
-                    class Foo {
-                        abstract class Parent extends DefaultTask {}
-                        class Child extends Parent {}
-                    }
-                    """,
-                    """
-                    import org.gradle.api.DefaultTask;
+                class Foo {
+                    abstract class Parent extends DefaultTask {}
+                    class Child extends Parent {}
+                }
+                """, """
+                import org.gradle.api.DefaultTask;
 
-                    class Foo {
-                        abstract class Parent extends DefaultTask {}
-                        abstract class Child extends Parent {}
-                    }
-                    """);
+                class Foo {
+                    abstract class Parent extends DefaultTask {}
+                    abstract class Child extends Parent {}
+                }
+                """);
         }
 
         @Test
         void abstract_task_is_fine() {
-            test(
-                    """
-                    import org.gradle.api.DefaultTask;
+            test("""
+                import org.gradle.api.DefaultTask;
 
-                    abstract class Test extends DefaultTask {}
-                    """);
+                abstract class Test extends DefaultTask {}
+                """);
         }
 
         @Test
         void interface_task_should_be_fine() {
-            test(
-                    """
-                    import org.gradle.api.Task;
+            test("""
+                import org.gradle.api.Task;
 
-                    interface TestTask extends Task {}
-                    """);
+                interface TestTask extends Task {}
+                """);
         }
     }
 
@@ -91,8 +83,7 @@ class NonAbstractGradleTypeTest {
     class Extensions {
 
         // language=Java
-        private String pluginCode =
-                """
+        private String pluginCode = """
             import org.gradle.api.Plugin;
             import org.gradle.api.Project;
 
@@ -148,8 +139,8 @@ class NonAbstractGradleTypeTest {
     @Test
     void non_abstract_other_type_is_fine() {
         test("""
-                class SomethingElse {}
-                """);
+            class SomethingElse {}
+            """);
     }
 
     private void test(@Language("Java") String source) {
