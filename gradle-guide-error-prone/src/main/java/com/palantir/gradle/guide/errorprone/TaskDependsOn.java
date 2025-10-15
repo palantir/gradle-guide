@@ -24,6 +24,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.method.MethodMatchers;
+import com.google.errorprone.suppliers.Supplier;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -31,28 +32,27 @@ import com.sun.tools.javac.code.Type;
 import java.util.Optional;
 
 @AutoService(BugChecker.class)
-@BugPattern(
-        severity = SeverityLevel.ERROR,
-        summary =
-                """
-        Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers.
-        Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
-        need `classes`. It is also a sign of bad task design. You should write tasks with explicit, fine-grained inputs
-        and outputs. Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.
+@BugPattern(severity = SeverityLevel.ERROR, summary = """
+    Instead of `task1.dependsOn(task2)`, wire up the outputs of `task2` to the inputs of `task1` using providers.
+    Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
+    need `classes`. It is also a sign of bad task design. You should write tasks with explicit, fine-grained inputs
+    and outputs. Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.
 
-        However, there are cases where `dependsOn` is unavoidable:
-        1. Wiring up tasks to lifecycle tasks e.g. `build.dependsOn(myTask)`
-        2. Tasks that do system-wide setup like installing npm. In these cases, we recommended that you specify the
-            installation directory as an `@OutputDirectory` of the task anyways.
+    However, there are cases where `dependsOn` is unavoidable:
+    1. Wiring up tasks to lifecycle tasks e.g. `build.dependsOn(myTask)`
+    2. Tasks that do system-wide setup like installing npm. In these cases, we recommended that you specify the
+        installation directory as an `@OutputDirectory` of the task anyways.
 
-        This errorprone tries to detect legitimate uses of `dependsOn`. You can suppress false positives, but we
-        encourage you to do so sparingly, and think about whether something can be improved about your task design.
-        """)
+    This errorprone tries to detect legitimate uses of `dependsOn`. You can suppress false positives, but we
+    encourage you to do so sparingly, and think about whether something can be improved about your task design.
+    """)
 public final class TaskDependsOn extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
 
     private static final Matcher<ExpressionTree> TASK_DEPENDS_ON = MethodMatchers.instanceMethod()
             .onDescendantOf("org.gradle.api.Task")
             .named("dependsOn");
+    private static final Supplier<Type> DEFAULT_TASK_TYPE =
+            VisitorState.memoize(state -> state.getTypeFromString("org.gradle.api.DefaultTask"));
 
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
@@ -73,12 +73,12 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
 
         return buildDescription(tree)
                 .setMessage("Instead of `task1.dependsOn(task2)`, "
-                        + "wire up the outputs of task2 to the inputs of task1 using providers")
+                        + "wire up the outputs of `task2` to the inputs of `task1` using providers")
                 .build();
     }
 
     private static boolean isCustomTask(Type task, VisitorState state) {
-        Type genericTaskType = state.getTypeFromString("org.gradle.api.DefaultTask");
+        Type genericTaskType = DEFAULT_TASK_TYPE.get(state);
         return ASTHelpers.isSubtype(task, genericTaskType, state)
                 && !ASTHelpers.isSameType(task, genericTaskType, state);
     }

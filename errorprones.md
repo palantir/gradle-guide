@@ -110,7 +110,7 @@ When defining a custom Task or Extension, you should make it an abstract class w
 </td>
 <td>
 
-Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers.
+Instead of `task1.dependsOn(task2)`, wire up the outputs of `task2` to the inputs of `task1` using providers.
 Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
 need `classes`. It is also a sign of bad task design. You should write tasks with explicit, fine-grained inputs
 and outputs. Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.

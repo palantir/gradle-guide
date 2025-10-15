@@ -26,86 +26,83 @@ class TaskDependsOnTest {
             CompilationTestHelper.newInstance(TaskDependsOn.class, getClass());
 
     // language=Java
-    private final String testSetup =
-            """
-            import java.io.File;
-            import org.gradle.api.*;
-            import org.gradle.api.file.*;
-            import org.gradle.api.provider.*;
-            import org.gradle.api.tasks.*;
-            import org.gradle.api.tasks.testing.*;
-            import org.gradle.api.tasks.bundling.*;
+    private final String testSetup = """
+                import java.io.File;
+                import org.gradle.api.*;
+                import org.gradle.api.file.*;
+                import org.gradle.api.provider.*;
+                import org.gradle.api.tasks.*;
+                import org.gradle.api.tasks.testing.*;
+                import org.gradle.api.tasks.bundling.*;
 
-            abstract class ProducingTask extends DefaultTask {
-                @OutputFile
-                public abstract RegularFileProperty getOutputFile();
-            }
+                abstract class ProducingTask extends DefaultTask {
+                    @OutputFile
+                    public abstract RegularFileProperty getOutputFile();
+                }
 
-            abstract class ConsumingTask extends DefaultTask {
-                @InputFile
-                public abstract RegularFileProperty getInputFile();
-            }
-    """;
+                abstract class ConsumingTask extends DefaultTask {
+                    @InputFile
+                    public abstract RegularFileProperty getInputFile();
+                }
+        """;
 
     @Test
     void dependsOn_custom_task_subtype_should_fail() {
-        test(
-                """
-            abstract class MyPlugin implements Plugin<Project> {
-                @Override
-                public final void apply(Project project) {
-                    Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
+        test("""
+                abstract class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
 
-                    TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
-                        task.getOutputFile().set(sharedFile);
-                    });
+                        TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
+                            task.getOutputFile().set(sharedFile);
+                        });
 
-                    TaskProvider<ConsumingTask> consumingTask = project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
-                        task.getInputFile().set(sharedFile);
-                        // BUG: Diagnostic contains: Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers
-                        task.dependsOn(producingTask);
-                    });
+                        TaskProvider<ConsumingTask> consumingTask = project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
+                            task.getInputFile().set(sharedFile);
+                            // BUG: Diagnostic contains: Instead of `task1.dependsOn(task2)`, wire up the outputs of `task2` to the inputs of `task1` using providers
+                            task.dependsOn(producingTask);
+                        });
 
-                    consumingTask.configure(task -> {
-                        // BUG: Diagnostic contains: Instead of `task1.dependsOn(task2)`, wire up the outputs of task2 to the inputs of task1 using providers
-                        task.dependsOn(producingTask);
-                    });
+                        consumingTask.configure(task -> {
+                            // BUG: Diagnostic contains: Instead of `task1.dependsOn(task2)`, wire up the outputs of `task2` to the inputs of `task1` using providers
+                            task.dependsOn(producingTask);
+                        });
+                    }
                 }
-            }
-        """);
+            """);
     }
 
     @Test
     void dependsOn_DefaultTask_should_pass() {
-        test(
-                """
-            abstract class MyPlugin implements Plugin<Project> {
-                @Override
-                public final void apply(Project project) {
-                    Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
+        test("""
+                abstract class MyPlugin implements Plugin<Project> {
+                    @Override
+                    public final void apply(Project project) {
+                        Provider<RegularFile> sharedFile = project.getLayout().getBuildDirectory().file("happy-squirrel.txt");
 
-                    TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
-                        task.getOutputFile().set(sharedFile);
-                    });
+                        TaskProvider<ProducingTask> producingTask = project.getTasks().register("producingTask", ProducingTask.class, task -> {
+                            task.getOutputFile().set(sharedFile);
+                        });
 
-                    TaskProvider<?> lifecycleTask = project.getTasks().register("lifecycleTask");
-                    Task check = project.getTasks().getByName("check");
-                    project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
-                        task.getInputFile().set(sharedFile);
+                        TaskProvider<?> lifecycleTask = project.getTasks().register("lifecycleTask");
+                        Task check = project.getTasks().getByName("check");
+                        project.getTasks().register("consumingTask", ConsumingTask.class, task -> {
+                            task.getInputFile().set(sharedFile);
 
-                        // These are OK, because we assume that a regular DefaultTask is a lifecycle task
-                        lifecycleTask.configure(lifecycle -> lifecycle.dependsOn(task));
-                        check.dependsOn(task);
-                    });
+                            // These are OK, because we assume that a regular DefaultTask is a lifecycle task
+                            lifecycleTask.configure(lifecycle -> lifecycle.dependsOn(task));
+                            check.dependsOn(task);
+                        });
 
-                    TaskProvider<Task> consumingTask = project.getTasks().named("consumingTask");
-                    consumingTask.configure(genericTask -> {
-                        // Ideally we'd catch this case, but we don't know whether consumingTask is actually a custom task or not, so be conservative
-                        genericTask.dependsOn(producingTask);
-                    });
+                        TaskProvider<Task> consumingTask = project.getTasks().named("consumingTask");
+                        consumingTask.configure(genericTask -> {
+                            // Ideally we'd catch this case, but we don't know whether consumingTask is actually a custom task or not, so be conservative
+                            genericTask.dependsOn(producingTask);
+                        });
+                    }
                 }
-            }
-        """);
+            """);
     }
 
     private void test(@Language("Java") String source) {
