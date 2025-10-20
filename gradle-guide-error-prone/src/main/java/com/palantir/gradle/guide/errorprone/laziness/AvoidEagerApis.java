@@ -28,22 +28,17 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.palantir.gradle.guide.errorprone.GradleGuideBugChecker;
 import com.palantir.gradle.guide.errorprone.utils.ChainedCallMatcher;
-import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.tree.VariableTree;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.TreePathScanner;
+import com.sun.source.tree.TypeCastTree;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @AutoService(BugChecker.class)
 @BugPattern(severity = SeverityLevel.ERROR, summary = "Avoid eager API methods, which force tasks to be realized. ")
-public final class ConfigurationAvoidance extends GradleGuideBugChecker
-        implements BugChecker.MethodInvocationTreeMatcher {
+public final class AvoidEagerApis extends GradleGuideBugChecker implements BugChecker.MethodInvocationTreeMatcher {
     private static final Matcher<MethodInvocationTree> FIRST_ARGUMENT_IS_MAP =
             Matchers.argument(0, Matchers.isSubtypeOf(Map.class));
 
@@ -102,11 +97,12 @@ public final class ConfigurationAvoidance extends GradleGuideBugChecker
             EagerApiUsage.fix(
                     ChainedCallMatcher.of(CONTAINER_CREATE),
                     "Use `.register` instead",
-                    ConfigurationAvoidance::fixCreateToRegister),
-            EagerApiUsage.report(
+                    AvoidEagerApis::fixCreateToRegister),
+            EagerApiUsage.fix( // fix
                     ChainedCallMatcher.of(TASK_CONTAINER_GET_BY_NAME),
-                    "Use `tasks.named(...)` instead of `tasks.getByName(...)`"),
-            EagerApiUsage.report(
+                    "Use `tasks.named(...)` instead of `tasks.getByName(...)`",
+                    AvoidEagerApis::fixGetByNameToNamed),
+            EagerApiUsage.report( // fix
                     ChainedCallMatcher.of(TASK_CONTAINER_FIND_BY_NAME),
                     "Use `tasks.named(...)` instead of `tasks.findByName(...)`"),
             EagerApiUsage.report(
@@ -121,12 +117,12 @@ public final class ConfigurationAvoidance extends GradleGuideBugChecker
             EagerApiUsage.report(
                     ChainedCallMatcher.of(TASK_COLLECTION_WHEN_TASK_ADDED),
                     "Use `tasks.configureEach(...)` instead of `tasks.whenTaskAdded(...)`"),
-            EagerApiUsage.report(
+            EagerApiUsage.report( // fix
                     ChainedCallMatcher.of(COLLECTION_MATCHING),
                     "Use `configureEach(...)` with conditional logic instead of `matching(...)`"),
             EagerApiUsage.report(
                     ChainedCallMatcher.of(TASK_COLLECTION_GET_AT), "Use `named(...)` instead of `getAt(...)`"),
-            EagerApiUsage.report(
+            EagerApiUsage.report( // fix
                     ChainedCallMatcher.of(COLLECTION_WITH_TYPE),
                     "Use `named(...).configureEach(...)` instead of `withType(...)`"),
             EagerApiUsage.report(
@@ -151,6 +147,49 @@ public final class ConfigurationAvoidance extends GradleGuideBugChecker
         return Description.NO_MATCH;
     }
 
+    private static SuggestedFix fixGetByNameToNamed(MethodInvocationTree tree, VisitorState state) {
+        if (!bestEffortModeEnabled(state)) {
+            return SuggestedFix.emptyFix();
+        }
+
+        // If the second argument is a closure, there is no direct java equivalent
+        if (SECOND_ARGUMENT_IS_GROOVY_CLOSURE.matches(tree, state)) {
+            return SuggestedFix.emptyFix();
+        }
+
+        SuggestedFix.Builder fix = SuggestedFix.builder();
+
+        // Handle both cases:
+        // MyTask myTask = (myTask) project.getTasks().named(...).get();
+        // Task myTask = project.getTasks().named(...).get();
+        // TODO(okelvin): We could handle chained calls here but it's complicated
+        Tree parentLeaf = state.getPath().getParentPath().getLeaf();
+        Tree toReplace;
+        Optional<String> taskClass;
+        if (parentLeaf instanceof TypeCastTree castTree) {
+            toReplace = parentLeaf;
+            taskClass = Optional.of(state.getSourceForNode(castTree.getType()) + ".class");
+        } else {
+            toReplace = tree;
+            taskClass = Optional.empty();
+        }
+
+        fix.postfixWith(toReplace, ".get()");
+
+        String name = state.getSourceForNode(tree.getArguments().get(0));
+        if (taskClass.isEmpty()) {
+            fix.replace(
+                    toReplace,
+                    state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".named(" + name + ")");
+        } else {
+            fix.replace(
+                    toReplace,
+                    state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".named(" + name + ", "
+                            + taskClass.get() + ")");
+        }
+        return fix.build();
+    }
+
     private static SuggestedFix fixCreateToRegister(MethodInvocationTree tree, VisitorState state) {
         if (!bestEffortModeEnabled(state)) {
             return SuggestedFix.emptyFix();
@@ -162,57 +201,12 @@ public final class ConfigurationAvoidance extends GradleGuideBugChecker
             return SuggestedFix.emptyFix();
         }
 
-        TreePath parentPath = state.getPath().getParentPath();
-        Tree leaf = parentPath.getLeaf();
         SuggestedFix.Builder fix = SuggestedFix.builder();
-
-        if (leaf instanceof VariableTree variableTree) {
-            replaceVariableDeclarationTypeWithProvider(state, fix, variableTree);
-            replaceVariableUsagesWithTaskProviderGet(fix, parentPath);
-        } else if (leaf instanceof ExpressionTree || leaf instanceof ReturnTree) {
-            fix.postfixWith(tree, ".get()");
-        }
-
+        fix.postfixWith(tree, ".get()");
         fix.replace(
                 tree.getMethodSelect(),
                 state.getSourceForNode(ASTHelpers.getReceiver(tree.getMethodSelect())) + ".register");
         return fix.build();
-    }
-
-    private static void replaceVariableDeclarationTypeWithProvider(
-            VisitorState state, SuggestedFix.Builder fixBuilder, VariableTree variableTree) {
-
-        @SuppressWarnings("for-rollout:MemoizeConstantVisitorStateLookups")
-        boolean isTask = state.getTypes()
-                .isSubtype(ASTHelpers.getType(variableTree.getType()), state.getTypeFromString("org.gradle.api.Task"));
-
-        if (isTask) {
-            fixBuilder.addImport("org.gradle.api.tasks.TaskProvider");
-            fixBuilder.prefixWith(variableTree.getType(), "TaskProvider<");
-        } else {
-            fixBuilder.addImport("org.gradle.api.NamedDomainObjectProvider");
-            fixBuilder.prefixWith(variableTree.getType(), "NamedDomainObjectProvider<");
-        }
-
-        fixBuilder.postfixWith(variableTree.getType(), ">");
-    }
-
-    private static void replaceVariableUsagesWithTaskProviderGet(
-            SuggestedFix.Builder fixBuilder, TreePath variableTreePath) {
-
-        TreePath variableParent = variableTreePath.getParentPath();
-        Object variableSymbol = ASTHelpers.getSymbol(variableTreePath.getLeaf());
-        if (variableParent.getLeaf() instanceof BlockTree) {
-            new TreePathScanner<Void, Void>() {
-                @Override
-                public Void visitIdentifier(IdentifierTree identifierTree, Void unused) {
-                    if (variableSymbol.equals(ASTHelpers.getSymbol(identifierTree))) {
-                        fixBuilder.postfixWith(identifierTree, ".get()");
-                    }
-                    return null;
-                }
-            }.scan(variableParent, null);
-        }
     }
 
     @Override

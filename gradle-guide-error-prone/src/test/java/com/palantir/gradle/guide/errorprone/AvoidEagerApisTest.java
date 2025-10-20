@@ -16,14 +16,14 @@
 package com.palantir.gradle.guide.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
-import com.palantir.gradle.guide.errorprone.laziness.ConfigurationAvoidance;
+import com.palantir.gradle.guide.errorprone.laziness.AvoidEagerApis;
 import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class ConfigurationAvoidanceTest {
+class AvoidEagerApisTest {
     private final CompilationTestHelper compilationTestHelper =
-            CompilationTestHelper.newInstance(ConfigurationAvoidance.class, getClass());
+            CompilationTestHelper.newInstance(AvoidEagerApis.class, getClass());
 
     @SuppressWarnings("for-rollout:MisformattedTestData")
     @Test
@@ -249,10 +249,10 @@ class ConfigurationAvoidanceTest {
 
                     class Test {
                         static void test(TaskContainer tasks) {
-                            tasks.register("lol");
-                            tasks.register("lol", Task.class);
-                            tasks.register("lol", Task.class, new Object());
-                            tasks.register("lol", Task.class, task -> {});
+                            tasks.register("lol").get();
+                            tasks.register("lol", Task.class).get();
+                            tasks.register("lol", Task.class, new Object()).get();
+                            tasks.register("lol", Task.class, task -> {}).get();
                         }
                     }
                     """)
@@ -260,7 +260,7 @@ class ConfigurationAvoidanceTest {
             }
 
             @Test
-            void when_return_value_is_used_adds_get_calls_to_usages() {
+            void when_return_value_is_used_adds_get_call() {
                 bestEffortRefactoringValidator()
                         .addInputLines(
                                 "Test.java",
@@ -286,11 +286,10 @@ class ConfigurationAvoidanceTest {
                                 """
                     import org.gradle.api.Task;
                     import org.gradle.api.tasks.TaskContainer;
-                    import org.gradle.api.tasks.TaskProvider;
 
                     class Test {
                         static Task test(TaskContainer tasks) {
-                            TaskProvider<Task> task = tasks.register("lol");
+                            Task task = tasks.register("lol").get();
                             System.out.println(tasks.register("lol", Task.class, t -> {}).get());
                             return tasks.register("lol", Task.class).get();
                         }
@@ -327,21 +326,25 @@ class ConfigurationAvoidanceTest {
             }
 
             @Test
-            void uses_get_on_taskprovider_usages() {
+            void getByName_refactored_correctly() {
                 bestEffortRefactoringValidator()
                         .addInputLines(
                                 "Test.java",
                                 // language=java
                                 """
                     import org.gradle.api.DefaultTask;
+                    import org.gradle.api.Project;
                     import org.gradle.api.tasks.TaskContainer;
 
                     class Test {
                         class CustomTask extends DefaultTask {}
-                        static CustomTask test(TaskContainer tasks) {
-                            CustomTask task = tasks.create("lol", CustomTask.class);
-                            String description = task.getDescription();
-                            return task;
+                        static void test(Project project) {
+                            CustomTask customTask = (CustomTask) project.getTasks().getByName("lol");
+
+                            TaskContainer tasks = project.getTasks();
+                            CustomTask customTask2 = (CustomTask) tasks.getByName("lol");
+
+                            CustomTask wontRemoveCast = (CustomTask) project.getTasks().getByName("lol").getDependsOn().stream().findFirst().get();
                         }
                     }
                     """)
@@ -350,15 +353,18 @@ class ConfigurationAvoidanceTest {
                                 // language=java
                                 """
                     import org.gradle.api.DefaultTask;
+                    import org.gradle.api.Project;
                     import org.gradle.api.tasks.TaskContainer;
-                    import org.gradle.api.tasks.TaskProvider;
 
                     class Test {
                         class CustomTask extends DefaultTask {}
-                        static CustomTask test(TaskContainer tasks) {
-                            TaskProvider<CustomTask> task = tasks.register("lol", CustomTask.class);
-                            String description = task.get().getDescription();
-                            return task.get();
+                        static void test(Project project) {
+                            CustomTask customTask = project.getTasks().named("lol", CustomTask.class).get();
+
+                            TaskContainer tasks = project.getTasks();
+                            CustomTask customTask2 = tasks.named("lol", CustomTask.class).get();
+
+                            CustomTask wontRemoveCast = (CustomTask) project.getTasks().named("lol").get().getDependsOn().stream().findFirst().get();
                         }
                     }
                     """)
@@ -392,8 +398,8 @@ class ConfigurationAvoidanceTest {
 
                     class Test {
                         static void test(ConfigurationContainer configurations) {
-                            configurations.register("lol");
-                            configurations.register("lol", conf -> {});
+                            configurations.register("lol").get();
+                            configurations.register("lol", conf -> {}).get();
                         }
                     }
                     """)
@@ -425,13 +431,12 @@ class ConfigurationAvoidanceTest {
                                 "Test.java",
                                 // language=java
                                 """
-                    import org.gradle.api.NamedDomainObjectProvider;
                     import org.gradle.api.artifacts.Configuration;
                     import org.gradle.api.artifacts.ConfigurationContainer;
 
                     class Test {
                         static Configuration test(ConfigurationContainer configurations) {
-                            NamedDomainObjectProvider<Configuration> configuration = configurations.register("lol");
+                            Configuration configuration = configurations.register("lol").get();
                             System.out.println(configurations.register("lol", conf -> {}).get());
                             return configurations.register("lol", conf -> {}).get();
                         }
@@ -468,6 +473,6 @@ class ConfigurationAvoidanceTest {
     }
 
     private RefactoringValidator refactoringValidator(String... args) {
-        return RefactoringValidator.of(ConfigurationAvoidance.class, getClass(), args);
+        return RefactoringValidator.of(AvoidEagerApis.class, getClass(), args);
     }
 }

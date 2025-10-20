@@ -12,7 +12,7 @@
 <tr>
 <td>
 
-<a id="ConfigurationAvoidance" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`ConfigurationAvoidance`</a>
+<a id="AvoidEagerApis" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`AvoidEagerApis`</a>
 
 </td>
 <td>
@@ -21,6 +21,22 @@
 <td>
 
 Avoid eager API methods, which force tasks to be realized. 
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+<a id="AvoidEagerlyEvaluatingProviders" href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">`AvoidEagerlyEvaluatingProviders`</a>
+
+</td>
+<td>
+<a href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">Please read</a>
+</td>
+<td>
+
+Do not call `Provider.get`. Instead, pass providers directly to methods that accept them, or transform providers using `Provider.map` or `Provider.flatMap`, or combine providers using `Provider.zip`. Calling `Provider.get` causes Gradle to lose track of implicit dependencies and can lead to timing issues by reading values too early.
 
 </td>
 </tr>
@@ -95,6 +111,22 @@ the tasks become independent and can execute in parallel.
 <td>
 
 When defining a custom Task or Extension, you should make it an abstract class with abstract getter methods of each of the properties and other gradle containers (eg NamedDomainObjectSet). Gradle will then automatically create the properties and containers, removing a lot of boilerplate. Additionally, as you declare eg `public abstract Property<Integer> getFoo()`, this will automatically make the `foo = 3` groovy syntax work of the box.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+<a id="PrivateMethodsShouldTakeProviders" href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">`PrivateMethodsShouldTakeProviders`</a>
+
+</td>
+<td>
+<a href="guide/avoiding-unnecessary-configuration.md#using-taskproviders">Please read</a>
+</td>
+<td>
+
+Private methods should take TaskProvider parameters instead of Task parameters when all call sites pass TaskProvider.get()
 
 </td>
 </tr>
