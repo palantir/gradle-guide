@@ -28,7 +28,8 @@ public class GradleGuidePlugin implements Plugin<Project> {
             "ConfigurationAvoidanceRegistration",
             "ProviderGet",
             "NonAbstractGradleType",
-            "IllegalMethodCalledDuringTaskExecution");
+            "IllegalMethodCalledDuringTaskExecution",
+            "UseGradleLoggerInGradlePlugins");
 
     @Override
     public final void apply(Project rootProject) {

@@ -14,6 +14,7 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.google.errorprone:error_prone_test_helpers'
+    testImplementation 'com.palantir.safe-logging:logger'
     testImplementation gradleApi()
 }
 
@@ -36,4 +37,8 @@ moduleJvmArgs {
         'jdk.compiler/com.sun.tools.javac.util'
     ]
     opens = ['jdk.compiler/com.sun.tools.javac.comp']
+}
+
+checkUnusedDependencies {
+    ignore('com.palantir.safe-logging', 'logger')  // Used within a test fixture
 }

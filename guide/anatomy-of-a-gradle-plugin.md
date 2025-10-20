@@ -58,6 +58,11 @@ That's it! You have access to `Project`[^2] variable that allows you to create e
 
 [^2]: `Settings` instead if you make a setting plugin aka `Plugin<Settings>`.
 
+> [!NOTE]
+> You should use Gradle's [`Logger`](https://docs.gradle.org/current/javadoc/org/gradle/api/logging/Logger.html) within a Gradle plugin rather than other loggers.
+> The Gradle logger exposes the `lifecycle` log level, which always prints the log but does not colour it as a warn or error.
+> Also, the overhead of specialized loggers like [`SafeLogger`](https://github.com/palantir/safe-logging) aren't needed if the Gradle plugin is not processing sensitive information.
+
 ## Extensions
 
 Extensions are the way users can enter configuration for your Gradle plugin. We want to allow our users to set a `name`, looking something like:

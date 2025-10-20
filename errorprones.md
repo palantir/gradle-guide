@@ -142,5 +142,21 @@ encourage you to do so sparingly, and think about whether something can be impro
 
 </td>
 </tr>
+
+<tr>
+<td>
+
+<a id="UseGradleLoggerInGradlePlugins" href="guide/anatomy-of-a-gradle-plugin.md#plugins">`UseGradleLoggerInGradlePlugins`</a>
+
+</td>
+<td>
+<a href="guide/anatomy-of-a-gradle-plugin.md#plugins">Please read</a>
+</td>
+<td>
+
+Use Gradle's `Logger` instead of `SafeLogger` within Gradle plugins. Safe logging isn't necessary for Gradle plugins which don't process sensitive data.
+
+</td>
+</tr>
 </tbody>
 </table>
