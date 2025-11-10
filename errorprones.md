@@ -12,6 +12,22 @@
 <tr>
 <td>
 
+<a id="AvoidEagerApis" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`AvoidEagerApis`</a>
+
+</td>
+<td>
+<a href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">Please read</a>
+</td>
+<td>
+
+Avoid eager API methods, which force tasks/configurations to be realized. 
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="ConfigurationAvoidanceRegistration" href="guide/avoiding-unnecessary-configuration.md#lazy-task-registration">`ConfigurationAvoidanceRegistration`</a>
 
 </td>

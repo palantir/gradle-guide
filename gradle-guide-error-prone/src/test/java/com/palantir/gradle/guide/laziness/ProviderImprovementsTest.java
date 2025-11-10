@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.besteffort;
+package com.palantir.gradle.guide.laziness;
 
-import com.palantir.gradle.guide.errorprone.besteffort.ProviderImprovements;
+import com.palantir.gradle.guide.errorprone.laziness.ProviderImprovements;
 import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
