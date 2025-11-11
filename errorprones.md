@@ -98,5 +98,33 @@ When defining a custom Task or Extension, you should make it an abstract class w
 
 </td>
 </tr>
+
+<tr>
+<td>
+
+<a id="TaskDependsOn" href="guide/diagnosing-build-performance.md#needlessly-included-tasks">`TaskDependsOn`</a>
+
+</td>
+<td>
+<a href="guide/diagnosing-build-performance.md#needlessly-included-tasks">Please read</a>
+</td>
+<td>
+
+Instead of `task1.dependsOn(task2)`, wire up the outputs of `task2` to the inputs of `task1` using providers.
+Using `dependsOn` makes it easy to add unnecessary task dependencies — e.g. depending on `jar` when you just
+need `classes`. It is also a sign of bad task design. You should write tasks with explicit, fine-grained inputs
+and outputs. Having unnecessary dependencies adds unnecessary work to a build and hurts task parallelism.
+
+However, there are cases where `dependsOn` is unavoidable:
+1. Wiring up tasks to lifecycle tasks e.g. `build.dependsOn(myTask)`
+2. Tasks that do system-wide setup like installing npm. In these cases, we recommended that you specify the
+    installation directory as an `@OutputDirectory` of the task anyways.
+
+This errorprone tries to detect legitimate uses of `dependsOn`. You can suppress false positives, but we
+encourage you to do so sparingly, and think about whether something can be improved about your task design.
+
+
+</td>
+</tr>
 </tbody>
 </table>
