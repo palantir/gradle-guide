@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.guide.errorprone;
 
+import com.google.errorprone.BugCheckerRefactoringTestHelper;
 import com.google.errorprone.CompilationTestHelper;
 import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.intellij.lang.annotations.Language;
@@ -359,14 +360,20 @@ class ExtensionsUseCreateTest {
         }
 
         private void refactoringTest(@Language("Java") String input, @Language("Java") String expected) {
-            bestEffortRefactoringValidator()
+            BugCheckerRefactoringTestHelper refactoringTestHelper =
+                    BugCheckerRefactoringTestHelper.newInstance(ExtensionsUseCreate.class, getClass());
+
+            refactoringTestHelper
                     .addInputLines("Test.java", input)
                     .addOutputLines("Test.java", expected)
                     .doTest();
         }
 
         private void refactoringNoop(@Language("Java") String code) {
-            bestEffortRefactoringValidator()
+            BugCheckerRefactoringTestHelper refactoringTestHelper =
+                    BugCheckerRefactoringTestHelper.newInstance(ExtensionsUseCreate.class, getClass());
+
+            refactoringTestHelper
                     .addInputLines("Test.java", code)
                     .expectUnchanged()
                     .doTest();
