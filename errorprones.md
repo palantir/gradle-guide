@@ -28,6 +28,22 @@ When registering a new `Task`, `Configuration` or other Gradle domain type, use 
 <tr>
 <td>
 
+<a id="ExtensionsUseCreate" href="guide/managed-types-and-properties.md">`ExtensionsUseCreate`</a>
+
+</td>
+<td>
+<a href="guide/managed-types-and-properties.md">Please read</a>
+</td>
+<td>
+
+Gradle extensions should be registered using `create` rather than by constructing and passing a new instance to `add`. Using `create` enables Gradle to properly manage the extension's type. Manual construction with `add` can interfere with certain error-prone checks.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 <a id="GradleManagedTypeGetPrefix" href="guide/managed-types-and-properties.md">`GradleManagedTypeGetPrefix`</a>
 
 </td>
