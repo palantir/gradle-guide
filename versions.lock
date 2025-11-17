@@ -20,7 +20,7 @@ com.google.errorprone:error_prone_check_api:2.41.0 (2 constraints: c91921d6)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.5.0-jre (10 constraints: 7cb388ec)
+com.google.guava:guava:33.5.0-jre (11 constraints: bcce00b9)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -70,9 +70,13 @@ com.google.truth:truth:1.4.0 (2 constraints: 72265a6a)
 
 com.netflix.nebula:nebula-test:10.6.2 (2 constraints: d61de72d)
 
-com.palantir.gradle.plugintesting:configuration-cache-spec:0.11.0 (1 constraints: 3405263b)
+com.palantir.gradle.plugintesting:configuration-cache-spec:0.37.0 (1 constraints: 3c05403b)
 
-com.palantir.gradle.plugintesting:plugin-testing-core:0.11.0 (1 constraints: 3405263b)
+com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.37.0 (1 constraints: 3c05403b)
+
+com.palantir.gradle.plugintesting:plugin-testing-core:0.37.0 (1 constraints: 3c05403b)
+
+commons-io:commons-io:2.19.0 (1 constraints: db190cdf)
 
 junit:junit:4.13.2 (4 constraints: 873fce86)
 
@@ -80,9 +84,9 @@ net.bytebuddy:byte-buddy:1.17.7 (1 constraints: 560b56df)
 
 org.apiguardian:apiguardian-api:1.1.2 (6 constraints: 5366ce6e)
 
-org.assertj:assertj-core:3.27.6 (1 constraints: 4405543b)
+org.assertj:assertj-core:3.27.6 (2 constraints: 211f1a90)
 
-org.codehaus.groovy:groovy:3.0.25 (3 constraints: 14347add)
+org.codehaus.groovy:groovy:3.0.24 (3 constraints: 133429dd)
 
 org.hamcrest:hamcrest:2.2 (2 constraints: 43187376)
 
@@ -90,11 +94,11 @@ org.hamcrest:hamcrest-core:2.2 (3 constraints: 84262b80)
 
 org.hamcrest:hamcrest-library:2.2 (1 constraints: fc138e38)
 
-org.jetbrains:annotations:26.0.2 (1 constraints: 3c054d3b)
+org.jetbrains:annotations:26.0.2 (2 constraints: 141fd78d)
 
 org.junit.jupiter:junit-jupiter:6.0.1 (1 constraints: 48070970)
 
-org.junit.jupiter:junit-jupiter-api:6.0.1 (4 constraints: 1c4679ce)
+org.junit.jupiter:junit-jupiter-api:6.0.1 (5 constraints: f75f4b94)
 
 org.junit.jupiter:junit-jupiter-engine:6.0.1 (1 constraints: 040ecb3b)
 
