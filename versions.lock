@@ -44,7 +44,7 @@ one.util:streamex:0.8.4 (2 constraints: 0f223f7b)
 
 org.checkerframework:checker-qual:3.52.0 (4 constraints: 4b325b09)
 
-org.immutables:value:2.11.6 (1 constraints: 3c05383b)
+org.immutables:value:2.11.7 (1 constraints: 3d05393b)
 
 org.jspecify:jspecify:1.0.0 (9 constraints: 8497a3d2)
 
