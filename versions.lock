@@ -42,7 +42,7 @@ net.ltgt.gradle:gradle-errorprone-plugin:4.3.0 (2 constraints: 0522bb79)
 
 one.util:streamex:0.8.4 (2 constraints: 0f223f7b)
 
-org.checkerframework:checker-qual:3.52.0 (4 constraints: 4b325b09)
+org.checkerframework:checker-qual:3.52.1 (4 constraints: 4c32e009)
 
 org.immutables:value:2.11.7 (1 constraints: 3d05393b)
 
