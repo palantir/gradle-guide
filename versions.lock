@@ -14,7 +14,7 @@ com.google.auto.value:auto-value-annotations:1.10.4 (2 constraints: 141da40a)
 
 com.google.errorprone:error_prone_annotation:2.41.0 (2 constraints: 9e2757d0)
 
-com.google.errorprone:error_prone_annotations:2.41.0 (9 constraints: fb7fc013)
+com.google.errorprone:error_prone_annotations:2.41.0 (9 constraints: 627fe6a7)
 
 com.google.errorprone:error_prone_check_api:2.41.0 (2 constraints: c91921d6)
 
@@ -78,13 +78,13 @@ com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.48.0 (1 constrai
 
 com.palantir.gradle.plugintesting:plugin-testing-core:0.48.0 (1 constraints: 3e05473b)
 
-com.palantir.safe-logging:logger:3.9.0 (1 constraints: 0e051536)
+com.palantir.safe-logging:logger:3.10.0 (1 constraints: 3605353b)
 
-com.palantir.safe-logging:logger-slf4j:3.9.0 (1 constraints: 070e6e42)
+com.palantir.safe-logging:logger-slf4j:3.10.0 (1 constraints: 2f0e8750)
 
-com.palantir.safe-logging:logger-spi:3.9.0 (2 constraints: 1d1e0c7c)
+com.palantir.safe-logging:logger-spi:3.10.0 (2 constraints: 6d1ed4af)
 
-com.palantir.safe-logging:safe-logging:3.9.0 (2 constraints: 861d3e3e)
+com.palantir.safe-logging:safe-logging:3.10.0 (2 constraints: d61d1f71)
 
 commons-io:commons-io:2.19.0 (1 constraints: db190cdf)
 
