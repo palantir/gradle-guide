@@ -78,13 +78,13 @@ com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.49.0 (1 constrai
 
 com.palantir.gradle.plugintesting:plugin-testing-core:0.49.0 (1 constraints: 3f054a3b)
 
-com.palantir.safe-logging:logger:3.10.0 (1 constraints: 3605353b)
+com.palantir.safe-logging:logger:3.11.0 (1 constraints: 3705383b)
 
-com.palantir.safe-logging:logger-slf4j:3.10.0 (1 constraints: 2f0e8750)
+com.palantir.safe-logging:logger-slf4j:3.11.0 (1 constraints: 300e8a50)
 
-com.palantir.safe-logging:logger-spi:3.10.0 (2 constraints: 6d1ed4af)
+com.palantir.safe-logging:logger-spi:3.11.0 (2 constraints: 6f1e0ab0)
 
-com.palantir.safe-logging:safe-logging:3.10.0 (2 constraints: d61d1f71)
+com.palantir.safe-logging:safe-logging:3.11.0 (2 constraints: d81d5371)
 
 commons-io:commons-io:2.19.0 (1 constraints: db190cdf)
 
