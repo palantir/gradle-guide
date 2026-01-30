@@ -30,7 +30,7 @@ com.palantir.gradle.auto-parallelizable:auto-parallelizable-annotations:1.4.0 (1
 
 com.palantir.gradle.utils:environment-variables:0.21.0 (1 constraints: 291d3bd8)
 
-com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.27.0 (1 constraints: 3d05483b)
+com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.28.0 (1 constraints: 3e054b3b)
 
 io.github.eisop:dataflow-errorprone:3.41.0-eisop1 (2 constraints: 9c2c4f1c)
 
@@ -38,7 +38,7 @@ io.github.java-diff-utils:java-diff-utils:4.12 (1 constraints: b412c908)
 
 javax.inject:javax.inject:1 (1 constraints: 201230d1)
 
-net.ltgt.gradle:gradle-errorprone-plugin:5.0.0 (2 constraints: 04221e79)
+net.ltgt.gradle:gradle-errorprone-plugin:5.0.0 (2 constraints: 01221779)
 
 one.util:streamex:0.8.4 (2 constraints: 0f223f7b)
 
