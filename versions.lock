@@ -14,7 +14,7 @@ com.google.auto.value:auto-value-annotations:1.10.4 (2 constraints: 141da40a)
 
 com.google.errorprone:error_prone_annotation:2.36.0 (2 constraints: a6274dd1)
 
-com.google.errorprone:error_prone_annotations:2.41.0 (9 constraints: 6a7f04af)
+com.google.errorprone:error_prone_annotations:2.47.0 (9 constraints: 737f94bb)
 
 com.google.errorprone:error_prone_check_api:2.36.0 (2 constraints: cd192cd6)
 
