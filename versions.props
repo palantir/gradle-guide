@@ -16,5 +16,5 @@ org.jetbrains:annotations = 26.1.0
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.47.0
-org.checkerframework:checker-qual = 3.53.1
+org.checkerframework:checker-qual = 3.54.0
 org.junit.platform:* = 6.0.3
