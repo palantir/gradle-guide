@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.guide.errorprone.besteffort;
+package com.palantir.gradle.guide.errorprone.laziness;
 
 import com.google.auto.service.AutoService;
 import com.google.errorprone.BugPattern;
