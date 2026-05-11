@@ -41,8 +41,10 @@ public class ProviderFactoryFixesTest extends IllegalMethodCalledDuringTaskExecu
                 import org.gradle.api.tasks.TaskAction;
 
                 abstract class CustomTask extends DefaultTask {
+
                     @Inject
                     protected abstract ProviderFactory getProviderFactory();
+
                     @TaskAction
                     final void action() {
                         getProviderFactory().provider(() -> "happy squirrel");

@@ -203,6 +203,7 @@ class ExtensionsUseCreateTest {
                 class Test {
                     void foo(Project project) {
                         FooExtension ext = new FooExtension("a", "b");
+
                         project.getExtensions().add("foo", ext);
                     }
 
@@ -212,6 +213,7 @@ class ExtensionsUseCreateTest {
                 import org.gradle.api.Project;
                 class Test {
                     void foo(Project project) {
+
                         project.getExtensions().create("foo", FooExtension.class, "a", "b");
                     }
 
@@ -256,6 +258,7 @@ class ExtensionsUseCreateTest {
                 import org.gradle.api.Project;
                 class Test {
                     void foo(Project project) {
+
                         project.getExtensions().create("foo", FooExtension.class, "a", "b");
                     }
                     class FooExtension { FooExtension(String a, String b) {} }

@@ -163,11 +163,8 @@ class ConfigurationAvoidanceRegistrationTest {
 
                                 class Test {
                                     static Task test(TaskContainer tasks) {
-                                        // BUG: Diagnostic contains: use `.register`
                                         Task task = tasks.create("lol");
-                                        // BUG: Diagnostic contains: use `.register`
                                         System.out.println(tasks.create("lol", Task.class, t -> {}));
-                                        // BUG: Diagnostic contains: use `.register`
                                         return tasks.create("lol", Task.class);
                                     }
                                 }
@@ -304,11 +301,8 @@ class ConfigurationAvoidanceRegistrationTest {
 
                                 class Test {
                                     static Configuration test(ConfigurationContainer configurations) {
-                                        // BUG: Diagnostic contains: use `.register`
                                         Configuration configuration = configurations.create("lol");
-                                        // BUG: Diagnostic contains: use `.register`
                                         System.out.println(configurations.create("lol", conf -> {}));
-                                        // BUG: Diagnostic contains: use `.register`
                                         return configurations.create("lol", conf -> {});
                                     }
                                 }

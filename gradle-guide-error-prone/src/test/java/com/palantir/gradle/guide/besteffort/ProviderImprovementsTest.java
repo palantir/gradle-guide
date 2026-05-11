@@ -128,6 +128,7 @@ class ProviderImprovementsTest {
 
                 class Test {
                     void test(Project project, Provider<Integer> first, Provider<String> second) {
+                        // BUG: Diagnostic contains: Provider.get
                         project.provider(() -> first.get() + second.get());
                     }
                 }

@@ -43,8 +43,10 @@ public class ArchiveOperationsFixesTest extends IllegalMethodCalledDuringTaskExe
             import org.gradle.api.file.FileTree;
             import org.gradle.api.tasks.TaskAction;
             abstract class AlreadyAbstractTask extends DefaultTask {
+
                 @Inject
                 protected abstract ArchiveOperations getArchiveOperations();
+
                 @TaskAction
                 final void action() {
                     FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
@@ -201,8 +203,10 @@ public class ArchiveOperationsFixesTest extends IllegalMethodCalledDuringTaskExe
             import org.gradle.api.file.FileTree;
             import org.gradle.api.tasks.TaskAction;
             abstract class ConcreteTask extends DefaultTask {
+
                 @Inject
                 protected abstract ArchiveOperations getArchiveOperations();
+
                 @TaskAction
                 final void action() {
                     FileTree fileTree = getArchiveOperations().tarTree("happy-squirrel.tar");
