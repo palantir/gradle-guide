@@ -25,6 +25,7 @@ import com.google.errorprone.fixes.SuggestedFix;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.predicates.TypePredicates;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.VariableTree;
@@ -41,15 +42,15 @@ public final class UseGradleLoggerInGradlePlugins extends GradleGuideBugChecker
     private static final Matcher<ClassTree> GRADLE_PLUGIN = Matchers.isSubtypeOf("org.gradle.api.Plugin");
     private static final Matcher<VariableTree> SLF4J_LOGGER_IN_GRADLE_PLUGIN = Matchers.allOf(
             Matchers.isField(),
-            Matchers.variableType(Matchers.allOf(
-                    Matchers.isSubtypeOf("org.slf4j.Logger"),
-                    Matchers.not(Matchers.isSubtypeOf("org.gradle.api.logging.Logger")))),
+            Matchers.variableType(TypePredicates.allOf(
+                    TypePredicates.isDescendantOf("org.slf4j.Logger"),
+                    TypePredicates.not(TypePredicates.isDescendantOf("org.gradle.api.logging.Logger")))),
             Matchers.enclosingClass(GRADLE_PLUGIN));
     private static final Matcher<VariableTree> PRIVATE_STATIC_FINAL_SLF4J_LOGGER_IN_GRADLE_PLUGIN =
             Matchers.allOf(SLF4J_LOGGER_IN_GRADLE_PLUGIN, Matchers.hasModifier(Modifier.PRIVATE));
     private static final Matcher<VariableTree> SAFE_LOGGER_IN_GRADLE_PLUGIN = Matchers.allOf(
             Matchers.isField(),
-            Matchers.variableType(Matchers.isSubtypeOf("com.palantir.logsafe.logger.SafeLogger")),
+            Matchers.variableType(TypePredicates.isDescendantOf("com.palantir.logsafe.logger.SafeLogger")),
             Matchers.enclosingClass(GRADLE_PLUGIN));
 
     @Override

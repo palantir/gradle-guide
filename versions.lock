@@ -4,23 +4,23 @@ com.github.ben-manes.caffeine:caffeine:3.0.5 (1 constraints: e312a21b)
 
 com.github.kevinstern:software-and-algorithms:1.0 (1 constraints: 7e12fcf5)
 
-com.google.auto:auto-common:1.2.1 (2 constraints: b321cc9d)
+com.google.auto:auto-common:1.2.2 (2 constraints: b421cd9d)
 
 com.google.auto.service:auto-service:1.1.1 (1 constraints: 0505f435)
 
 com.google.auto.service:auto-service-annotations:1.1.1 (1 constraints: 9c0f6a86)
 
-com.google.auto.value:auto-value-annotations:1.10.4 (2 constraints: 141da40a)
+com.google.auto.value:auto-value-annotations:1.11.0 (3 constraints: 562f3924)
 
-com.google.errorprone:error_prone_annotation:2.36.0 (2 constraints: a6274dd1)
+com.google.errorprone:error_prone_annotation:2.49.0 (2 constraints: ae2747d2)
 
-com.google.errorprone:error_prone_annotations:2.47.0 (9 constraints: 797f84bf)
+com.google.errorprone:error_prone_annotations:2.49.0 (9 constraints: 7f7f9ac5)
 
-com.google.errorprone:error_prone_check_api:2.36.0 (2 constraints: cd192cd6)
+com.google.errorprone:error_prone_check_api:2.49.0 (2 constraints: d51926d7)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.6.0-jre (11 constraints: bace45b6)
+com.google.guava:guava:33.6.0-jre (11 constraints: 31cfe511)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -42,13 +42,13 @@ net.ltgt.gradle:gradle-errorprone-plugin:5.1.0 (2 constraints: 02226879)
 
 one.util:streamex:0.8.4 (2 constraints: 0f223f7b)
 
-org.checkerframework:checker-qual:4.1.0 (4 constraints: 1632afe8)
+org.checkerframework:checker-qual:4.1.0 (2 constraints: 3915d9d6)
 
 org.immutables:value:2.12.1 (1 constraints: 3805363b)
 
-org.jspecify:jspecify:1.0.0 (9 constraints: 8497a3d2)
+org.jspecify:jspecify:1.0.0 (11 constraints: efb3ea79)
 
-org.ow2.asm:asm:9.9.1 (2 constraints: 1127a96e)
+org.ow2.asm:asm:9.9.1 (2 constraints: 1327476f)
 
 
 
@@ -56,17 +56,15 @@ org.ow2.asm:asm:9.9.1 (2 constraints: 1127a96e)
 
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
 
-com.google.auto.value:auto-value:1.10 (1 constraints: e711f8e8)
+com.google.errorprone:error_prone_test_helpers:2.49.0 (1 constraints: 4105563b)
 
-com.google.errorprone:error_prone_test_helpers:2.36.0 (1 constraints: 3d05493b)
-
-com.google.googlejavaformat:google-java-format:1.19.1 (1 constraints: 9214b075)
+com.google.googlejavaformat:google-java-format:1.35.0 (1 constraints: 8f14ab75)
 
 com.google.jimfs:jimfs:1.3.0 (1 constraints: 5a141061)
 
-com.google.testing.compile:compile-testing:0.21.0 (1 constraints: 89149575)
+com.google.testing.compile:compile-testing:0.23.0 (1 constraints: 8b149b75)
 
-com.google.truth:truth:1.4.0 (2 constraints: 72265a6a)
+com.google.truth:truth:1.4.5 (2 constraints: 7726656a)
 
 com.netflix.nebula:nebula-test:10.6.2 (2 constraints: d61de72d)
 
