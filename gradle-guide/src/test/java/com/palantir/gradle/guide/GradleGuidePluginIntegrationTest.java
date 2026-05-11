@@ -32,65 +32,59 @@ class GradleGuidePluginIntegrationTest {
 
     @BeforeEach
     void before(RootProject rootProject) {
-        rootProject.buildGradle()
-                .plugins()
-                .add("com.palantir.gradle-guide")
-                .add("com.palantir.baseline-java-versions");
+        rootProject.buildGradle().plugins().add("com.palantir.gradle-guide").add("com.palantir.baseline-java-versions");
 
-        // language=Gradle
         rootProject.buildGradle().append("""
-                javaVersions {
-                    javaCompiler = 25
-                    libraryTarget = 17
+            javaVersions {
+                javaCompiler = 25
+                libraryTarget = 17
+            }
+
+            allprojects {
+                repositories {
+                    mavenCentral()
+                    mavenLocal()
                 }
 
-                allprojects {
-                    repositories {
-                        mavenCentral()
-                        mavenLocal()
+                apply plugin: 'java'
+
+                pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
+                    suppressibleErrorProne {
+                        configureEachErrorProneOptions {
+                            it.excludedPaths.unset()
+                        }
                     }
 
-                    apply plugin: 'java'
-
-                    pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
-                        suppressibleErrorProne {
-                            configureEachErrorProneOptions {
-                                it.excludedPaths.unset()
-                            }
+                    dependencies {
+                        constraints {
+                            errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
                         }
 
-                        dependencies {
-                            constraints {
-                                errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
-                            }
-
-                            errorprone 'com.google.errorprone:error_prone_core:2.49.0'
-                        }
+                        errorprone 'com.google.errorprone:error_prone_core:2.49.0'
                     }
                 }
-                """);
+            }
+            """);
     }
 
     @Test
     void registers_errorprones_correctly_in_subproject_that_uses_gradle_api(
             GradleInvoker gradle, SubProject gradleApi) {
-        // language=Gradle
         gradleApi.buildGradle().append("""
-                dependencies {
-                    compileOnly gradleApi()
-                }
-                """);
+            dependencies {
+                compileOnly gradleApi()
+            }
+            """);
 
-        // language=Java
         gradleApi.mainSourceSet().java().writeClass("""
-                import org.gradle.api.Project;
+            import org.gradle.api.Project;
 
-                final class Bad {
-                    public void apply(Project project) {
-                        project.getTasks().create("bad");
-                    }
+            final class Bad {
+                public void apply(Project project) {
+                    project.getTasks().create("bad");
                 }
-                """);
+            }
+            """);
 
         assertThat(gradle.withArgs(":gradleApi:compileJava").buildsWithFailure())
                 .output()
@@ -102,16 +96,15 @@ class GradleGuidePluginIntegrationTest {
             GradleInvoker gradle, SubProject javaGradlePlugin) {
         javaGradlePlugin.buildGradle().plugins().add("java-gradle-plugin");
 
-        // language=Java
         javaGradlePlugin.mainSourceSet().java().writeClass("""
-                import org.gradle.api.Project;
+            import org.gradle.api.Project;
 
-                final class Bad {
-                    public void apply(Project project) {
-                        project.getTasks().create("bad");
-                    }
+            final class Bad {
+                public void apply(Project project) {
+                    project.getTasks().create("bad");
                 }
-                """);
+            }
+            """);
 
         assertThat(gradle.withArgs(":javaGradlePlugin:compileJava").buildsWithFailure())
                 .output()
