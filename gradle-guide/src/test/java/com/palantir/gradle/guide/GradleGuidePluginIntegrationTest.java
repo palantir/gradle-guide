@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 
 @GradlePluginTests
 @WithJdkAutomanagement
-@DisabledConfigurationCache
+@DisabledConfigurationCache("gradle-jdks is not CC compatible")
 class GradleGuidePluginIntegrationTest {
 
     @BeforeEach
