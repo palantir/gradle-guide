@@ -14,6 +14,11 @@ dependencies {
     annotationProcessor 'com.palantir.gradle.auto-parallelizable:auto-parallelizable'
 
     gradlePluginForTesting 'com.palantir.baseline:gradle-baseline-java'
+    gradlePluginForTesting 'com.palantir.gradle.jdks:gradle-jdks'
+    gradlePluginForTesting 'com.palantir.gradle.jdks:gradle-jdks-settings'
+    gradlePluginForTesting 'com.palantir.gradle.jdkslatest:gradle-jdks-latest'
+
+    testImplementation 'com.palantir.gradle.jdks:gradle-jdks-testing'
 }
 
 tasks.named('test').configure {

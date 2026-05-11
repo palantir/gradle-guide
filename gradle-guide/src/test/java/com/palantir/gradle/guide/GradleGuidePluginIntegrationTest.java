@@ -18,7 +18,9 @@ package com.palantir.gradle.guide;
 
 import static com.palantir.gradle.testing.assertion.GradlePluginTestAssertions.assertThat;
 
+import com.palantir.gradle.jdks.testing.WithJdkAutomanagement;
 import com.palantir.gradle.testing.execution.GradleInvoker;
+import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import com.palantir.gradle.testing.project.SubProject;
@@ -26,16 +28,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @GradlePluginTests
+@WithJdkAutomanagement
+@DisabledConfigurationCache
 class GradleGuidePluginIntegrationTest {
 
     @BeforeEach
     void before(RootProject rootProject) {
-        rootProject.buildGradle().plugins().add("com.palantir.gradle-guide").add("com.palantir.baseline-java-versions");
+        rootProject
+                .buildGradle()
+                .plugins()
+                .add("com.palantir.gradle-guide")
+                .add("com.palantir.baseline-java-versions")
+                .add("com.palantir.jdks.latest");
 
         rootProject.buildGradle().append("""
             javaVersions {
                 javaCompiler = 25
                 libraryTarget = 17
+            }
+
+            jdks {
+                daemonTarget = 21
             }
 
             allprojects {
