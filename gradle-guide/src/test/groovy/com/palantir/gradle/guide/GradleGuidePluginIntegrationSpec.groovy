@@ -34,7 +34,6 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                 repositories {
                     mavenCentral()
                     gradlePluginPortal()
-                    mavenLocal()
                 }
                 dependencies {
                     classpath "com.palantir.baseline:gradle-baseline-java:7.4.0"
