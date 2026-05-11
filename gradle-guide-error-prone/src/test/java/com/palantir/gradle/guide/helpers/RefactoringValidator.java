@@ -87,7 +87,7 @@ public final class RefactoringValidator {
         }
 
         public void doTest() {
-            delegate.doTest();
+            delegate.doTest(BugCheckerRefactoringTestHelper.TestMode.TEXT_MATCH);
             helper.compilationHelper
                     .addSourceLines(helper.outputPath, helper.outputLines)
                     .matchAllDiagnostics()
