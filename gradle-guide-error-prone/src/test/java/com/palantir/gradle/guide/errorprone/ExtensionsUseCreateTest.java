@@ -348,7 +348,7 @@ class ExtensionsUseCreateTest {
             refactoringTestHelper
                     .addInputLines("Test.java", input)
                     .addOutputLines("Test.java", expected)
-                    .doTest();
+                    .doTest(BugCheckerRefactoringTestHelper.TestMode.TEXT_MATCH);
         }
 
         private void refactoringNoop(@Language("Java") String code) {
@@ -358,7 +358,7 @@ class ExtensionsUseCreateTest {
             refactoringTestHelper
                     .addInputLines("Test.java", code)
                     .expectUnchanged()
-                    .doTest();
+                    .doTest(BugCheckerRefactoringTestHelper.TestMode.TEXT_MATCH);
         }
     }
 }
