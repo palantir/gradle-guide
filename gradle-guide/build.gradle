@@ -1,5 +1,4 @@
 apply plugin: 'java-gradle-plugin'
-apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
 apply plugin: 'com.palantir.gradle-plugin-testing'
 
@@ -14,8 +13,12 @@ dependencies {
     compileOnly 'com.palantir.gradle.auto-parallelizable:auto-parallelizable-annotations'
     annotationProcessor 'com.palantir.gradle.auto-parallelizable:auto-parallelizable'
 
-    testImplementation gradleTestKit()
-    testImplementation 'com.netflix.nebula:nebula-test'
+    gradlePluginForTesting 'com.palantir.baseline:gradle-baseline-java'
+    gradlePluginForTesting 'com.palantir.gradle.jdks:gradle-jdks'
+    gradlePluginForTesting 'com.palantir.gradle.jdks:gradle-jdks-settings'
+    gradlePluginForTesting 'com.palantir.gradle.jdkslatest:gradle-jdks-latest'
+
+    testImplementation 'com.palantir.gradle.jdks:gradle-jdks-testing'
 }
 
 tasks.named('test').configure {
