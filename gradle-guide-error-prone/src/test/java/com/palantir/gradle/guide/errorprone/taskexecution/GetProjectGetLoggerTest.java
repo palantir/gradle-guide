@@ -56,6 +56,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
                 abstract class CustomTask extends DefaultTask {
                     @TaskAction
                     final void action() {
+                        // BUG: Diagnostic contains: Don't call `getProject()` in task actions
                         getProject();  // not fixable
                         Logger logger = getProject().getLogger();  // fixable to getLogger()
                     }
@@ -69,8 +70,8 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
                 @TaskAction
                 final void action() {
                     // BUG: Diagnostic contains: Don't call `getProject()` in task actions
-                    getProject();
-                    Logger logger = getLogger();
+                    getProject(); // not fixable
+                    Logger logger = getLogger(); // fixable to getLogger()
                 }
             }
             """);
@@ -105,7 +106,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
                     }
 
                     void helper() {
-                        Logger logger = getLogger();
+                        Logger logger = getLogger();  // fixable to getLogger()
                     }
                 }
             """);
@@ -134,7 +135,7 @@ public class GetProjectGetLoggerTest extends IllegalMethodCalledDuringTaskExecut
                 abstract class CustomTaskAction implements Action<Task> {
                     @Override
                     public void execute(Task task) {
-                        Logger logger = task.getLogger();
+                        Logger logger = task.getLogger(); // fixable to getLogger()
                     }
                 }
             """);

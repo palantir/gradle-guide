@@ -23,7 +23,24 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
         // language=Gradle
         buildFile << '''
             apply plugin: 'com.palantir.gradle-guide'
+            apply plugin: 'com.palantir.baseline-java-versions'
             
+            javaVersions {
+                javaCompiler = 25
+                libraryTarget = 17
+            }
+
+            buildscript {
+                repositories {
+                    mavenCentral()
+                    gradlePluginPortal()
+                    mavenLocal()
+                }
+                dependencies {
+                    classpath "com.palantir.baseline:gradle-baseline-java:7.4.0"
+                } 
+            }
+
             allprojects {
                 repositories {
                     mavenCentral()
@@ -31,6 +48,7 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                 }
                 
                 apply plugin: 'java'
+
              
                 pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
                     suppressibleErrorProne {
@@ -45,7 +63,7 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                             errorprone "com.palantir.gradle.guide:gradle-guide-error-prone:${System.getProperty('gradleGuideErrorProneVersion')}"
                         }
                         
-                        errorprone 'com.google.errorprone:error_prone_core:2.36.0'
+                        errorprone 'com.google.errorprone:error_prone_core:2.49.0'
                     }
                 }
             }

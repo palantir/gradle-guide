@@ -47,8 +47,10 @@ public class ExecOperationsFixesTest extends IllegalMethodCalledDuringTaskExecut
             import org.gradle.api.tasks.TaskAction;
             import org.gradle.process.ExecOperations;
             abstract class ConcreteTask extends DefaultTask {
+
                 @Inject
                 protected abstract ExecOperations getExecOperations();
+
                 @TaskAction
                 final void action() {
                     getExecOperations().exec(execSpec -> {

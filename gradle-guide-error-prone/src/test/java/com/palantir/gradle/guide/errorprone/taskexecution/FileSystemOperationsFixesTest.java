@@ -55,8 +55,10 @@ public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTask
             import org.gradle.api.file.FileSystemOperations;
             import org.gradle.api.tasks.TaskAction;
             abstract class AlreadyAbstractTask extends DefaultTask {
+
                 @Inject
                 protected abstract FileSystemOperations getFileSystemOperations();
+
                 @TaskAction
                 final void action() {
                     getFileSystemOperations().copy(copySpec -> {
@@ -257,8 +259,10 @@ public class FileSystemOperationsFixesTest extends IllegalMethodCalledDuringTask
             import org.gradle.api.file.FileSystemOperations;
             import org.gradle.api.tasks.TaskAction;
             abstract class ConcreteTask extends DefaultTask {
+
                 @Inject
                 protected abstract FileSystemOperations getFileSystemOperations();
+
                 @TaskAction
                 final void action() {
                     getFileSystemOperations().delete(deleteSpec -> {
