@@ -26,7 +26,7 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
             apply plugin: 'com.palantir.baseline-java-versions'
             
             javaVersions {
-                javaCompiler = 25
+                javaCompiler = 21
                 libraryTarget = 17
             }
 
