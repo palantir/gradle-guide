@@ -46,6 +46,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
                 import org.gradle.api.tasks.TaskAction;
 
                 abstract class AlreadyAbstractTask extends DefaultTask {
+
                     @Inject
                     protected abstract ProjectLayout getProjectLayout();
 
@@ -137,6 +138,7 @@ public class ProjectLayoutFixesTest extends IllegalMethodCalledDuringTaskExecuti
                 import org.gradle.api.tasks.TaskAction;
 
                 abstract class ConcreteTask extends DefaultTask {
+
                     @Inject
                     protected abstract ProjectLayout getProjectLayout();
 

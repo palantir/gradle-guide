@@ -56,8 +56,10 @@ public class ObjectFactoryFixesTest extends IllegalMethodCalledDuringTaskExecuti
                 import org.gradle.api.tasks.TaskAction;
 
                 abstract class CustomTask extends DefaultTask {
+
                     @Inject
                     protected abstract ObjectFactory getObjectFactory();
+
                     @TaskAction
                     final void action() {
                         getObjectFactory().setProperty(String.class);
