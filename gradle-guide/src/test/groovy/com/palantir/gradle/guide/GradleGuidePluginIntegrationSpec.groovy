@@ -48,7 +48,6 @@ class GradleGuidePluginIntegrationSpec extends IntegrationSpec {
                 }
                 
                 apply plugin: 'java'
-
              
                 pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
                     suppressibleErrorProne {
