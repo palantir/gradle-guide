@@ -42,3 +42,7 @@ moduleJvmArgs {
 checkUnusedDependencies {
     ignore('com.palantir.safe-logging', 'logger')  // Used within a test fixture
 }
+
+javaVersion {
+    runtime = 21
+}

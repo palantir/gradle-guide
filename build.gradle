@@ -61,6 +61,10 @@ allprojects {
             disable("PreferSafeLoggingPreconditions")
         }
     }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.errorprone.enabled = false
+    }
 }
 
 javaVersions {
