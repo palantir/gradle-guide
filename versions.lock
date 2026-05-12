@@ -74,7 +74,7 @@ com.fasterxml.jackson.core:jackson-annotations:2.21 (8 constraints: d4903810)
 
 com.fasterxml.jackson.core:jackson-core:2.21.1 (4 constraints: 8856df02)
 
-com.fasterxml.jackson.core:jackson-databind:2.21.1 (6 constraints: cd8212b9)
+com.fasterxml.jackson.core:jackson-databind:2.21.1 (6 constraints: ce8259b9)
 
 com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.21.1 (2 constraints: d7358945)
 
@@ -130,7 +130,7 @@ com.palantir.gradle.jdks:gradle-jdks-setup-common:0.79.0 (4 constraints: f24daaf
 
 com.palantir.gradle.jdks:gradle-jdks-testing:0.79.0 (1 constraints: 4205563b)
 
-com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.26.0 (1 constraints: 3a05393b)
+com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.27.0 (1 constraints: 3b053c3b)
 
 com.palantir.gradle.plugintesting:configuration-cache-spec:0.71.0 (1 constraints: 3a053e3b)
 
@@ -140,13 +140,15 @@ com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.71.0 (2 constrai
 
 com.palantir.gradle.plugintesting:plugin-testing-core:0.71.0 (2 constraints: 101f2b8d)
 
-com.palantir.gradle.utils:exec:0.23.0 (2 constraints: bd1e0eb5)
+com.palantir.gradle.utils:exec:0.24.0 (2 constraints: be1e11b5)
 
 com.palantir.gradle.utils:lazily-configured-mapping:0.24.0 (2 constraints: 7c2130d2)
 
-com.palantir.gradle.utils:platform:0.23.0 (7 constraints: ed83cfac)
+com.palantir.gradle.utils:platform:0.24.0 (7 constraints: f0838fad)
 
-com.palantir.gradle.utils:providers:0.23.0 (1 constraints: 700ddd31)
+com.palantir.gradle.utils:providers:0.24.0 (1 constraints: 710de031)
+
+com.palantir.gradle.utils:safe-exec-commandline:0.24.0 (1 constraints: 710de031)
 
 com.palantir.javaformat:gradle-palantir-java-format:2.73.0 (1 constraints: f5111b07)
 
