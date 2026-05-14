@@ -156,13 +156,13 @@ com.palantir.javaformat:palantir-java-format-jdk-bootstrap:2.73.0 (1 constraints
 
 com.palantir.javaformat:palantir-java-format-spi:2.73.0 (3 constraints: 1e406830)
 
-com.palantir.safe-logging:logger:3.14.0 (1 constraints: 3a05413b)
+com.palantir.safe-logging:logger:3.15.0 (1 constraints: 3b05443b)
 
-com.palantir.safe-logging:logger-slf4j:3.14.0 (1 constraints: 330e9350)
+com.palantir.safe-logging:logger-slf4j:3.15.0 (1 constraints: 340e9650)
 
-com.palantir.safe-logging:logger-spi:3.14.0 (2 constraints: 751eacb0)
+com.palantir.safe-logging:logger-spi:3.15.0 (2 constraints: 771ee2b0)
 
-com.palantir.safe-logging:safe-logging:3.14.0 (2 constraints: de1def71)
+com.palantir.safe-logging:safe-logging:3.15.0 (2 constraints: e01d2372)
 
 com.squareup.okhttp3:okhttp:4.12.0 (1 constraints: f6093eb3)
 
