@@ -42,7 +42,7 @@ net.ltgt.gradle:gradle-errorprone-plugin:5.1.0 (3 constraints: 423ba642)
 
 one.util:streamex:0.8.4 (3 constraints: 73311b92)
 
-org.immutables:value:2.12.1 (2 constraints: ad168e34)
+org.immutables:value:2.12.2 (2 constraints: ae16c234)
 
 org.jspecify:jspecify:1.0.0 (12 constraints: e5c346c7)
 
@@ -256,7 +256,7 @@ org.hamcrest:hamcrest-core:2.2 (3 constraints: 84262b80)
 
 org.hamcrest:hamcrest-library:2.2 (1 constraints: fc138e38)
 
-org.immutables:serial:2.12.1 (1 constraints: 761145ef)
+org.immutables:serial:2.12.2 (1 constraints: 761145ef)
 
 org.jetbrains:annotations:26.1.0 (3 constraints: f02d2f03)
 
