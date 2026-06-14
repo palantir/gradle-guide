@@ -74,7 +74,7 @@ com.fasterxml.jackson.core:jackson-annotations:2.21 (8 constraints: d4903810)
 
 com.fasterxml.jackson.core:jackson-core:2.21.4 (4 constraints: 94565607)
 
-com.fasterxml.jackson.core:jackson-databind:2.21.4 (6 constraints: d782d5c1)
+com.fasterxml.jackson.core:jackson-databind:2.21.4 (6 constraints: da82a4c2)
 
 com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.21.4 (2 constraints: d7358945)
 
@@ -130,7 +130,7 @@ com.palantir.gradle.jdks:gradle-jdks-setup-common:0.79.0 (4 constraints: f24daaf
 
 com.palantir.gradle.jdks:gradle-jdks-testing:0.79.0 (1 constraints: 4205563b)
 
-com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.27.0 (1 constraints: 3b053c3b)
+com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.28.0 (1 constraints: 3c053f3b)
 
 com.palantir.gradle.plugintesting:configuration-cache-spec:0.72.0 (1 constraints: 3b05413b)
 
