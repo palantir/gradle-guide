@@ -57,8 +57,6 @@ class GradleGuidePluginIntegrationTest {
                     mavenLocal()
                 }
 
-                apply plugin: 'java'
-
                 pluginManager.withPlugin('com.palantir.suppressible-error-prone') {
                     suppressibleErrorProne {
                         configureEachErrorProneOptions {
@@ -76,6 +74,7 @@ class GradleGuidePluginIntegrationTest {
                 }
             }
             """);
+        rootProject.buildGradle().plugins().add("java");
     }
 
     @Test

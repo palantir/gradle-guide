@@ -61,11 +61,6 @@ allprojects {
             disable("PreferSafeLoggingPreconditions")
         }
     }
-
-    // TEMPHACK: reenable when baseline-error-prone etc are errorprone 2.49.0 compatible
-    tasks.withType(JavaCompile).configureEach {
-        options.errorprone.enabled = false
-    }
 }
 
 javaVersions {
