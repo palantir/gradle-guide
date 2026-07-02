@@ -80,6 +80,7 @@ class GradleGuidePluginIntegrationTest {
     @Test
     void registers_errorprones_correctly_in_subproject_that_uses_gradle_api(
             GradleInvoker gradle, SubProject gradleApi) {
+        gradleApi.buildGradle().plugins().add("java");
         gradleApi.buildGradle().append("""
             dependencies {
                 compileOnly gradleApi()
