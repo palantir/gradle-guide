@@ -77,7 +77,6 @@ public final class RefactoringValidator {
     }
 
     public static final class TestStage {
-
         private final RefactoringValidator helper;
         private final BugCheckerRefactoringTestHelper delegate;
 
@@ -86,6 +85,7 @@ public final class RefactoringValidator {
             this.delegate = delegate;
         }
 
+        @SuppressWarnings("deprecation")
         public void doTest() {
             delegate.doTest(BugCheckerRefactoringTestHelper.TestMode.TEXT_MATCH);
             helper.compilationHelper
@@ -94,6 +94,7 @@ public final class RefactoringValidator {
                     .doTest();
         }
 
+        @SuppressWarnings("deprecation")
         public void doTest(BugCheckerRefactoringTestHelper.TestMode testMode) {
             delegate.doTest(testMode);
             helper.compilationHelper
@@ -102,6 +103,7 @@ public final class RefactoringValidator {
                     .doTest();
         }
 
+        @SuppressWarnings("deprecation")
         public void doTestExpectingFailure(BugCheckerRefactoringTestHelper.TestMode testMode) {
             delegate.doTest(testMode);
             assertThatThrownBy(() -> helper.compilationHelper

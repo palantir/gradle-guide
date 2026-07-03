@@ -341,6 +341,7 @@ class ExtensionsUseCreateTest {
                 """);
         }
 
+        @SuppressWarnings("deprecation")
         private void refactoringTest(@Language("Java") String input, @Language("Java") String expected) {
             BugCheckerRefactoringTestHelper refactoringTestHelper =
                     BugCheckerRefactoringTestHelper.newInstance(ExtensionsUseCreate.class, getClass());
@@ -351,6 +352,7 @@ class ExtensionsUseCreateTest {
                     .doTest(BugCheckerRefactoringTestHelper.TestMode.TEXT_MATCH);
         }
 
+        @SuppressWarnings("deprecation")
         private void refactoringNoop(@Language("Java") String code) {
             BugCheckerRefactoringTestHelper refactoringTestHelper =
                     BugCheckerRefactoringTestHelper.newInstance(ExtensionsUseCreate.class, getClass());
