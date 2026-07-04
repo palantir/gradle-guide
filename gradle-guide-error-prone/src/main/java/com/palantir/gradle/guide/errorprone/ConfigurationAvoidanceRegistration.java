@@ -120,6 +120,7 @@ public final class ConfigurationAvoidanceRegistration extends GradleGuideBugChec
         Object variableSymbol = ASTHelpers.getSymbol(variableTreePath.getLeaf());
         if (variableParent.getLeaf() instanceof BlockTree) {
             new TreePathScanner<Void, Void>() {
+                @SuppressWarnings("for-rollout:NullAway")
                 @Override
                 public Void visitIdentifier(IdentifierTree identifierTree, Void unused) {
                     if (variableSymbol.equals(ASTHelpers.getSymbol(identifierTree))) {
