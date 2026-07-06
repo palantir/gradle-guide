@@ -77,7 +77,6 @@ public final class ProviderImprovements extends GradleGuideBugChecker
         return buildDescription(tree).addFix(fix.build()).build();
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static boolean handleDependsOnTaskProviderGet(
             VisitorState state, SuggestedFixBuilder fix, MethodInvocationTree tree, MemberSelectTree memberSelectTree) {
 
@@ -103,7 +102,6 @@ public final class ProviderImprovements extends GradleGuideBugChecker
         return false;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static void replaceNewProviderWithGetCalledInside(
             VisitorState state, SuggestedFixBuilder fix, MethodInvocationTree tree, MemberSelectTree memberSelectTree) {
 
