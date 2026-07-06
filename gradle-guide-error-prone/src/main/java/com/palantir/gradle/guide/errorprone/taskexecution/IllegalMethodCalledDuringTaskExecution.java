@@ -218,7 +218,6 @@ public final class IllegalMethodCalledDuringTaskExecution extends GradleGuideBug
         // If we included methods defined externally into the call graph,
         // GetProjectTest#getProject_in_constructor_should_pass will fail.
         Set<MethodSymbol> transitiveCallersOfIllegalMethod = callGraph.transitiveCallers(enclosingMethod);
-        @SuppressWarnings("for-rollout:NullAway")
         boolean isInvokedAtTaskExecution = StreamEx.of(transitiveCallersOfIllegalMethod)
                 .append(enclosingMethod)
                 .anyMatch(caller -> {

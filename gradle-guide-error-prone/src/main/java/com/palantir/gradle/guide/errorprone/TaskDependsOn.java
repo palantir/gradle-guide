@@ -54,7 +54,6 @@ public final class TaskDependsOn extends GradleGuideBugChecker implements BugChe
     private static final Supplier<Type> DEFAULT_TASK_TYPE =
             VisitorState.memoize(state -> state.getTypeFromString("org.gradle.api.DefaultTask"));
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
         if (!TASK_DEPENDS_ON.matches(tree, state)) {

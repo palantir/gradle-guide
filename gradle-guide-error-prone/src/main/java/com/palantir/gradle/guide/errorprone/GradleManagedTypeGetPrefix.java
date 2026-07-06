@@ -48,7 +48,6 @@ public final class GradleManagedTypeGetPrefix extends GradleGuideBugChecker
                     + "implementation automatically, removes boilerplate, and supports the Groovy DSL "
                     + "(e.g. `foo = 3`).";
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Description matchMethod(MethodTree method, VisitorState state) {
         ClassTree enclosingClass = ASTHelpers.findEnclosingNode(state.getPath(), ClassTree.class);

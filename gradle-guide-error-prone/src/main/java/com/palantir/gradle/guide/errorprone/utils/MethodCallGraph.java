@@ -74,7 +74,6 @@ public final class MethodCallGraph {
                 return super.visitMethod(node, Optional.of(methodSymbol));
             }
 
-            @SuppressWarnings("for-rollout:NullAway")
             @Override
             public Void visitMethodInvocation(MethodInvocationTree node, Optional<MethodSymbol> caller) {
                 MethodSymbol calleeSymbol = (MethodSymbol) ASTHelpers.getSymbol(node.getMethodSelect());
