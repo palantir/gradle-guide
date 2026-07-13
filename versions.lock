@@ -280,7 +280,7 @@ org.junit.platform:junit-platform-commons:6.1.2 (2 constraints: d920b14a)
 
 org.junit.platform:junit-platform-engine:6.1.2 (3 constraints: 26305157)
 
-org.junit.platform:junit-platform-launcher:6.1.2 (2 constraints: 581b6462)
+org.junit.platform:junit-platform-launcher:6.1.2 (2 constraints: 591ba362)
 
 org.objenesis:objenesis:2.4 (1 constraints: ea0c8c0a)
 
