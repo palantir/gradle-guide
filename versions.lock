@@ -40,7 +40,7 @@ javax.inject:javax.inject:1 (8 constraints: 0575c927)
 
 net.ltgt.gradle:gradle-errorprone-plugin:5.1.0 (3 constraints: 423ba642)
 
-one.util:streamex:0.8.4 (3 constraints: 73311b92)
+one.util:streamex:0.9.0 (3 constraints: 7031a990)
 
 org.immutables:value:2.12.2 (2 constraints: af16c334)
 
