@@ -14,13 +14,13 @@ com.google.auto.value:auto-value-annotations:1.11.0 (3 constraints: 562f3924)
 
 com.google.errorprone:error_prone_annotation:2.49.0 (2 constraints: ae2747d2)
 
-com.google.errorprone:error_prone_annotations:2.49.0 (9 constraints: 8b7f19d4)
+com.google.errorprone:error_prone_annotations:2.50.0 (9 constraints: 857f2ad0)
 
 com.google.errorprone:error_prone_check_api:2.49.0 (2 constraints: d51926d7)
 
 com.google.guava:failureaccess:1.0.3 (2 constraints: f3154f13)
 
-com.google.guava:guava:33.6.0-jre (20 constraints: 42914a5c)
+com.google.guava:guava:33.7.0-jre (20 constraints: 4391ac60)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -44,7 +44,7 @@ one.util:streamex:0.9.0 (3 constraints: 6d31be8f)
 
 org.immutables:value:2.12.2 (2 constraints: af16c334)
 
-org.jspecify:jspecify:1.0.0 (12 constraints: e5c346c7)
+org.jspecify:jspecify:1.0.1 (12 constraints: e6c3b9c8)
 
 org.ow2.asm:asm:9.10.1 (5 constraints: 355d0d4a)
 
