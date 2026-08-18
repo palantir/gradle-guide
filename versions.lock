@@ -20,7 +20,7 @@ com.google.errorprone:error_prone_check_api:2.49.0 (2 constraints: d51926d7)
 
 com.google.guava:failureaccess:1.0.3 (2 constraints: f3154f13)
 
-com.google.guava:guava:33.7.0-jre (20 constraints: 4391ac60)
+com.google.guava:guava:33.7.1-jre (20 constraints: 44910c65)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
