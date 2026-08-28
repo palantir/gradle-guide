@@ -25,11 +25,23 @@ public class ExecOperationsFixesTest extends IllegalMethodCalledDuringTaskExecut
         testFix("ConcreteTask.java", """
             import java.io.File;
             import java.util.List;
+            import org.gradle.api.Action;
             import org.gradle.api.DefaultTask;
             import org.gradle.api.Plugin;
             import org.gradle.api.Project;
             import org.gradle.api.tasks.TaskAction;
+            import org.gradle.process.ExecResult;
+            import org.gradle.process.ExecSpec;
             class ConcreteTask extends DefaultTask {
+                interface GradleEightProject extends Project {
+                    ExecResult exec(Action<? super ExecSpec> action);
+                }
+
+                @Override
+                public GradleEightProject getProject() {
+                    return (GradleEightProject) super.getProject();
+                }
+
                 @TaskAction
                 final void action() {
                     getProject().exec(execSpec -> {
@@ -41,15 +53,27 @@ public class ExecOperationsFixesTest extends IllegalMethodCalledDuringTaskExecut
             import java.io.File;
             import java.util.List;
             import javax.inject.Inject;
+            import org.gradle.api.Action;
             import org.gradle.api.DefaultTask;
             import org.gradle.api.Plugin;
             import org.gradle.api.Project;
             import org.gradle.api.tasks.TaskAction;
             import org.gradle.process.ExecOperations;
+            import org.gradle.process.ExecResult;
+            import org.gradle.process.ExecSpec;
             abstract class ConcreteTask extends DefaultTask {
 
                 @Inject
                 protected abstract ExecOperations getExecOperations();
+
+                interface GradleEightProject extends Project {
+                    ExecResult exec(Action<? super ExecSpec> action);
+                }
+
+                @Override
+                public GradleEightProject getProject() {
+                    return (GradleEightProject) super.getProject();
+                }
 
                 @TaskAction
                 final void action() {
