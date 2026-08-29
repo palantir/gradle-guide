@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: Change `com.palantir.gradle-guide` plugin to be a root project plugin
-  links:
-  - https://github.com/palantir/gradle-guide/pull/90

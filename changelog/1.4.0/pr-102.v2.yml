@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: 'Best effort errorprone: `dependsOn(taskProvider.get())` -> `dependsOn(taskProvider)`'
-  links:
-  - https://github.com/palantir/gradle-guide/pull/102

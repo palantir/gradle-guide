@@ -1,5 +1,0 @@
-type: fix
-fix:
-  description: Allow interfaces for Tasks and Extensions
-  links:
-  - https://github.com/palantir/gradle-guide/pull/108

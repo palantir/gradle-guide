@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: Re-enabled this repository's Error Prone checks.
-  links:
-  - https://github.com/palantir/gradle-guide/pull/463
