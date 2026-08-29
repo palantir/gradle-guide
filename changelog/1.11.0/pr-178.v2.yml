@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: Rollout autofix for `getProject().getLogger()` to `getLogger()`
-  links:
-  - https://github.com/palantir/gradle-guide/pull/178

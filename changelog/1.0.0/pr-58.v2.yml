@@ -1,5 +1,0 @@
-type: fix
-fix:
-  description: Initial errorprones for lazy task creation
-  links:
-  - https://github.com/palantir/gradle-guide/pull/58

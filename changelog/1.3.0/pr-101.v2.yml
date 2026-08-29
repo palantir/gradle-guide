@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: Errorprone banning non-abstract tasks and extensions
-  links:
-  - https://github.com/palantir/gradle-guide/pull/101

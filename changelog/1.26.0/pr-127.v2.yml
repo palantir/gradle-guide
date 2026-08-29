@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: Ensure that extensions are only added via `.create`
-  links:
-  - https://github.com/palantir/gradle-guide/pull/127

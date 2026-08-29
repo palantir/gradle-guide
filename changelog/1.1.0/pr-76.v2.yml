@@ -1,5 +1,0 @@
-type: fix
-fix:
-  description: switch to git version over circle tag
-  links:
-  - https://github.com/palantir/gradle-guide/pull/76
