@@ -26,7 +26,6 @@ class ExtensionsUseCreateTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(ExtensionsUseCreate.class, getClass());
 
-    @SuppressWarnings("for-rollout:UnusedMethod")
     private RefactoringValidator bestEffortRefactoringValidator() {
         return refactoringValidator("-XepOpt:GradleGuide:BestEffortMode");
     }

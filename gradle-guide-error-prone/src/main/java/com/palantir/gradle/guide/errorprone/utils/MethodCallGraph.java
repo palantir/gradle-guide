@@ -58,7 +58,6 @@ public final class MethodCallGraph {
                 GraphBuilder.directed().allowsSelfLoops(true).build();
 
         new TreePathScanner<Void, Void>() {
-            @SuppressWarnings("for-rollout:VoidUsed")
             @Override
             public Void visitMethod(MethodTree node, Void unused) {
                 MethodSymbol methodSymbol = ASTHelpers.getSymbol(node);

@@ -20,7 +20,6 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("MisformattedTestData")
 class GradleTypesAsFieldsTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(GradleTypesAsFields.class, getClass());
