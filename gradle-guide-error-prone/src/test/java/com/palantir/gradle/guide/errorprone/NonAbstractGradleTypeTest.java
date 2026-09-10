@@ -21,7 +21,6 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("MisformattedTestData")
 class NonAbstractGradleTypeTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(NonAbstractGradleType.class, getClass());

@@ -20,7 +20,6 @@ import com.palantir.gradle.guide.helpers.RefactoringValidator;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("MisformattedTestData")
 class UseGradleLoggerInGradlePluginsTest {
     private final CompilationTestHelper compilationTestHelper =
             CompilationTestHelper.newInstance(UseGradleLoggerInGradlePlugins.class, getClass());
