@@ -119,6 +119,7 @@ public final class ProviderImprovements extends GradleGuideBugChecker
 
                     String originalMethodExpression = state.getSourceForNode(memberSelectTree.getExpression());
 
+                    @SuppressWarnings("for-rollout:ReferenceEquality")
                     boolean lambdaBodyJustReturnsProviderValue = tree == lambdaBodyPath.getLeaf();
                     if (lambdaBodyJustReturnsProviderValue) {
                         fix.replace(providerFactoryMethod, originalMethodExpression);
