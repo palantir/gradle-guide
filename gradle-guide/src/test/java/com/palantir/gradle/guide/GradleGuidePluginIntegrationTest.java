@@ -20,7 +20,6 @@ import static com.palantir.gradle.testing.assertion.GradlePluginTestAssertions.a
 
 import com.palantir.gradle.jdks.testing.WithJdkAutomanagement;
 import com.palantir.gradle.testing.execution.GradleInvoker;
-import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import com.palantir.gradle.testing.project.SubProject;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 @GradlePluginTests
 @WithJdkAutomanagement
-@DisabledConfigurationCache("gradle-jdks is not CC compatible")
 class GradleGuidePluginIntegrationTest {
 
     @BeforeEach
