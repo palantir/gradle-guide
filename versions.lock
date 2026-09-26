@@ -130,7 +130,7 @@ com.palantir.gradle.jdks:gradle-jdks-setup-common:0.82.0 (4 constraints: da4dd4e
 
 com.palantir.gradle.jdks:gradle-jdks-testing:0.82.0 (1 constraints: 3c05453b)
 
-com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.32.0 (1 constraints: 3705313b)
+com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.33.0 (1 constraints: 3805343b)
 
 com.palantir.gradle.plugintesting:configuration-cache-spec:0.77.0 (1 constraints: 4005503b)
 
@@ -140,15 +140,15 @@ com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.77.0 (2 constrai
 
 com.palantir.gradle.plugintesting:plugin-testing-core:0.77.0 (2 constraints: 1c1ff98e)
 
-com.palantir.gradle.utils:exec:0.27.0 (2 constraints: c41ea7b5)
+com.palantir.gradle.utils:exec:0.29.0 (2 constraints: c61eadb5)
 
 com.palantir.gradle.utils:lazily-configured-mapping:0.28.0 (2 constraints: 8321fdd2)
 
-com.palantir.gradle.utils:platform:0.27.0 (7 constraints: 0384c1bb)
+com.palantir.gradle.utils:platform:0.29.0 (7 constraints: 058441bc)
 
-com.palantir.gradle.utils:providers:0.27.0 (1 constraints: 740de931)
+com.palantir.gradle.utils:providers:0.29.0 (1 constraints: 760def31)
 
-com.palantir.gradle.utils:safe-exec-commandline:0.27.0 (1 constraints: 740de931)
+com.palantir.gradle.utils:safe-exec-commandline:0.29.0 (1 constraints: 760def31)
 
 com.palantir.javaformat:gradle-palantir-java-format:2.87.0 (1 constraints: fa112b07)
 
