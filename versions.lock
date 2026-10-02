@@ -28,9 +28,11 @@ com.google.j2objc:j2objc-annotations:3.1 (1 constraints: b809f1a0)
 
 com.palantir.gradle.auto-parallelizable:auto-parallelizable-annotations:1.6.0 (1 constraints: 09050236)
 
-com.palantir.gradle.utils:environment-variables:0.30.0 (3 constraints: a73e8100)
+com.palantir.gradle.utils:environment-variables:0.30.0 (4 constraints: 3c57c6d5)
 
-com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.28.0 (2 constraints: b11e0780)
+com.palantir.suppressible-error-prone:artifact-transforms:2.34.0 (1 constraints: 2f1d54d8)
+
+com.palantir.suppressible-error-prone:gradle-suppressible-error-prone:2.34.0 (2 constraints: ae1e2a7f)
 
 io.github.eisop:dataflow-errorprone:3.41.0-eisop1 (2 constraints: 9c2c4f1c)
 
@@ -38,15 +40,15 @@ io.github.java-diff-utils:java-diff-utils:4.12 (1 constraints: b412c908)
 
 javax.inject:javax.inject:1 (8 constraints: 0575c927)
 
-net.ltgt.gradle:gradle-errorprone-plugin:5.1.1 (3 constraints: 433b3b43)
+net.ltgt.gradle:gradle-errorprone-plugin:5.1.1 (3 constraints: 453b3f43)
 
-one.util:streamex:0.9.0 (3 constraints: 6d31be8f)
+one.util:streamex:0.9.0 (3 constraints: 6a31bd8f)
 
 org.immutables:value:2.12.2 (2 constraints: af16c334)
 
 org.jspecify:jspecify:1.0.1 (13 constraints: 29d1dd1f)
 
-org.ow2.asm:asm:9.10.1 (5 constraints: 5d5d53a7)
+org.ow2.asm:asm:9.10.1 (6 constraints: f275ffc4)
 
 
 
