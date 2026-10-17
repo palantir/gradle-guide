@@ -46,7 +46,7 @@ org.immutables:value:2.12.3 (2 constraints: b016f734)
 
 org.jspecify:jspecify:1.0.1 (13 constraints: 29d1dd1f)
 
-org.ow2.asm:asm:9.10.1 (5 constraints: 5d5d53a7)
+org.ow2.asm:asm:9.11 (5 constraints: ff5c572c)
 
 
 
@@ -104,7 +104,7 @@ com.googlecode.javaewah:JavaEWAH:1.2.3 (1 constraints: 460e7e50)
 
 com.netflix.nebula:nebula-test:11.1.0 (1 constraints: 96181a8f)
 
-com.palantir.baseline:gradle-baseline-java:7.12.0 (2 constraints: d11467be)
+com.palantir.baseline:gradle-baseline-java:7.13.0 (2 constraints: d21498be)
 
 com.palantir.baseline-error-prone:gradle-baseline-error-prone:0.7.0 (1 constraints: c01105f5)
 
