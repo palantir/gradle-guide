@@ -17,6 +17,7 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
 * managed-types-and-properties.md
 * lifecycle-of-a-gradle-build.md
 * avoiding-unnecessary-configuration.md
+* wiring-task-dependencies-through-providers.md
 * testing-and-running-your-plugins-locally.md
 * adopting-the-configuration-cache.md
 * diagnosing-build-performance.md
@@ -53,17 +54,27 @@ A guide for writing good Gradle plugins and a plugin to check for bad Gradle cod
     3. [Accessing tasks lazily](guide/avoiding-unnecessary-configuration.md#accessing-tasks-lazily)
     4. [Lazy `Configuration` registration](guide/avoiding-unnecessary-configuration.md#lazy-configuration-registration)
     5. [Other types](guide/avoiding-unnecessary-configuration.md#other-types)
-7. [Testing and running your plugins](guide/testing-and-running-your-plugins-locally.md)
+7. [Wiring Task Dependencies Through Providers](guide/wiring-task-dependencies-through-providers.md)
+    1. [Passing a task's output to another task](guide/wiring-task-dependencies-through-providers.md#passing-a-task's-output-to-another-task)
+    2. [Combining providers with `zip`](guide/wiring-task-dependencies-through-providers.md#combining-providers-with-zip)
+    3. [Falling back with `orElse`](guide/wiring-task-dependencies-through-providers.md#falling-back-with-orelse)
+    4. [Choosing between alternatives](guide/wiring-task-dependencies-through-providers.md#choosing-between-alternatives)
+    5. [Selecting a group of related providers](guide/wiring-task-dependencies-through-providers.md#selecting-a-group-of-related-providers)
+    6. [When the value has to be a `FileCollection`](guide/wiring-task-dependencies-through-providers.md#when-the-value-has-to-be-a-filecollection)
+    7. [Don't paper over this with `dependsOn`](guide/wiring-task-dependencies-through-providers.md#don't-paper-over-this-with-dependson)
+    8. [Things to be aware of](guide/wiring-task-dependencies-through-providers.md#things-to-be-aware-of)
+    9. [Testing](guide/wiring-task-dependencies-through-providers.md#testing)
+8. [Testing and running your plugins](guide/testing-and-running-your-plugins-locally.md)
     1. [Testing locally](guide/testing-and-running-your-plugins-locally.md#testing-locally)
     2. [Running your plugin in other repos locally](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-locally)
     3. [Debugging your Gradle plugin running on a different repo](guide/testing-and-running-your-plugins-locally.md#debugging-your-gradle-plugin-running-on-a-different-repo)
     4. [Running your plugin in other repos on CI](guide/testing-and-running-your-plugins-locally.md#running-your-plugin-in-other-repos-on-ci)
-8. [Adopting the Configuration Cache](guide/adopting-the-configuration-cache.md)
+9. [Adopting the Configuration Cache](guide/adopting-the-configuration-cache.md)
     1. [How does Configuration Caching work?](guide/adopting-the-configuration-cache.md#how-does-configuration-caching-work?)
     2. [Finding Configuration Cache problems](guide/adopting-the-configuration-cache.md#finding-configuration-cache-problems)
     3. [Solving Configuration Cache problems](guide/adopting-the-configuration-cache.md#solving-configuration-cache-problems)
     4. [Two strategies to write Configuration Cache friendly Gradle](guide/adopting-the-configuration-cache.md#two-strategies-to-write-configuration-cache-friendly-gradle)
-9. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
+10. [Diagnosing Build Performance](guide/diagnosing-build-performance.md)
     1. [Expectations of performance](guide/diagnosing-build-performance.md#expectations-of-performance)
     2. [Finding a build scan](guide/diagnosing-build-performance.md#finding-a-build-scan)
     3. [Tasks: How to diagnose performance issues](guide/diagnosing-build-performance.md#tasks-how-to-diagnose-performance-issues)

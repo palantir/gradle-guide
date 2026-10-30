@@ -2,7 +2,7 @@
 <table><tr>
   <td>Previous: <a href="lifecycle-of-a-gradle-build.md">Lifecycle of a Gradle Build</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td align="right">Next: <a href="wiring-task-dependencies-through-providers.md">Wiring Task Dependencies Through Providers</a></td>
 </tr></table>
 <!-- PreviousNext:END -->
 
@@ -72,6 +72,8 @@ myTaskProvider.configure(task -> {
 ```
 
 These also has the benefit of wiring up the dependencies between the two tasks automatically (no need for `dependsOn`).
+
+This only works if the dependencies survive any further transformations of the provider. See [Wiring Task Dependencies Through Providers](wiring-task-dependencies-through-providers.md) for the cases where they don't.
 
 ## Accessing tasks lazily
 
@@ -168,6 +170,6 @@ The advice for `Task`s also applies to other Gradle domain objects like `SourceS
 <table><tr>
   <td>Previous: <a href="lifecycle-of-a-gradle-build.md">Lifecycle of a Gradle Build</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
-  <td align="right">Next: <a href="testing-and-running-your-plugins-locally.md">Testing and running your plugins</a></td>
+  <td align="right">Next: <a href="wiring-task-dependencies-through-providers.md">Wiring Task Dependencies Through Providers</a></td>
 </tr></table>
 <!-- PreviousNext:END -->

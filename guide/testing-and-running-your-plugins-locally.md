@@ -1,6 +1,6 @@
 <!-- PreviousNext:START -->
 <table><tr>
-  <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
+  <td>Previous: <a href="wiring-task-dependencies-through-providers.md">Wiring Task Dependencies Through Providers</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
   <td align="right">Next: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
 </tr></table>
@@ -150,7 +150,7 @@ Sometimes, you really do need to test your plugin in a CI environment. In every 
 <!-- PreviousNext:START -->
 <hr>
 <table><tr>
-  <td>Previous: <a href="avoiding-unnecessary-configuration.md">Avoiding Unnecessary Configuration</a></td>
+  <td>Previous: <a href="wiring-task-dependencies-through-providers.md">Wiring Task Dependencies Through Providers</a></td>
   <td align="center"><a href="../README.md#table-of-contents">Table of Contents</a></td>
   <td align="right">Next: <a href="adopting-the-configuration-cache.md">Adopting the Configuration Cache</a></td>
 </tr></table>
