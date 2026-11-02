@@ -14,13 +14,13 @@ com.google.auto.value:auto-value-annotations:1.11.0 (3 constraints: 562f3924)
 
 com.google.errorprone:error_prone_annotation:2.49.0 (2 constraints: ae2747d2)
 
-com.google.errorprone:error_prone_annotations:2.50.0 (9 constraints: 7d7f83c6)
+com.google.errorprone:error_prone_annotations:2.52.0 (9 constraints: 7f7fd3c7)
 
 com.google.errorprone:error_prone_check_api:2.49.0 (2 constraints: d51926d7)
 
 com.google.guava:failureaccess:1.0.3 (2 constraints: f3154f13)
 
-com.google.guava:guava:33.7.2-jre (20 constraints: 40917e72)
+com.google.guava:guava:33.8.0-jre (20 constraints: 3f91206e)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
